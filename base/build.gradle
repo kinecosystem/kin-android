@@ -1,0 +1,94 @@
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
+apply plugin: "maven"
+apply plugin: "maven-publish"
+apply plugin: 'com.jfrog.bintray'
+
+enableJacoco(project, 'debug')
+
+sourceSets {
+    integrationTest {
+        compileClasspath += main.output + test.output
+        runtimeClasspath += main.output + test.output
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.kotlin_stdlib
+    implementation deps.gson
+    implementation deps.okhttp
+    implementation deps.oksse
+    implementation deps.slf4j
+    implementation deps.grpc_stub
+    implementation deps.grpc_protobuf
+    implementation project(':base-storage')
+    implementation 'com.github.joshjdevl.libsodiumjni:libsodium-jni:2.0.1'
+
+    testImplementation deps.kotlin_stdlib
+    testImplementation deps.kotlin_junit
+    testImplementation deps.kotlinMockito
+    testImplementation "org.conscrypt:conscrypt-openjdk-uber:2.2.1"
+    testImplementation deps.okhttp_mockwebserver
+    testImplementation deps.grpc_testing
+}
+
+task integrationTest(type: Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    outputs.upToDateWhen { false }
+    shouldRunAfter test
+}
+
+check.dependsOn integrationTest
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+jar {
+    baseName = 'base'
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+task testDebugUnitTest(type : Test)
+
+task testReleaseUnitTest(type : Test)
+
+bintray {
+    user = project.hasProperty('bintrayUser') ? bintrayUser : System.getenv('BINTRAY_USER')
+    key = project.hasProperty('bintrayKey') ? bintrayKey : System.getenv('BINTRAY_API_KEY')
+
+    configurations = ['archives']
+    pkg {
+        repo = "kin-android"
+        userOrg = "kinecosystem"
+        name = "base"
+        desc = "Kin Android SDK Base"
+        websiteUrl = "https://github.com/kinecosystem/kin-android"
+        vcsUrl = "https://github.com/kinecosystem/kin-android.git"
+        licenses = ["MIT", "Apache-2.0"]
+        publish = true
+        publicDownloadNumbers = true
+    }
+}

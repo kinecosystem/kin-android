@@ -1,0 +1,30 @@
+$dokka.format:gfm
+$dokka.linkExtension:md
+$dokka.location:org.kin.sdk.base.models$asKinAccount(org.kin.stellarfork.KeyPair)org.kin.sdk.base.models/org.kin.stellarfork.-key-pair/as-kin-account.md
+$dokka.location:org.kin.sdk.base.models$asKinAccountId(org.kin.stellarfork.KeyPair)org.kin.sdk.base.models/org.kin.stellarfork.-key-pair/as-kin-account-id.md
+$dokka.location:org.kin.sdk.base.models$asKinPayments(kotlin.collections.List((org.kin.sdk.base.stellar.models.KinTransaction)), kotlin.Boolean)org.kin.sdk.base.models/kotlin.collections.-list/as-kin-payments.md
+$dokka.location:org.kin.sdk.base.models$asKinTransaction(org.kin.stellarfork.responses.TransactionResponse, org.kin.sdk.base.stellar.models.NetworkEnvironment)org.kin.sdk.base.models/org.kin.stellarfork.responses.-transaction-response/as-kin-transaction.md
+$dokka.location:org.kin.sdk.base.models$asPrivateKey(org.kin.stellarfork.KeyPair)org.kin.sdk.base.models/org.kin.stellarfork.-key-pair/as-private-key.md
+$dokka.location:org.kin.sdk.base.models$asPublicKey(org.kin.stellarfork.KeyPair)org.kin.sdk.base.models/org.kin.stellarfork.-key-pair/as-public-key.md
+$dokka.location:org.kin.sdk.base.models$envelopeXdrBytes(org.kin.stellarfork.responses.SubmitTransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-submit-transaction-response/envelope-xdr-bytes.md
+$dokka.location:org.kin.sdk.base.models$envelopeXdrBytes(org.kin.stellarfork.responses.TransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-transaction-response/envelope-xdr-bytes.md
+$dokka.location:org.kin.sdk.base.models$kinAccount(org.kin.stellarfork.responses.AccountResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-account-response/kin-account.md
+$dokka.location:org.kin.sdk.base.models$kinBalance(org.kin.stellarfork.responses.AccountResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-account-response/kin-balance.md
+$dokka.location:org.kin.sdk.base.models$resultXdrBytes(org.kin.stellarfork.responses.SubmitTransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-submit-transaction-response/result-xdr-bytes.md
+$dokka.location:org.kin.sdk.base.models$resultXdrBytes(org.kin.stellarfork.responses.TransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-transaction-response/result-xdr-bytes.md
+$dokka.location:org.kin.sdk.base.models$toEnvelopeXdrBytes(org.kin.stellarfork.Transaction)org.kin.sdk.base.models/org.kin.stellarfork.-transaction/to-envelope-xdr-bytes.md
+$dokka.location:org.kin.sdk.base.models$toKinTransaction(org.kin.stellarfork.Transaction, org.kin.sdk.base.stellar.models.NetworkEnvironment)org.kin.sdk.base.models/org.kin.stellarfork.-transaction/to-kin-transaction.md
+$dokka.location:org.kin.sdk.base.models$toUTF8Bytes(kotlin.String)org.kin.sdk.base.models/kotlin.-string/to-u-t-f8-bytes.md
+$dokka.location:org.kin.sdk.base.models$toUTF8String(kotlin.ByteArray)org.kin.sdk.base.models/kotlin.-byte-array/to-u-t-f8-string.md
+kin.sdk
+kin.sdk.exception
+kin.sdk.internal
+kin.utils
+org.kin.sdk.base
+org.kin.sdk.base.models
+org.kin.sdk.base.network.api
+org.kin.sdk.base.network.api.rest
+org.kin.sdk.base.network.services
+org.kin.sdk.base.stellar.models
+org.kin.sdk.base.storage
+org.kin.sdk.base.tools

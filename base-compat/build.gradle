@@ -1,0 +1,86 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: "com.github.dcendents.android-maven"
+apply plugin: "maven-publish"
+apply plugin: 'com.jfrog.bintray'
+
+enableJacoco(project, 'debug')
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 29
+        versionCode 1
+        versionName "${version}"
+        archivesBaseName = "base-compat"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility 1.8 /** Required for de-suraging */
+        targetCompatibility 1.8 /** Required for de-suraging */
+    }
+    testOptions {
+        unitTests.includeAndroidResources = true
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.kotlin_stdlib
+    api (project(':base')) {
+        exclude module: 'libsodium-jni'
+    }
+    implementation "androidx.annotation:annotation:1.1.0"
+    implementation('com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:2.0.1')
+
+    implementation deps.gson
+    implementation deps.okhttp
+    implementation deps.oksse
+    implementation deps.slf4j_android
+
+    testImplementation deps.junit
+    testImplementation 'org.mockito:mockito-core:2.23.0'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:3.13.1'
+    testImplementation deps.kotlinMockito
+    testImplementation 'org.json:json:20190722'
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+bintray {
+    user = project.hasProperty('bintrayUser') ? bintrayUser : System.getenv('BINTRAY_USER')
+    key = project.hasProperty('bintrayKey') ? bintrayKey : System.getenv('BINTRAY_API_KEY')
+
+    configurations = ['archives']
+    pkg {
+        repo = "kin-android"
+        userOrg = "kinecosystem"
+        name = "base-compat"
+        desc = "Kin Android SDK Base Compatibility Layer"
+        websiteUrl = "https://github.com/kinecosystem/kin-android"
+        vcsUrl = "https://github.com/kinecosystem/kin-android.git"
+        licenses = ["MIT", "Apache-2.0"]
+        publish = true
+        publicDownloadNumbers = true
+    }
+}

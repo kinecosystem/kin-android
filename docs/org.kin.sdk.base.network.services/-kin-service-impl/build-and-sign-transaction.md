@@ -1,0 +1,5 @@
+[kin-android](../../index.md) / [org.kin.sdk.base.network.services](../index.md) / [KinServiceImpl](index.md) / [buildAndSignTransaction](./build-and-sign-transaction.md)
+
+# buildAndSignTransaction
+
+`fun buildAndSignTransaction(sourceKinAccount: `[`KinAccount`](../../org.kin.sdk.base.models/-kin-account/index.md)`, paymentItems: `[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<`[`KinPaymentItem`](../../org.kin.sdk.base.models/-kin-payment-item/index.md)`>, memo: `[`KinMemo`](../../org.kin.sdk.base.models/-kin-memo/index.md)`, fee: `[`QuarkAmount`](../../org.kin.sdk.base.models/-quark-amount/index.md)`): `[`Promise`](../../org.kin.sdk.base.tools/-promise/index.md)`<`[`KinTransaction`](../../org.kin.sdk.base.stellar.models/-kin-transaction/index.md)`>`

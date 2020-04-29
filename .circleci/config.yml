@@ -1,0 +1,74 @@
+version: 2.1
+executors:
+  kin-executor:
+    working_directory: ~/code
+    docker:
+      - image: circleci/android:api-29
+    resource_class: xlarge
+    environment:
+      JVM_OPTS: -Xmx3200m
+
+references:
+  gradle_key: &gradle_key
+                jars-{{ checksum "build.gradle" }}-{{ checksum "base/build.gradle" }}-{{ checksum "base-compat/build.gradle" }}-{{ checksum "base-storage/build.gradle" }}
+
+  restore_gradle_cache: &restore_gradle_cache
+    restore_cache:
+      key: *gradle_key
+
+  save_gradle_cache: &save_gradle_cache
+    save_cache:
+      key: *gradle_key
+      paths:
+        - ~/.gradle
+        - ~/.m2
+
+  android_dependencies: &android_dependencies
+    run:
+      name: Download Android Dependencies
+      command: ./gradlew androidDependencies
+
+jobs:
+  build_and_test:
+    executor: kin-executor
+    steps:
+      - checkout
+      - *restore_gradle_cache
+      - *android_dependencies
+      - *save_gradle_cache
+      - run:
+          name: Assemble
+          command: ./gradlew clean assemble
+      - run:
+          name: Run Unit Tests & Reporting
+          command: ./gradlew copyNativeLibsForLinux testDebugUnitTest && ./gradlew jacocoTestReporting && ./gradlew jacocoFullReport
+      - run:
+          name: Save test results
+          command: |
+            mkdir -p build/test-results/junit/
+            find . -type f -regex ".*/build/test-results/.*xml" -exec cp {} build/test-results/junit/ \;
+          when: always
+      - run:
+          name: Upload Jacoco Report to codecov.io
+          command: curl -s https://codecov.io/bash | bash -s -- -c -F aFlag -f build/reports/jacoco/jacocoFullReport/jacocoFullReport.xml
+      - run:
+          name: Generating KDoc via dokka
+          command: ./gradlew dokka
+      - run:
+          name: Compress Artifacts
+          command: tar -cvf test-coverage.tar build/reports/jacoco/jacocoFullReport; tar -cvf test-results.tar build/test-results/junit
+      - store_artifacts: # for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
+          path: test-coverage.tar
+          destination: test-coverage
+      - store_artifacts:
+          path: test-results.tar
+          destination: test-results
+      - store_test_results:
+          path: build/test-results
+
+workflows:
+  version: 2.1
+  build-sdk:
+    jobs:
+      - build_and_test
+

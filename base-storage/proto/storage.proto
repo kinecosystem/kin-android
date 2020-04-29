@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package kin.storage.v1;
+
+option java_package = "org.kin.gen.storage.v1";
+
+message PrivateKey {
+    bytes value = 1;
+}
+
+message PublicKey {
+    bytes value = 1;
+}
+
+message KinBalance {
+    int64 quark_amount = 1;
+    int64 pending_quark_amount = 2;
+}
+
+message KinAccount {
+    PublicKey public_key = 1;
+
+    PrivateKey private_key = 2;
+
+    KinBalance balance = 3;
+
+    Status status = 4;
+    enum Status {
+        UNREGISTERED = 0;
+        REGISTERED = 1;
+    }
+
+    int64 sequence_number = 5;
+}
+
+message KinTransaction {
+    bytes envelope_xdr = 1;
+
+    Status status = 2;
+    enum Status {
+        UNKNOWN = 0;
+        INFLIGHT = 1;
+        ACKNOWLEDGED = 2;
+        HISTORICAL = 3;
+    }
+
+    int64 timestamp = 3;
+
+    // result_xdr should exist in `ACKNOWLEDGED` and `HISTORICAL` states
+    bytes result_xdr = 4;
+
+    // paging_token should exist only in `HISTORICAL` state
+    string paging_token = 5;
+}
+
+message KinTransactions {
+    repeated KinTransaction items = 1;
+
+    // The newest paging token to query newer transactions with
+    string head_paging_token = 2;
+
+    // The oldest paging token to query older transactions with
+    string tail_paging_token = 3;
+}
+
+message KinConfig {
+    int64 min_fee = 1;
+}
