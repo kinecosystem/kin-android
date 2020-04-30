@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="backup_and_restore_edittext_height">32dp</dimen>
+    <dimen name="backup_and_restore_edittext_stroke_width">0.5dp</dimen>
+    <dimen name="backup_and_restore_edittext_corners_radius">1dp</dimen>
+    <dimen name="backup_and_restore_password_edit_text_size">12sp</dimen>
+    <dimen name="backup_and_restore_password_edittext_error_size">11sp</dimen>
+    <dimen name="backup_and_restore_toolbar_text_size">20sp</dimen>
+
+    <dimen name="backup_and_restore_margin_small">8dp</dimen>
+    <dimen name="backup_and_restore_margin_medium">8dp</dimen>
+    <dimen name="backup_and_restore_margin_large">16dp</dimen>
+    <dimen name="backup_and_restore_margin_extra_large">23dp</dimen>
+    <dimen name="backup_and_restore_margin_block">4dp</dimen>
+
+    <dimen name="backup_and_restore_small_size">12sp</dimen>
+    <dimen name="backup_and_restore_regular_size">12sp</dimen>
+    <dimen name="backup_and_restore_large_size">19sp</dimen>
+    <dimen name="backup_and_restore_btn_text_size">13sp</dimen>
+</resources>

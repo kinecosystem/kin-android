@@ -30,3 +30,4 @@ comment:
 
 ignore:
   - "**/stellarfork/xdr/*.*"
+  - "**/kin/backupandrestore/**/*.*"

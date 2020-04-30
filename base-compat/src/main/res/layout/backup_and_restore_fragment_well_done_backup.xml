@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingLeft="@dimen/backup_and_restore_margin_extra_large"
+    android:paddingRight="@dimen/backup_and_restore_margin_extra_large"
+    android:background="@android:color/white">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/safe_image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_large"
+        app:srcCompat="@drawable/safe"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/save_qr_tile"
+        style="@style/BackupAndRestoreTitleLargeBold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_large"
+        android:text="@string/backup_and_restore_well_your_kin_is_safe_title"
+        android:gravity="center_horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/safe_image" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/save_qr_description"
+        style="@style/BackupAndRestoreTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_description_margin"
+        android:text="@string/backup_and_restore_well_your_kin_is_safe_description"
+        android:gravity="center_horizontal"
+        android:lineSpacingExtra="@dimen/backup_and_restore_line_spacing_medium"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/save_qr_tile" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/save_qr_be_sure_to_save"
+        style="@style/BackupAndRestoreTitleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_large"
+        android:lineSpacingExtra="@dimen/backup_and_restore_line_spacing_medium"
+        android:text="@string/backup_and_restore_save_password_and_keep_your_qr_handy"
+        android:gravity="center_horizontal"
+        android:textColor="@color/backup_and_restore_red"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/save_qr_description" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

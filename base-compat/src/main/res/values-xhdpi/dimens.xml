@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="backup_and_restore_margin_small">10dp</dimen>
+    <dimen name="backup_and_restore_margin_medium">20dp</dimen>
+    <dimen name="backup_and_restore_margin_large">35dp</dimen>
+    <dimen name="backup_and_restore_margin_extra_large">65dp</dimen>
+    <dimen name="backup_and_restore_screen_left_right_padding">35dp</dimen>
+    <dimen name="backup_and_restore_description_margin">15dp</dimen>
+    <dimen name="backup_and_restore_small_size">14sp</dimen>
+    <dimen name="backup_and_restore_regular_size">16sp</dimen>
+    <dimen name="backup_and_restore_large_size">22sp</dimen>
+    <dimen name="backup_and_restore_toolbar_text_size">20sp</dimen>
+    <dimen name="backup_and_restore_btn_text_size">18sp</dimen>
+    <dimen name="backup_and_restore_button_corners_radius">5dp</dimen>
+    <dimen name="backup_and_restore_btn_height">50dp</dimen>
+    <dimen name="backup_and_restore_btn_margin_bottom">23dp</dimen>
+    <dimen name="backup_and_restore_line_spacing_large">9sp</dimen>
+    <dimen name="backup_and_restore_line_spacing_medium">7sp</dimen>
+    <dimen name="backup_and_restore_line_spacing_small">6sp</dimen>
+    <dimen name="backup_and_restore_dialog_left_right_padding">24dp</dimen>
+    <dimen name="backup_and_restore_dialog_title_top_padding">22dp</dimen>
+    <dimen name="backup_and_restore_dialog_message_top_padding">6dp</dimen>
+
+    <dimen name="backup_and_restore_edittext_height">40dp</dimen>
+    <dimen name="backup_and_restore_edittext_stroke_width">1dp</dimen>
+    <dimen name="backup_and_restore_edittext_corners_radius">2dp</dimen>
+    <dimen name="backup_and_restore_password_edit_text_size">14sp</dimen>
+    <dimen name="backup_and_restore_password_edittext_error_size">14sp</dimen>
+    <dimen name="backup_and_restore_margin_block">9dp</dimen>
+    <dimen name="backup_and_restore_password_edittext_text_sidesPadding">25dp</dimen>
+
+    <dimen name="backup_and_restore_qr_code_image_size">174dp</dimen>
+</resources>

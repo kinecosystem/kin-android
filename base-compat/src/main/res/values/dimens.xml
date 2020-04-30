@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="backup_and_restore_qr_code_image_size">174dp</dimen>
+</resources>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingRight="@dimen/backup_and_restore_screen_left_right_padding"
+    android:paddingLeft="@dimen/backup_and_restore_screen_left_right_padding"
+    android:background="@android:color/white">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/safe_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_large"
+        app:srcCompat="@drawable/safe"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/keep_safe_title"
+        style="@style/BackupAndRestoreTitleLargeBold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_large"
+        android:text="@string/backup_and_restore_keep_your_kin_safe"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/safe_icon" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/description"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_small"
+        android:layout_marginLeft="@dimen/backup_and_restore_margin_medium"
+        android:layout_marginRight="@dimen/backup_and_restore_margin_medium"
+        android:gravity="center_horizontal"
+        style="@style/BackupAndRestoreTitle"
+        android:lineSpacingExtra="@dimen/backup_and_restore_line_spacing_large"
+        android:text="@string/backup_and_restore_backup_description"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/keep_safe_title" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/lets_go_button"
+        style="@style/BackupAndRestoreButton"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/backup_and_restore_btn_height"
+        android:layout_marginBottom="@dimen/backup_and_restore_btn_margin_bottom"
+        android:text="@string/backup_and_restore_lets_go"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:background="@drawable/backup_and_restore_btn_purple_blue" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

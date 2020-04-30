@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="BackupAndRestorePasswordEditText">
+        <attr format="boolean" name="backup_and_restore_show_reveal_icon" />
+        <attr format="string" name="backup_and_restore_hint" />
+    </declare-styleable>
+
+</resources>

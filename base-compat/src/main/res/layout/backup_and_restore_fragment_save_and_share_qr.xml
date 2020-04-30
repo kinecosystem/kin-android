@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingRight="@dimen/backup_and_restore_screen_left_right_padding"
+    android:paddingLeft="@dimen/backup_and_restore_screen_left_right_padding"
+    android:background="@android:color/white">
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/save_qr_tile"
+        style="@style/BackupAndRestoreTitleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_medium"
+        android:layout_marginLeft="@dimen/backup_and_restore_margin_small"
+        android:layout_marginRight="@dimen/backup_and_restore_margin_small"
+        android:text="@string/backup_and_restore_save_your_qr_code_description"
+        android:gravity="center_horizontal"
+        android:lineSpacingExtra="@dimen/backup_and_restore_line_spacing_large"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/qr_image"
+        android:layout_width="@dimen/backup_and_restore_qr_code_image_size"
+        android:layout_height="@dimen/backup_and_restore_qr_code_image_size"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_large"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/save_qr_tile" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/remember_description"
+        style="@style/BackupAndRestoreTitleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_medium"
+        android:gravity="center_horizontal"
+        android:lineSpacingExtra="@dimen/backup_and_restore_line_spacing_medium"
+        android:text="@string/backup_and_restore_save_password_and_keep_your_qr_handy"
+        android:textColor="@color/backup_and_restore_red"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/qr_image" />
+
+    <androidx.appcompat.widget.AppCompatCheckBox
+        android:id="@+id/i_saved_my_qr_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColorHighlight="@color/backup_and_restore_purple_blue"
+        android:theme="@style/BackupAndRestoreCheckBox"
+        android:visibility="gone"
+        android:layout_marginBottom="25dp"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintEnd_toStartOf="@+id/i_saved_my_qr_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/send_email_button" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/i_saved_my_qr_text"
+        style="@style/BackupAndRestoreTitleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/backup_and_restore_i_ve_saved_my_qr"
+        android:visibility="gone"
+        android:layout_marginLeft="10dp"
+        android:lineSpacingExtra="@dimen/backup_and_restore_line_spacing_small"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintBottom_toBottomOf="@+id/i_saved_my_qr_checkbox"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/i_saved_my_qr_checkbox"
+        app:layout_constraintTop_toTopOf="@id/i_saved_my_qr_checkbox" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/send_email_button"
+        style="@style/BackupAndRestoreButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/backup_and_restore_btn_margin_bottom"
+        android:background="@drawable/backup_and_restore_btn_purple_blue"
+        android:text="@string/backup_and_restore_email_qr_code"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

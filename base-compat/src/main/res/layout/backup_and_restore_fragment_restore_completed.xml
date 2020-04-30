@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/kinrecovery_password_qr_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_large"
+        android:src="@drawable/backup_and_restore_password_recovery_qr_code_icon"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:srcCompat="@drawable/purple_blue_v_mark"
+        android:translationX="10dp"
+        android:translationY="10dp"
+        app:layout_constraintBottom_toBottomOf="@id/kinrecovery_password_qr_icon"
+        app:layout_constraintEnd_toEndOf="@+id/kinrecovery_password_qr_icon" />
+
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/kinrecovery_password_recovery_text"
+        style="@style/BackupAndRestoreTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:layout_marginTop="25dp"
+        android:text="@string/backup_and_restore_all_set"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/kinrecovery_password_qr_icon" />
+
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/backup_and_restore_v_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/backup_and_restore_margin_extra_large"
+        android:background="@drawable/circle_v_mark_icon"
+        app:layout_constraintTop_toBottomOf="@+id/kinrecovery_password_recovery_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

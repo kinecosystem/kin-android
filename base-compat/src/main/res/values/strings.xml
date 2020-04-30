@@ -1,3 +1,63 @@
 <resources>
 
+    <!--Activity Name-->
+    <string name="backup_and_restore_restore">Restore</string>
+    <string name="backup_and_restore_backup">Backup</string>
+
+    <string name="backup_and_restore_steps_format">%d/%d</string>
+
+    <!--Sentences-->
+    <string name="backup_and_restore_upload_qr_title">Load your Kin from a backup</string>
+    <string name="backup_and_restore_upload_qr_toolbar_title">Load your Kin from a backup</string>
+    <string name="backup_and_restore_upload_qr_description">First, upload the QR code you saved\n
+        (Hint: Check your email to find it) </string>
+    <string name="backup_and_restore_upload_qr_btn">Upload QR code</string>
+    <string name="backup_and_restore_restore_consent_title">Are you sure you want to restore your previous balance?</string>
+    <string name="backup_and_restore_consent_message">Restoring your old balance will replace your current Kin balance.</string>
+    <string name="backup_and_restore_password_recovery_content">Now, enter your password</string>
+    <string name="backup_and_restore_done">Done</string>
+    <string name="backup_and_restore_all_set">All set!\n
+Your Kin balance is updated</string>
+    <string name="backup_and_restore_restore_completed_title">Your Kin balance is updated</string>
+    <string name="backup_and_restore_enter_password">Enter password</string>
+    <string name="backup_and_restore_try_again">Try Again</string>
+    <string name="backup_and_restore_cancel">Cancel</string>
+
+    <!--Errors-->
+    <string name="backup_and_restore_loading_file_error">Error Loading QR File</string>
+    <string name="backup_and_restore_error_decoding_QR">Error Processing QR File</string>
+    <string name="backup_and_restore_restore_password_error">Password doesn\'t match QR code.\nPlease try again.</string>
+    <string name="backup_and_restore_restore_invalid_qr">Oops, we didn\'t recognized this QR code.\nPlease upload again.</string>
+    <string name="backup_and_restore_password_does_not_meet_req_above">Password doesn\'t meet the requirements above</string>
+    <string name="backup_and_restore_password_does_not_match">Password doesn\'t match</string>
+
+    <!--Backup Strings-->
+    <string name="backup_and_restore_backup_description">Back up your wallet so that you don’t lose your Kin if you change phones, delete the app or clear your data.\n\n
+To do this, you’ll first need to create a password and save your unique QR code somewhere you can access it later.</string>
+    <string name="backup_and_restore_keep_your_kin_safe">Keep your Kin Safe</string>
+    <string name="backup_and_restore_lets_go">Let\'s Go</string>
+    <string name="backup_and_restore_create_password_description_part_a">To back up your Kin, first create a strong password. It should have:</string>
+    <string name="backup_and_restore_create_password_description_part_b">at least 9 characters, including 1 uppercase, 1 lowercase, 1 special character (\"#, !, @\") and 1 number.</string>
+    <string name="backup_and_restore_confirm_password">Confirm password</string>
+    <string name="backup_and_restore_next">Next</string>
+    <string name="backup_and_restore_i_understand_password_description">I understand that I won\’t be able to restore my Kin without this password.</string>
+    <string name="backup_and_restore_create_password">Create password</string>
+    <string name="backup_and_restore_i_ve_saved_my_qr">I\'ve saved my QR code</string>
+    <string name="backup_and_restore_email_qr_code">Email QR code</string>
+    <string name="backup_and_restore_save_password_and_keep_your_qr_handy">Be sure to save your password\n
+        and keep your QR code handy</string>
+    <string name="backup_and_restore_save_your_qr_code_description">Now, save your unique QR code by emailing it to yourself.
+You\'ll need it to load your Kin from a backup later on.</string>
+    <string name="backup_and_restore_my_kin_wallet_qr_code">Save your QR code</string>
+    <string name="your_app_qr_code_subject">Your %1$s QR code</string>
+    <string name="your_app_qr_code_body">Your %1$s QR code is attached. When you restore your account on %1$s, you will need to provide this QR code. Please save this QR code.</string>
+    <string name="backup_and_restore_backup_created_on">Backup created on:</string>
+    <string name="backup_and_restore_send_email">Send email…</string>
+    <string name="backup_and_restore_well_your_kin_is_safe_title">Your Kin is backed up and safe!</string>
+    <string name="backup_and_restore_well_your_kin_is_safe_description">To load your Kin from a backup later on,
+        you’ll need your password and QR code</string>
+    <string name="backup_and_restore_something_went_wrong_title">Something went wrong</string>
+    <string name="backup_and_restore_we_had_some_issues_to_create_backup">We had some issues to create your backup.</string>
+    <string name="backup_and_restore_could_not_load_the_qr_please_try_again_later">Could not load the QR, please try again later.</string>
+    <string name="backup_and_restore_choose_qr_image">Choose QR image…</string>
 </resources>

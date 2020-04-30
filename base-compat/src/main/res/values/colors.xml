@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="backup_and_restore_red">#db497b</color>
+    <color name="backup_and_restore_gray">#a6a6a6</color>
+    <color name="backup_and_restore_dialog_message_gray">#6f6f6f</color>
+    <color name="backup_and_restore_black">#1f1f1f</color>
+    <color name="backup_and_restore_purple_blue">#6f41e8</color>
+    <color name="backup_and_restore_disabled_button">#e7e7e7</color>
+
+</resources>
