@@ -50,6 +50,9 @@ buildscript {
             def javaClasses = fileTree(
                     dir: "$buildDir/intermediates/classes/$folder",
                     excludes: fileFilter
+            ) + fileTree(
+                    dir: "$buildDir/intermediates/javac/$variant/classes",
+                    excludes: fileFilter
             )
             def kotlinClasses = fileTree(
                     dir: "$buildDir/tmp/kotlin-classes/$variant",

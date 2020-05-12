@@ -73,10 +73,10 @@ public class UploadQRPresenterImpl extends BaseChildPresenterImpl<UploadQRView> 
             String encryptedKeyStore = qrBarcodeGenerator.decodeQR(fileUri);
             getParentPresenter().navigateToEnterPasswordPage(encryptedKeyStore);
         } catch (QRFileHandlingException e) {
-            Logger.e("loadEncryptedKeyStore - loading file failed.", e);
+//            Logger.e("loadEncryptedKeyStore - loading file failed.", e);
             view.showErrorLoadingFileDialog();
         } catch (QRBarcodeGeneratorException e) {
-            Logger.e("loadEncryptedKeyStore - decoding QR failed.", e);
+//            Logger.e("loadEncryptedKeyStore - decoding QR failed.", e);
             view.showErrorDecodingQRDialog();
         }
     }

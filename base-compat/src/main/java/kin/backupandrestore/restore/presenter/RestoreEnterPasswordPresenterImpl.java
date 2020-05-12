@@ -53,7 +53,7 @@ public class RestoreEnterPasswordPresenterImpl extends BaseChildPresenterImpl<Re
             KinAccount kinAccount = importAccount(keystoreData, password);
             getParentPresenter().navigateToRestoreCompletedPage(kinAccount);
         } catch (BackupAndRestoreException e) {
-            Logger.e("RestoreEnterPasswordPresenterImpl - restore failed.", e);
+//            Logger.e("RestoreEnterPasswordPresenterImpl - restore failed.", e);
             RestoreEnterPasswordView view = getView();
             if (view != null) {
                 if (e.getCode() == CODE_RESTORE_INVALID_KEYSTORE_FORMAT) {

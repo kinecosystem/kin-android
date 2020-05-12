@@ -30,4 +30,12 @@ comment:
 
 ignore:
   - "**/stellarfork/xdr/*.*"
-  - "**/kin/backupandrestore/**/*.*"
+  - "**/MainExecutorService.java"
+  - "**/kin/backupandrestore/*.*"
+  - "**/kin/backupandrestore/backup/view/*.*"
+  - "**/kin/backupandrestore/restore/view/*.*"
+  - "**/kin/backupandrestore/events/*.*"
+  - "**/kin/backupandrestore/qr/*.*"
+  - "**/kin/backupandrestore/base/*.*"
+  - "**/kin/backupandrestore/utils/*.*"
+  - "**/kin/backupandrestore/widget/*.*"
