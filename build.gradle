@@ -97,6 +97,7 @@ buildscript {
         versions.gson = '2.8.2'
         versions.okhttp = '3.12.6'
         versions.oksse = '4121e87e8c'
+        versions.i2p_crypto_eddsa = '0.3.0'
         versions.slf4j = '1.7.25'
         versions.kotlinmockito = '2.1.0'
         versions.grpcProtobuf = '1.18.0'
@@ -117,6 +118,7 @@ buildscript {
         deps.okhttp = "com.squareup.okhttp3:okhttp:${versions.okhttp}"
         deps.okhttp_mockwebserver = "com.squareup.okhttp3:mockwebserver:${versions.okhttp}"
         deps.oksse = "com.github.kinecosystem:oksse:${versions.oksse}"
+        deps.i2p_crypto_eddsa = "net.i2p.crypto:eddsa:${versions.i2p_crypto_eddsa}"
 
         deps.slf4j_android = "org.slf4j:slf4j-android:$versions.slf4j"
         deps.slf4j = "org.slf4j:slf4j-api:$versions.slf4j"
@@ -210,6 +212,16 @@ task copyNativeLibsForLinux() {
     doLast {
         println "sudo cp jniLibs/linux/libsodium.so /usr/lib".execute()
         println "sudo cp jniLibs/linux/libsodiumjni.so /usr/lib".execute()
+    }
+}
+
+task copyNativeLibsForMacOS() {
+    doLast {
+        println "cp jniLibs/macOS/libsodium.dylib /usr/local/lib".execute()
+        println "cp jniLibs/macOS/libsodium.a /usr/local/lib".execute()
+        println "cp jniLibs/macOS/libsodium.la /usr/local/lib".execute()
+        println "cp jniLibs/macOS/libsodium.jnilib /usr/local/lib".execute()
+        println "cp jniLibs/macOS/pkgconfig/libsodium.pc /usr/local/lib/pkgconfig/libsodium.pc".execute()
     }
 }
 

@@ -1,27 +1,62 @@
 package org.kin.stellarfork
 
-import org.kin.stellarfork.StrKey.decodeStellarAccountId
-import org.kin.stellarfork.StrKey.decodeStellarSecretSeed
-import org.kin.stellarfork.StrKey.encodeStellarAccountId
-import org.kin.stellarfork.StrKey.encodeStellarSecretSeed
 import org.kin.stellarfork.xdr.DecoratedSignature
-import org.kin.stellarfork.xdr.PublicKeyType
 import org.kin.stellarfork.xdr.SignatureHint
 import org.kin.stellarfork.xdr.SignerKey
-import org.kin.stellarfork.xdr.SignerKeyType
-import org.kin.stellarfork.xdr.Uint256
-import org.kin.stellarfork.xdr.XdrDataOutputStream
 import org.libsodium.jni.NaCl
-import org.libsodium.jni.Sodium
-import org.libsodium.jni.SodiumConstants
-import org.libsodium.jni.SodiumConstants.PUBLICKEY_BYTES
-import org.libsodium.jni.SodiumConstants.SECRETKEY_BYTES
-import org.libsodium.jni.crypto.Util
-import java.io.ByteArrayOutputStream
-import java.io.IOException
-import java.security.GeneralSecurityException
-import java.util.Arrays
+import kotlin.properties.Delegates
 import org.kin.stellarfork.xdr.PublicKey as XDRPublicKey
+
+interface IKeyPair {
+    /**
+     * Returns the human readable account ID encoded in strkey.
+     */
+    val accountId: String
+
+    /**
+     * Returns the human readable secret seed encoded in strkey.
+     */
+    val secretSeed: CharArray
+
+    /**
+     * Returns the raw 32 byte secret seed.
+     */
+    val rawSecretSeed: ByteArray?
+    val publicKey: ByteArray
+    val signatureHint: SignatureHint
+    val xdrPublicKey: org.kin.stellarfork.xdr.PublicKey
+    val xdrSignerKey: SignerKey
+
+    /**
+     * Returns true if this Keypair is capable of signing
+     */
+    fun canSign(): Boolean
+
+    /**
+     * Sign the provided data with the keypair's private key.
+     *
+     * @param data The data to sign.
+     * @return signed bytes, null if the private key for this keypair is null.
+     */
+    fun sign(data: ByteArray?): ByteArray?
+
+    /**
+     * Sign the provided data with the keypair's private key and returns [DecoratedSignature].
+     *
+     * @param data
+     */
+    fun signDecorated(data: ByteArray?): DecoratedSignature
+
+    /**
+     * Verify the provided data and signature match this keypair's public key.
+     *
+     * @param data      The data that was signed.
+     * @param signature The signature.
+     * @return True if they match, false otherwise.
+     * @throws RuntimeException
+     */
+    fun verify(data: ByteArray?, signature: ByteArray?): Boolean
+}
 
 /**
  * Holds a Stellar keypair.
@@ -40,68 +75,42 @@ data class KeyPair @JvmOverloads
  * @param publicKey
  */
 constructor(
-    private val mPublicKey: PublicKey,
-    private val mPrivateKey: PrivateKey? = null
-) {
+    private val impl: IKeyPair
+) : IKeyPair {
     /**
      * Returns true if this Keypair is capable of signing
      */
-    fun canSign(): Boolean {
-        return mPrivateKey != null
-    }
+    override fun canSign(): Boolean = impl.canSign()
 
     /**
      * Returns the human readable account ID encoded in strkey.
      */
-    val accountId: String
-        get() = encodeStellarAccountId(mPublicKey.bytes)
+    override val accountId: String
+        get() = impl.accountId
 
     /**
      * Returns the human readable secret seed encoded in strkey.
      */
-    val secretSeed: CharArray
-        get() = encodeStellarSecretSeed(mPrivateKey!!.seed)
+    override val secretSeed: CharArray
+        get() = impl.secretSeed
 
     /**
      * Returns the raw 32 byte secret seed.
      */
-    val rawSecretSeed: ByteArray?
-        get() = mPrivateKey!!.seed
+    override val rawSecretSeed: ByteArray?
+        get() = impl.rawSecretSeed
 
-    val publicKey: ByteArray
-        get() = mPublicKey.bytes
+    override val publicKey: ByteArray
+        get() = impl.publicKey
 
-    val signatureHint: SignatureHint
-        get() = try {
-            val publicKeyBytesStream = ByteArrayOutputStream()
-            val xdrOutputStream = XdrDataOutputStream(publicKeyBytesStream)
-            XDRPublicKey.encode(xdrOutputStream, xdrPublicKey)
-            val publicKeyBytes = publicKeyBytesStream.toByteArray()
-            val signatureHintBytes = Arrays.copyOfRange(
-                publicKeyBytes,
-                publicKeyBytes.size - 4,
-                publicKeyBytes.size
-            )
-            SignatureHint().apply { signatureHint = signatureHintBytes }
-        } catch (e: IOException) {
-            throw AssertionError(e)
-        }
+    override val signatureHint: SignatureHint
+        get() = impl.signatureHint
 
-    val xdrPublicKey: XDRPublicKey
-        get() {
-            return XDRPublicKey().apply {
-                discriminant = PublicKeyType.PUBLIC_KEY_TYPE_ED25519
-                ed25519 = Uint256().apply { uint256 = publicKey }
-            }
-        }
+    override val xdrPublicKey: XDRPublicKey
+        get() = impl.xdrPublicKey
 
-    val xdrSignerKey: SignerKey
-        get() {
-            return SignerKey().apply {
-                discriminant = SignerKeyType.SIGNER_KEY_TYPE_ED25519
-                ed25519 = Uint256().apply { uint256 = publicKey }
-            }
-        }
+    override val xdrSignerKey: SignerKey
+        get() = impl.xdrSignerKey
 
     /**
      * Sign the provided data with the keypair's private key.
@@ -109,48 +118,14 @@ constructor(
      * @param data The data to sign.
      * @return signed bytes, null if the private key for this keypair is null.
      */
-    fun sign(data: ByteArray?): ByteArray? {
-        mPrivateKey
-            ?: throw RuntimeException("KeyPair does not contain secret key. Use KeyPair.fromSecretSeed method to create a new KeyPair with a secret key.")
-        return try {
-            val signature = Util.prependZeros(
-                SodiumConstants.SIGNATURE_BYTES,
-                data
-            )
-            val bufferLen = IntArray(1)
-            val seed: ByteArray = mPrivateKey.seed
-            val publicKey: ByteArray = Util.zeros(PUBLICKEY_BYTES)
-            val secretKey: ByteArray = Util.zeros(SECRETKEY_BYTES * 2)
-            Sodium.crypto_sign_ed25519_seed_keypair(publicKey, secretKey, seed)
-
-            Sodium.crypto_sign_ed25519(
-                signature,
-                bufferLen,
-                data,
-                data!!.size,
-                secretKey
-            )
-            Util.slice(
-                signature,
-                0,
-                SodiumConstants.SIGNATURE_BYTES
-            )
-        } catch (e: GeneralSecurityException) {
-            throw RuntimeException(e)
-        }
-    }
+    override fun sign(data: ByteArray?): ByteArray? = impl.sign(data)
 
     /**
      * Sign the provided data with the keypair's private key and returns [DecoratedSignature].
      *
      * @param data
      */
-    fun signDecorated(data: ByteArray?): DecoratedSignature {
-        return DecoratedSignature().apply {
-            hint = signatureHint
-            signature = org.kin.stellarfork.xdr.Signature().apply { signature = sign(data) }
-        }
-    }
+    override fun signDecorated(data: ByteArray?): DecoratedSignature = impl.signDecorated(data)
 
     /**
      * Verify the provided data and signature match this keypair's public key.
@@ -160,36 +135,18 @@ constructor(
      * @return True if they match, false otherwise.
      * @throws RuntimeException
      */
-    fun verify(data: ByteArray?, signature: ByteArray?): Boolean {
-        return try {
-            Util.checkLength(
-                signature,
-                SodiumConstants.SIGNATURE_BYTES
-            )
-            val sigAndMsg = Util.merge(signature, data)
-            val buffer = Util.zeros(sigAndMsg.size)
-            val bufferLen = IntArray(1)
-
-            Util.isValid(
-                Sodium.crypto_sign_ed25519_open(
-                    buffer,
-                    bufferLen,
-                    sigAndMsg,
-                    sigAndMsg.size,
-                    mPublicKey.bytes
-                ), "signature was forged or corrupted"
-            )
-        } catch (t: Throwable) {
-            false
-        }
-    }
+    override fun verify(data: ByteArray?, signature: ByteArray?): Boolean =
+        impl.verify(data, signature)
 
     companion object {
+        private var canUseNativeJNI by Delegates.notNull<Boolean>()
+
         init {
-            try {
+            canUseNativeJNI = try {
                 NaCl.sodium()
+                true
             } catch (t: Throwable) {
-                // do nothing
+                false
             }
         }
 
@@ -200,12 +157,10 @@ constructor(
          * @return [KeyPair]
          */
         @JvmStatic
-        fun fromSecretSeed(seed: CharArray): KeyPair {
-            val decoded = decodeStellarSecretSeed(seed)
-            val keypair = fromSecretSeed(decoded)
-            Arrays.fill(decoded, 0.toByte())
-            return keypair
-        }
+        fun fromSecretSeed(seed: CharArray): KeyPair = KeyPair(
+            if (canUseNativeJNI) KeyPairNativeJNIImpl.fromSecretSeed(seed)
+            else KeyPairJvmImpl.fromSecretSeed(seed)
+        )
 
         /**
          * **Insecure** Creates a new Stellar KeyPair from a strkey encoded Stellar secret seed.
@@ -216,13 +171,10 @@ constructor(
          * @see [Using Password-Based Encryption](http://docs.oracle.com/javase/1.5.0/docs/guide/security/jce/JCERefGuide.html.PBEEx)
          */
         @JvmStatic
-        fun fromSecretSeed(seed: String): KeyPair {
-            val charSeed = seed.toCharArray()
-            val decoded = decodeStellarSecretSeed(charSeed)
-            val keypair = fromSecretSeed(decoded)
-            Arrays.fill(charSeed, ' ')
-            return keypair
-        }
+        fun fromSecretSeed(seed: String): KeyPair = KeyPair(
+            if (canUseNativeJNI) KeyPairNativeJNIImpl.fromSecretSeed(seed)
+            else KeyPairJvmImpl.fromSecretSeed(seed)
+        )
 
         /**
          * Creates a new Stellar keypair from a raw 32 byte secret seed.
@@ -231,16 +183,10 @@ constructor(
          * @return [KeyPair]
          */
         @JvmStatic
-        fun fromSecretSeed(seed: ByteArray): KeyPair {
-            val publicKey: ByteArray = Util.zeros(PUBLICKEY_BYTES)
-            val secretKey: ByteArray = Util.zeros(SECRETKEY_BYTES * 2)
-            Sodium.crypto_sign_ed25519_seed_keypair(publicKey, secretKey, seed)
-
-            return KeyPair(
-                PublicKey(publicKey),
-                PrivateKey(secretKey, seed)
-            )
-        }
+        fun fromSecretSeed(seed: ByteArray): KeyPair = KeyPair(
+            if (canUseNativeJNI) KeyPairNativeJNIImpl.fromSecretSeed(seed)
+            else KeyPairJvmImpl.fromSecretSeed(seed)
+        )
 
         /**
          * Creates a new Stellar KeyPair from a strkey encoded Stellar account ID.
@@ -249,8 +195,10 @@ constructor(
          * @return [KeyPair]
          */
         @JvmStatic
-        fun fromAccountId(accountId: String): KeyPair =
-            fromPublicKey(decodeStellarAccountId(accountId))
+        fun fromAccountId(accountId: String): KeyPair = KeyPair(
+            if (canUseNativeJNI) KeyPairNativeJNIImpl.fromAccountId(accountId)
+            else KeyPairJvmImpl.fromAccountId(accountId)
+        )
 
         /**
          * Creates a new Stellar keypair from a 32 byte address.
@@ -260,9 +208,8 @@ constructor(
          */
         @JvmStatic
         fun fromPublicKey(publicKey: ByteArray): KeyPair = KeyPair(
-            PublicKey(
-                publicKey
-            )
+            if (canUseNativeJNI) KeyPairNativeJNIImpl.fromPublicKey(publicKey)
+            else KeyPairJvmImpl.fromPublicKey(publicKey)
         )
 
         /**
@@ -271,61 +218,15 @@ constructor(
          * @return a random Stellar keypair.
          */
         @JvmStatic
-        fun random(): KeyPair {
-            val publicKey: ByteArray = Util.zeros(PUBLICKEY_BYTES)
-            val secretKey: ByteArray = Util.zeros(SECRETKEY_BYTES * 2)
-            Sodium.crypto_box_curve25519xsalsa20poly1305_keypair(publicKey, secretKey)
-            val seed = ByteArray(SECRETKEY_BYTES)
-            Sodium.crypto_sign_ed25519_sk_to_seed(seed, secretKey)
-
-
-            val publicKey2: ByteArray = Util.zeros(PUBLICKEY_BYTES)
-            val secretKey2: ByteArray = Util.zeros(SECRETKEY_BYTES * 2)
-            Sodium.crypto_sign_ed25519_seed_keypair(publicKey2, secretKey2, seed)
-
-            return KeyPair(
-                PublicKey(publicKey2),
-                PrivateKey(secretKey2, seed)
-            )
-        }
+        fun random(): KeyPair = KeyPair(
+            if (canUseNativeJNI) KeyPairNativeJNIImpl.random()
+            else KeyPairJvmImpl.random()
+        )
 
         @JvmStatic
         fun fromXdrPublicKey(key: XDRPublicKey): KeyPair = fromPublicKey(key.ed25519!!.uint256!!)
 
         @JvmStatic
         fun fromXdrSignerKey(key: SignerKey): KeyPair = fromPublicKey(key.ed25519!!.uint256!!)
-    }
-
-    data class PublicKey(val bytes: ByteArray) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is PublicKey) return false
-
-            if (!bytes.contentEquals(other.bytes)) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            return bytes.contentHashCode()
-        }
-    }
-
-    data class PrivateKey(val bytes: ByteArray, val seed: ByteArray) {
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (other !is PrivateKey) return false
-
-            if (!bytes.contentEquals(other.bytes)) return false
-            if (!seed.contentEquals(other.seed)) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = bytes.contentHashCode()
-            result = 31 * result + seed.contentHashCode()
-            return result
-        }
     }
 }

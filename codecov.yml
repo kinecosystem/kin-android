@@ -30,6 +30,7 @@ comment:
 
 ignore:
   - "**/stellarfork/xdr/*.*"
+  - "**/stellarfork/KeyPairJvmImpl.*" # we only test the jni version of ci, not the jvm fallback
   - "**/MainExecutorService.java"
   - "**/kin/backupandrestore/*.*"
   - "**/kin/backupandrestore/backup/view/*.*"
