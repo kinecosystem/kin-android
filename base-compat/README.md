@@ -21,6 +21,20 @@ dependencies {
     implementation "org.kin.sdk.android:base-compat:${versions.kin}"
 }
 ```
+and add the following to your android app's defaultConfig.  
+The second parameter for missingDimensionStrategy should be either "normal" or "shaded", where:
+`normal` - all normal transitive dependency resolution strategy  
+`shaded` - some difficult to resolve transititve dependencies are re-packaged and included with this variant (i.e. these deps are shaded). This flavor is reccomended when encountering dependency collisions (e.g. duplicate classes, incompatible versions, etc).  
+If you are still encountering difficulties with dependency collisions with this variant we reccomend forking the library and adding additional libraries you want to shade to the list included under the shadowJar task configured in [../base/build.gradle](../base/build.gradle)
+```groovy
+android {
+    // ...
+    defaultConfig {
+        // ...
+        missingDimensionStrategy "deps", "normal" // "normal" or "shaded"  
+    }
+}
+```
 Otherwise, if you're not using [kin-sdk-android](https://github.com/kinecosystem/kin-sdk-android), please checkout [:base](../base).
 
 # Documentation

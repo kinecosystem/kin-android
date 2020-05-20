@@ -5,7 +5,7 @@ apply plugin: "com.github.dcendents.android-maven"
 apply plugin: "maven-publish"
 apply plugin: 'com.jfrog.bintray'
 
-enableJacoco(project, 'debug')
+enableJacoco(project, 'normalDebug')
 
 android {
     compileSdkVersion 29
@@ -23,9 +23,16 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    flavorDimensions "deps"
+    productFlavors {
+        normal
+        shaded
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
+            debuggable false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -41,7 +48,10 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation deps.kotlin_stdlib
-    api (project(':base')) {
+    normalApi (project(':base')) {
+        exclude module: 'libsodium-jni'
+    }
+    shadedApi (project(path: ':base', configuration: 'shadow')) {
         exclude module: 'libsodium-jni'
     }
     implementation "androidx.annotation:annotation:1.1.0"

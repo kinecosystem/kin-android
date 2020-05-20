@@ -1,8 +1,17 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
+    }
+}
 apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: "maven"
 apply plugin: "maven-publish"
 apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 enableJacoco(project, 'debug')
 
@@ -16,6 +25,37 @@ sourceSets {
 configurations {
     integrationTestImplementation.extendsFrom testImplementation
     integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+// Output to build/libs/base-shaded.jar
+shadowJar {
+    archiveClassifier.set('shaded')
+    relocate 'io.grpc', 'org.kin.shaded.io.grpc'
+    relocate 'com.google', 'org.kin.shaded.com.google'
+    relocate 'javax.annotation', 'org.kin.shaded.javax.annotation'
+    relocate 'org.codehaus', 'org.kin.shaded.org.codehaus'
+    relocate 'org.checkerframework', 'org.kin.shaded.org.checkerframework'
+    relocate 'org.apache', 'org.kin.shaded.org.apache'
+    relocate 'io.opencensus', 'org.kin.shaded.io.opencensus'
+    relocate 'google.protobuf', 'org.kin.shaded.google.protobuf'
+
+    // Our goal is to shade our 'hard to resolve conflicts' dependencies & transitive deps
+    // since downstream this can get really hard to manage if there are conflicts with these.
+    dependencies {
+        exclude(dependency {
+            it.moduleGroup == '.*'
+        })
+
+        def groupsToShade = ['io.grpc', 'com.google.protobuf', 'com.google.guava',
+                             'com.google.code.gson', 'com.google.code.findbugs',
+                             'com.google.errorprone', 'com.google.re2j', 'com.google.j2objc',
+                             'org.codehaus.mojo', 'org.checkerframework', 'commons-validator',
+                             'io.opencensus']
+        include(dependency {
+            groupsToShade.contains(it.moduleGroup)
+        })
+        include(project(':base-storage'))
+    }
 }
 
 dependencies {
