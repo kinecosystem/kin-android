@@ -189,7 +189,7 @@ dokka {
 def jitpackAuthToken = findProperty("jitpackAuthToken") ?: System.getenv("JITPACK_AUTH_TOKEN")
 
 allprojects {
-    version = "0.1.1"
+    version = "0.1.2"
     group = "org.kin.sdk.android"
 
     repositories {
