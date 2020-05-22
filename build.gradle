@@ -1,6 +1,8 @@
+import com.amazonaws.auth.profile.ProfileCredentialsProvider
+
 buildscript {
     ext.kotlin_version = '1.3.72'
-    ext.jacoco_version = '0.8.5'
+    ext.jacoco_version = "0.8.5"
     ext.dokka_version = '0.10.1'
     ext.bintray_version = '1.8.5'
     ext.enableJacoco = { Project project, String variant ->
@@ -73,6 +75,7 @@ buildscript {
     repositories {
         google()
         jcenter()
+
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.6.3'
@@ -80,7 +83,8 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jacoco:org.jacoco.core:${jacoco_version}"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:${dokka_version}"
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:${bintray_version}"
+        classpath "com.amazonaws:aws-java-sdk-core:1.11.786"
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
     }
     ext {
         versions = [:]
@@ -110,9 +114,14 @@ buildscript {
         deps.multi_dex = "androidx.multidex:multidex:$versions.multidex"
         deps.kotlin_stdlib = "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$versions.kotlin"
         deps.kotlin_junit = "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+        deps.appcompat = "androidx.appcompat:appcompat:$versions.androidx_appcompat"
+        deps.ktx = "androidx.core:core-ktx:$versions.androidx_ktx"
+        deps.recyclerview = "androidx.recyclerview:recyclerview:${versions.androidx_recyclerview}"
 
         deps.kotlinMockito = "com.nhaarman.mockitokotlin2:mockito-kotlin:$versions.kotlinmockito"
         deps.junit = "junit:junit:$versions.junit"
+        deps.museum_annotations = "com.github.mproberts.museum:annotations:${versions.museum}"
+        deps.museum_showcase = "com.github.mproberts.museum:showcase:${versions.museum}@aar"
 
         deps.gson = "com.google.code.gson:gson:${versions.gson}"
         deps.okhttp = "com.squareup.okhttp3:okhttp:${versions.okhttp}"
@@ -132,6 +141,8 @@ buildscript {
         deps.grpc_android = "io.grpc:grpc-android:${versions.grpcProtobuf}"
         deps.grpc_validate = "io.envoyproxy.protoc-gen-validate:pgv-java-stub:${versions.grpc_validate}"
         deps.grpc_testing = "io.grpc:grpc-testing:${versions.grpcProtobuf}"
+
+        deps.kin_api = "com.github.kinecosystem:kin-api:${versions.kin_api}"
 
         pomConfig = {
             licenses {
@@ -153,7 +164,9 @@ buildscript {
             }
         }
 
-        buildNumber = System.getProperty("build.number")
+        bintrayUser = findProperty("bintray.user") ?: System.getProperty("bintray.user")
+        bintrayKey = findProperty("bintray.key") ?: System.getProperty("bintray.key")
+        buildNumber = findProperty("build.number") ?:  System.getProperty("build.number")
     }
 }
 
@@ -189,8 +202,16 @@ dokka {
 def jitpackAuthToken = findProperty("jitpackAuthToken") ?: System.getenv("JITPACK_AUTH_TOKEN")
 
 allprojects {
-    version = "0.1.2"
-    group = "org.kin.sdk.android"
+    ext {
+        // Libraries
+        groupId = "org.kin.sdk.android"
+        libraryVersion = "0.1.2"
+        siteUrl = "https://github.com/kinecosystem/kin-android"
+        gitUrl = "https://github.com/kinecosystem/kin-android.git"
+    }
+
+    version = libraryVersion
+    group = groupId
 
     repositories {
         google()

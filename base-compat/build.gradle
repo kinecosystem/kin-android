@@ -1,3 +1,10 @@
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
@@ -31,8 +38,7 @@ android {
 
     buildTypes {
         release {
-            debuggable false
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -48,10 +54,10 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation deps.kotlin_stdlib
-    normalApi (project(':base')) {
+    normalApi(project(':base')) {
         exclude module: 'libsodium-jni'
     }
-    shadedApi (project(path: ':base', configuration: 'shadow')) {
+    shadedApi(project(path: ':base', configuration: 'shaded')) {
         exclude module: 'libsodium-jni'
     }
     implementation "androidx.annotation:annotation:1.1.0"
@@ -63,7 +69,6 @@ dependencies {
 
     implementation deps.gson
     implementation deps.okhttp
-    implementation deps.oksse
     implementation deps.slf4j_android
 
     testImplementation deps.junit
@@ -73,29 +78,161 @@ dependencies {
     testImplementation 'org.json:json:20190722'
 }
 
-task sourcesJar(type: Jar) {
+task androidSourcesJar(type: Jar) {
+    archiveClassifier.set('sources')
     from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
 }
 
 artifacts {
-    archives sourcesJar
+    archives androidSourcesJar
 }
 
-bintray {
-    user = project.hasProperty('bintrayUser') ? bintrayUser : System.getenv('BINTRAY_USER')
-    key = project.hasProperty('bintrayKey') ? bintrayKey : System.getenv('BINTRAY_API_KEY')
+afterEvaluate {
+    // ================================================================================
+    // Built upon solutions presented here to build for multiple android flavors
+    // https://stackoverflow.com/questions/34331713/publishing-android-library-aar-to-bintray-with-chosen-flavors
+    // ================================================================================
+    def publicationNames = []
+    publishing {
+        publications {
+            android.libraryVariants.all { variant ->
+                if (variant.buildType.name == "debug") return // Prevents publishing debug library
 
-    configurations = ['archives']
-    pkg {
-        repo = "kin-android"
-        userOrg = "kinecosystem"
-        name = "base-compat"
-        desc = "Kin Android SDK Base Compatibility Layer"
-        websiteUrl = "https://github.com/kinecosystem/kin-android"
-        vcsUrl = "https://github.com/kinecosystem/kin-android.git"
-        licenses = ["MIT", "Apache-2.0"]
-        publish = true
-        publicDownloadNumbers = true
+                def flavored = !variant.flavorName.isEmpty()
+
+                /**
+                 * Translates "_" in flavor names to "-" for artifactIds, because "-" in flavor name is an
+                 * illegal character, but is well used in artifactId names.
+                 */
+                def variantArtifactId = flavored ? "${project.name}-${variant.flavorName.replace('_', '-')}".replace('-normal', '') : project.name
+
+                /**
+                 * If the javadoc destinationDir wasn't changed per flavor, the libraryVariants would
+                 * overwrite the javaDoc as all variants would write in the same directory
+                 * before the last javadoc jar would have been built, which would cause the last javadoc
+                 * jar to include classes from other flavors that it doesn't include.
+                 *
+                 * Yes, tricky.
+                 *
+                 * Note that "${buildDir}/docs/javadoc" is the default javadoc destinationDir.
+                 */
+                def javaDocDestDir = file("${buildDir}/docs/javadoc ${flavored ? variantArtifactId : ""}")
+
+                /**
+                 * Includes
+                 */
+                def javadoc = task("${variant.name}Javadoc", type: Javadoc) {
+                    description "Generates Javadoc for ${variant.name}."
+                    source = variant.javaCompileProvider.get().source
+                    //variant.javaCompile.source // Yes, javaCompile is deprecated,
+                    // but I didn't find any working alternative. Please, tweet @Louis_CAD if you find one.
+                    destinationDir = javaDocDestDir
+                    classpath += files(android.getBootClasspath().join(File.pathSeparator))
+                    classpath += files(configurations.compile)
+                    options.links("http://docs.oracle.com/javase/7/docs/api/");
+                    options.links("http://d.android.com/reference/");
+                    exclude '**/BuildConfig.java'
+                    exclude '**/R.java'
+                    failOnError false
+                }
+                def javadocJar = task("${variant.name}JavadocJar", type: Jar, dependsOn: javadoc) {
+                    description "Puts Javadoc for ${variant.name} in a jar."
+                    classifier = 'javadoc'
+                    from javadoc.destinationDir
+                }
+
+                def publicationName = "baseCompat${variant.name.capitalize()}"
+                publicationNames.add(publicationName)
+
+                "$publicationName"(MavenPublication) {
+                    artifactId variantArtifactId
+                    group groupId
+                    version libraryVersion
+
+                    // This is the aar library
+                    artifact variant.packageLibraryProvider.get().archivePath
+                    artifact androidSourcesJar
+                    artifact javadocJar
+
+                    pom {
+                        packaging 'aar'
+                        withXml {
+                            def root = asNode()
+                            root.appendNode("name", 'base-compat')
+                            root.appendNode("url", siteUrl)
+                            root.children().last() + pomConfig
+                            def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
+
+                            def addDep = {
+                                if (it.group == null) return // Avoid empty dependency nodes
+                                def dependencyNode = depsNode.appendNode('dependency')
+                                dependencyNode.appendNode('groupId', it.group)
+                                if (it.hasProperty('targetConfiguration') && it.targetConfiguration != null) {
+                                    dependencyNode.appendNode('artifactId', "${it.name}-${it.targetConfiguration}")
+                                } else {
+                                    dependencyNode.appendNode('artifactId', it.name)
+                                }
+                                dependencyNode.appendNode('version', it.version)
+                                if (it.hasProperty('optional') && it.optional) {
+                                    dependencyNode.appendNode('optional', 'true')
+                                }
+                                if (it.hasProperty("excludeRules")) {
+                                    ArrayList<ExcludeRule> excludeRules = it.excludeRules
+                                    if (excludeRules.size() > 0) {
+                                        def exclusionsNode = dependencyNode.appendNode("exclusions")
+                                        it.excludeRules.each { ExcludeRule rule ->
+                                            def xmlExclusion = exclusionsNode.appendNode("exclusion")
+                                            if (rule.group != null && !(rule.group as String).isEmpty()) {
+                                                xmlExclusion.appendNode("groupId", rule.group)
+                                            } else {
+                                                xmlExclusion.appendNode("groupId", "*")
+                                            }
+                                            xmlExclusion.appendNode("artifactId", rule.module)
+                                        }
+                                    }
+                                }
+                                dependencyNode.appendNode("scope", "runtime")
+                            }
+
+                            // Add deps that everyone has
+                            configurations.implementation.allDependencies.each addDep
+                            // Add flavor specific deps
+                            if (flavored) {
+                                configurations["${variant.flavorName}Implementation"].allDependencies.each addDep
+                            }
+                            // NOTE: This library doesn't use builtTypes specific dependencies, so no need to add them.
+                        }
+                    }
+                }
+            }
+        }
+        repositories {
+            maven {
+                url "s3://maven.kin/releases"
+                credentials(AwsCredentials) {
+                    accessKey project.hasProperty('awsAccessKeyId') ? awsAccessKeyId : System.getenv('AWS_ACCESS_KEY_ID')
+                    secretKey project.hasProperty('awsSecretAccessKey') ? awsSecretAccessKey : System.getenv('AWS_SECRET_ACCESS_KEY')
+                }
+            }
+        }
+    }
+
+    bintray {
+        user = project.hasProperty('bintrayUser') ? bintrayUser : System.getenv('BINTRAY_USER')
+        key = project.hasProperty('bintrayKey') ? bintrayKey : System.getenv('BINTRAY_API_KEY')
+        publications = publicationNames
+        override = true
+
+        pkg {
+            repo = "kin-android"
+            userOrg = "kinecosystem"
+            name = "base-compat"
+            desc = "Kin Android SDK Base Compatibility Layer"
+            websiteUrl = "https://github.com/kinecosystem/kin-android"
+            vcsUrl = "https://github.com/kinecosystem/kin-android.git"
+            licenses = ["MIT", "Apache-2.0"]
+            publish = true
+            publicDownloadNumbers = true
+        }
     }
 }

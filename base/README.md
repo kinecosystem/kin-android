@@ -20,7 +20,7 @@ dependencies {
 ## Quick Start
 Everything starts with a `KinEnvironment` instance that describes which blockchain, services, and storage will be used.
 ```kotlin
-val environment: KinEnvironment = 
+val environment: KinEnvironment =
     KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
         .setStorage(KinFileStorage.Builder("path/to/storage/location"))
         .build()
@@ -115,7 +115,7 @@ context.observeBalance()
 Weather you're looking for the full payment history, or just to be notified of new payments you can observe any changes to payments for a given account with:
 ```kotlin
 context.observePayments()
-    .add { payments: List<KinPayment> -> 
+    .add { payments: List<KinPayment> ->
         // Will emit the full payment history by default
         // @see ObserverMode for more details
     }
@@ -138,13 +138,25 @@ context.clearStorage()
     }
 ```
 
+## Having Trouble with Dependencies?
+Alternatively...there is a shaded artifact for those that are having difficulty resolving common dependencies (e.g. grpc, guava, other google transitive deps)
+```groovy
+dependencies {
+    // ...
+    implementation "org.kin.sdk.android:base-shaded:${versions.kin}"
+}
+```
+This variant is recommended when encountering dependency collisions (e.g. duplicate classes, incompatible versions, etc).
+If you are still encountering difficulties with dependency collisions with this variant we recommend forking the library and adding additional libraries you want to shade to the list included under the shadowJar task configured in [../base/build.gradle](build.gradle)
+
+
 ## Java Idioms
 Instead of Promise .then tail calls in Java...
 ```java
 context.getAccount(new Callback<KinAccount>() {
         @Override
         public void onCompleted(@Nullable KinAccount value, @Nullable Throwable error) {
-                
+
         }
     });
 ```

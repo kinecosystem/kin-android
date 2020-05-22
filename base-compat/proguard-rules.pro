@@ -13,7 +13,7 @@
 -dontwarn sun.misc.**
 
 # Application classes that will be serialized/deserialized over Gson
--keep class kin.base.responses.** { <fields>; }
+-keep class org.kin.stellarfork.responses.** { <fields>; }
 
 # Prevent R8 from leaving Data object members always null
 -keepclassmembers,allowobfuscation class * {
