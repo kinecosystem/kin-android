@@ -18,6 +18,12 @@ dependencies {
     implementation "org.kin.sdk.android:base:${versions.kin}"
     implementation "org.kin.sdk.android:base-compat:${versions.kin}"
 }
+repositories {
+    // ...
+    maven {
+        url  "https://kinecosystem.bintray.com/kin-android"
+    }
+}
 ```
 
 ## Documentation

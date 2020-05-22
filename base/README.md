@@ -15,6 +15,12 @@ dependencies {
     // ...
     implementation "org.kin.sdk.android:base:${versions.kin}"
 }
+repositories {
+    // ...
+    maven {
+        url  "https://kinecosystem.bintray.com/kin-android"
+    }
+}
 ```
 
 ## Quick Start

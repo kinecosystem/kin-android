@@ -20,6 +20,12 @@ dependencies {
     // ...
     implementation "org.kin.sdk.android:base-compat:${versions.kin}"
 }
+repositories {
+    // ...
+    maven {
+        url  "https://kinecosystem.bintray.com/kin-android"
+    }
+}
 ```
 Alternatively...there is a shaded artifact for those that are having difficuly resolving common dependencies (e.g. grpc, guava, other google transitive deps)
 ```groovy
