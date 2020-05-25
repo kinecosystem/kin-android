@@ -2,6 +2,7 @@
 [![codecov](https://codecov.io/gh/kinecosystem/kin-android/branch/master/graph/badge.svg?token=V05OQ629R5)](https://codecov.io/gh/kinecosystem/kin-android)
 [![CircleCI](https://img.shields.io/circleci/build/gh/kinecosystem/kin-android/master?token=ac677bb614658377373f411ba6394e9adf112cba)](https://circleci.com/gh/kinecosystem/kin-android)
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
+[![Download](https://api.bintray.com/packages/kinecosystem/kin-android/base-compat/images/download.svg) ](https://bintray.com/kinecosystem/kin-android/base-compat/_latestVersion)
 
 Use the Kin SDK for Android to enable the use of Kin inside of your app. Include only the functionality you need to provide the right experience to your users. Use just the base library to access the lightest-weight wrapper over the Kin crytocurrency.
 

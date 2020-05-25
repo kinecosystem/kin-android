@@ -1,5 +1,6 @@
 # <img src="../assets/kin-logo.png" height="32" alt="Kin Logo"> Base Module
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
+[![Download](https://api.bintray.com/packages/kinecosystem/kin-android/base-compat/images/download.svg) ](https://bintray.com/kinecosystem/kin-android/base-compat/_latestVersion)
 
 The [:base](../base) module is the foundation upon which the rest of the sdk stands on, however can be used on it's own to headlessly access the Kin Blockchain.
 
