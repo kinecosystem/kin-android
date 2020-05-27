@@ -24,6 +24,7 @@ import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.merge
+import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransactions
@@ -40,7 +41,7 @@ import org.kin.sdk.base.tools.latchOperationValueCapture
 import org.kin.sdk.base.tools.test
 import org.kin.sdk.base.tools.updateStatus
 import org.kin.stellarfork.codec.Base64
-import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -452,7 +453,14 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(eq(registeredAccount.id), eq(amountSpent))
+        }.whenever(mockStorage).deductFromAccountBalance(
+            eq(registeredAccount.id),
+            eq(amountSpent + responseTransaction.fee.toKin())
+        )
+
+        doAnswer {
+            Promise.of(KinTransactions(listOf(responseTransaction), null, null))
+        }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
 
         sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
             assertNull(error)
@@ -473,7 +481,11 @@ class KinAccountContextImplTest {
                 eq(registeredAccount.id),
                 eq(responseTransaction)
             )
-            verify(mockStorage).deductFromAccountBalance(eq(registeredAccount.id), eq(amountSpent))
+            verify(mockStorage).deductFromAccountBalance(
+                eq(registeredAccount.id),
+                eq(amountSpent + responseTransaction.fee.toKin())
+            )
+            verify(mockStorage).getStoredTransactions(eq(registeredAccount.id))
             verifyNoMoreInteractions(mockService)
             verifyNoMoreInteractions(mockStorage)
         }
@@ -534,7 +546,22 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(eq(registeredAccount.id), eq(amountSpent))
+        }.whenever(mockStorage).deductFromAccountBalance(
+            eq(registeredAccount.id),
+            eq(amountSpent + responseTransaction.fee.toKin())
+        )
+
+        doAnswer {
+            Promise.of(
+                KinTransactions(
+                    listOf(
+                        responseTransaction,
+                        responseTransaction,
+                        responseTransaction
+                    ), null, null
+                )
+            )
+        }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
 
         sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
             assertNull(error)
@@ -566,8 +593,9 @@ class KinAccountContextImplTest {
         )
         verify(mockStorage, times(3)).deductFromAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent)
+            eq(amountSpent + responseTransaction.fee.toKin())
         )
+        verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
         verify(mockService, times(3)).canWhitelistTransactions()
         verify(mockStorage, times(3)).getMinFee()
         verifyNoMoreInteractions(mockService)
@@ -639,7 +667,22 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(eq(registeredAccount.id), eq(amountSpent))
+        }.whenever(mockStorage).deductFromAccountBalance(
+            eq(registeredAccount.id),
+            eq(amountSpent + responseTransaction.fee.toKin())
+        )
+
+        doAnswer {
+            Promise.of(
+                KinTransactions(
+                    listOf(
+                        responseTransaction,
+                        responseTransaction,
+                        responseTransaction
+                    ), null, null
+                )
+            )
+        }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
 
         sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
             assertNull(error)
@@ -677,8 +720,9 @@ class KinAccountContextImplTest {
         )
         verify(mockStorage, times(3)).deductFromAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent)
+            eq(amountSpent + responseTransaction.fee.toKin())
         )
+        verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
         verify(mockService, times(3)).canWhitelistTransactions()
         verify(mockStorage, times(3)).getMinFee()
         verifyNoMoreInteractions(mockService)
@@ -754,7 +798,22 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(eq(registeredAccount.id), eq(amountSpent))
+        }.whenever(mockStorage).deductFromAccountBalance(
+            eq(registeredAccount.id),
+            eq(amountSpent + responseTransaction.fee.toKin())
+        )
+
+        doAnswer {
+            Promise.of(
+                KinTransactions(
+                    listOf(
+                        responseTransaction,
+                        responseTransaction,
+                        responseTransaction
+                    ), null, null
+                )
+            )
+        }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
 
         sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
             assertNull(error)
@@ -792,8 +851,9 @@ class KinAccountContextImplTest {
         )
         verify(mockStorage, times(3)).deductFromAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent)
+            eq(amountSpent + responseTransaction.fee.toKin())
         )
+        verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
         verify(mockService, times(3)).canWhitelistTransactions()
         verify(mockStorage, times(3)).getMinFee()
         verifyNoMoreInteractions(mockService)
@@ -917,34 +977,6 @@ class KinAccountContextImplTest {
         )
 
         doAnswer {
-
-            // Start transactions after we've fetched from storage
-
-            sut.sendKinPayment(KinAmount(1), destination.id).test(20) {
-                assertNull(error)
-                assertEquals(responseTransaction.asKinPayments().first(), value)
-            }
-
-            sut.sendKinPayment(KinAmount(2), destination.id).test(20) {
-                assertNull(error)
-                assertEquals(responseTransaction.asKinPayments().first(), value)
-            }
-
-            sut.sendKinPayment(KinAmount(3), destination.id).test(20) {
-                assertNull(error)
-                assertEquals(responseTransaction.asKinPayments().first(), value)
-            }
-
-            sut2.sendKinPayment(KinAmount(4), registeredAccount.id).test(20) {
-                assertNull(error)
-                assertEquals(responseTransaction.asKinPayments().first(), value)
-            }
-
-            sut2.sendKinPayment(KinAmount(5), registeredAccount.id).test(20) {
-                assertNull(error)
-                assertEquals(responseTransaction.asKinPayments().first(), value)
-            }
-
             Promise.of(
                 KinTransactions(
                     listOf(
@@ -1020,26 +1052,36 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(eq(registeredAccount.id), eq(amountSpent))
+        }.whenever(mockStorage).deductFromAccountBalance(
+            eq(registeredAccount.id),
+            eq(amountSpent + responseTransaction.fee.toKin())
+        )
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
         }.whenever(mockStorage2)
-            .deductFromAccountBalance(eq(registeredAccount2.id), eq(amountSpent))
+            .deductFromAccountBalance(
+                eq(registeredAccount2.id),
+                eq(amountSpent + responseTransaction.fee.toKin())
+            )
 
         val values = mutableListOf<List<String>>()
 
-        sut.observePayments().add {
-            val localValues = mutableListOf<String>()
-            it.forEach {
-                println(it.amount)
-                localValues += it.amount.toString(0)
+        val latch = CountDownLatch(2)
+        sut.observePayments()
+            .add {
+                val localValues = mutableListOf<String>()
+                it.forEach {
+                    println(it.amount)
+                    localValues += it.amount.toString(0)
+                }
+                values += localValues
+                println("-----")
+                latch.countDown()
             }
-            values += localValues
-            println("-----")
-        }.test(2, 20) {
-            assertEquals(listOf(listOf("3", "2", "1"), listOf("5", "4", "3", "2", "1")), values)
-        }
+
+        latch.await(10, TimeUnit.SECONDS)
+        assertEquals(listOf(listOf("3", "2", "1"), listOf("5", "4", "3", "2", "1")), values)
     }
 
     @Test
@@ -1171,22 +1213,6 @@ class KinAccountContextImplTest {
         }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
 
         doAnswer {
-
-            sut.sendKinPayment(KinAmount(3), destination.id).test(10) {
-                assertNull(error)
-                assertEquals(responseTransaction.asKinPayments().first(), value)
-            }
-
-            sut.sendKinPayment(KinAmount(4), destination.id).test(10) {
-                assertNull(error)
-                assertEquals(responseTransaction.asKinPayments().first(), value)
-            }
-
-            sut.sendKinPayment(KinAmount(5), destination.id).test(10) {
-                assertNull(error)
-                assertEquals(responseTransaction.asKinPayments().first(), value)
-            }
-
             Promise.of(listOf(historicalTransaction2, historicalTransaction1))
         }.whenever(mockService).getTransactionPage(
             eq(registeredAccount.id),
@@ -1215,15 +1241,16 @@ class KinAccountContextImplTest {
 
         val values = mutableListOf<List<String>>()
 
-        sut.observePayments().add {
-            val localValues = mutableListOf<String>()
-            it.forEach {
-                println(it.amount)
-                localValues += it.amount.toString(0)
+        sut.observePayments()
+            .add {
+                val localValues = mutableListOf<String>()
+                it.forEach {
+                    println(it.amount)
+                    localValues += it.amount.toString(0)
+                }
+                values += localValues
+                println("-----")
             }
-            values += localValues
-            println("-----")
-        }
             .requestPreviousPage()
             .test(timeout = 10) {
                 assertEquals(listOf(listOf("5", "4", "3"), listOf("5", "4", "3", "2", "1")), values)

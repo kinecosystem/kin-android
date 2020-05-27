@@ -167,6 +167,16 @@ sealed class KinEnvironment {
     fun importPrivateKey(privateKey: Key.PrivateKey, callback: Callback<Boolean>) {
         return importPrivateKey(privateKey).callback(callback)
     }
+
+    fun allAccountIds(): Promise<List<KinAccount.Id>> {
+        return Promise.create { resolve, reject ->
+            try {
+                resolve(storage.getAllAccountIds())
+            } catch (t: Throwable) {
+                reject(t)
+            }
+        }
+    }
 }
 
 

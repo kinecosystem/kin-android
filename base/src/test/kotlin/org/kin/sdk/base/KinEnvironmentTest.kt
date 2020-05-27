@@ -16,6 +16,7 @@ import org.kin.sdk.base.tools.TestUtils
 import org.kin.sdk.base.tools.test
 import org.slf4j.LoggerFactory
 import java.io.IOException
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -123,6 +124,40 @@ class KinEnvironmentTest {
 
         sut.importPrivateKey(privateKey).test {
             error is IOException
+        }
+    }
+
+    @Test
+    fun testAllAccountIds() {
+        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            .setStorage(mockStorage)
+            .build()
+
+        val kinAccount1 = TestUtils.newKinAccount()
+        val kinAccount2 = TestUtils.newKinAccount()
+        val kinAccount3 = TestUtils.newKinAccount()
+
+        whenever(mockStorage.getAllAccountIds())
+            .thenReturn(listOf(kinAccount1.id, kinAccount2.id, kinAccount3.id))
+
+        sut.allAccountIds().test {
+            assertEquals(listOf(kinAccount1.id, kinAccount2.id, kinAccount3.id), value)
+        }
+    }
+
+    @Test
+    fun testAllAccountIds_error() {
+        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            .setStorage(mockStorage)
+            .build()
+
+        val ex = RuntimeException()
+
+        whenever(mockStorage.getAllAccountIds())
+            .thenThrow(ex)
+
+        sut.allAccountIds().test {
+            assertEquals(ex, error)
         }
     }
 }

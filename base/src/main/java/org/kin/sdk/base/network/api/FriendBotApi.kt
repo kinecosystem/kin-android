@@ -43,7 +43,7 @@ internal class FriendBotRequestBuilder(client: OkHttpClient, friendBotBaseUri: U
  */
 class FriendBotApi(
     private val okHttpClient: OkHttpClient,
-    private val friendBotBaseUrl: String = "http://friendbot-testnet.kininfrastructure.com"
+    private val friendBotBaseUrl: String = "https://friendbot-testnet.kininfrastructure.com"
 ) : KinFriendBotApi {
     override fun createAccount(
         request: CreateAccountRequest,

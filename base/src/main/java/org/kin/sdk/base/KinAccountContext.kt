@@ -11,11 +11,13 @@ import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.merge
+import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.KinTransaction
@@ -415,7 +417,7 @@ class KinAccountContextImpl private constructor(
                             .doOnResolved { storage.advanceSequence(accountId) }
                             .flatMap { storage.insertNewTransactionInStorage(accountId, it) }
                             .map { it.asKinPayments() }
-                            .doOnResolved { deductFromAccountBalance(it) }
+                            .doOnResolved { deductFromAccountBalance(it, transaction.fee) }
                     attempt()
                         .then(
                             resolve,
@@ -487,7 +489,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                     .flatMap { fetchUpdatedBalance() }
                     .resolve()
             }
-        }.apply { requestInvalidation() }
+        }
     }
     private val paymentsSubject: ListSubject<KinPayment> by lazy {
         ListSubject<KinPayment>(
@@ -503,7 +505,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                         .resolve()
                 }
             }
-        ).apply { requestInvalidation() }
+        )
     }
 
     protected abstract fun maybeFetchAccountDetails(): Promise<KinAccount>
@@ -545,8 +547,10 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
 
     override fun observePayments(mode: ObservationMode): ListObserver<KinPayment> {
         return when (mode) {
-            Passive -> paymentsSubject
-            ObservationMode.Active -> paymentsSubject.setupActiveStreamingUpdatesIfNecessary(mode) as ListObserver<KinPayment>
+            Passive -> with(paymentsSubject) { requestInvalidation() } as ListObserver<KinPayment>
+            ObservationMode.Active -> with(paymentsSubject) { requestInvalidation() }.setupActiveStreamingUpdatesIfNecessary(
+                mode
+            ) as ListObserver<KinPayment>
             ObservationMode.ActiveNewOnly -> {
                 ListSubject<KinPayment>()
                     .apply {
@@ -568,7 +572,10 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
             .map { it.asKinPayments() }
 
     override fun observeBalance(mode: ObservationMode): Observer<KinBalance> =
-        balanceSubject.setupActiveStreamingUpdatesIfNecessary(mode)
+        with(balanceSubject) {
+            setupActiveStreamingUpdatesIfNecessary(mode)
+            requestInvalidation()
+        }
 
     override fun clearStorage(): Promise<Boolean> = storage.deleteAllStorage(accountId)
 
@@ -633,12 +640,28 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
             .doOnResolved { balanceSubject.onNext(it) }
     }
 
-    protected fun deductFromAccountBalance(payments: List<KinPayment>) {
-        storage.deductFromAccountBalance(
-            accountId,
-            payments.map { it.amount }
-                .reduce { total, kinAmount -> total + kinAmount }
-        ).doOnResolved { it.map { balanceSubject.onNext(it.balance) } }
+    protected fun deductFromAccountBalance(
+        payments: List<KinPayment>,
+        transactionFee: QuarkAmount
+    ) {
+        storage
+            .deductFromAccountBalance(
+                accountId,
+                with(payments) {
+                    var totalAmount = transactionFee.toKin()
+                    payments.forEach { payment ->
+                        totalAmount += (if (!payment.destinationAccountId.equals(payment.sourceAccountId)) payment.amount else KinAmount.ZERO)
+                    }
+                    totalAmount
+                }
+            )
+            .doOnResolved { it.map { balanceSubject.onNext(it.balance) } }
+            .doOnResolved {
+                storage.getStoredTransactions(accountId)
+                    .map { it?.items ?: emptyList() }
+                    .then { paymentsSubject.onNext(it.asKinPayments(true)) }
+            }
+            .resolve()
     }
 
 

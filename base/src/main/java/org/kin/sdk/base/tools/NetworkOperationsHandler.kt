@@ -246,8 +246,7 @@ class NetworkOperationsHandlerImpl(
     private fun NetworkOperation<*>.handleError(error: Throwable) = apply {
         log.debug("handleError[id=$id]: $error")
         if (shouldRetryError(error)) {
-            state =
-                NetworkOperation.State.ERRORED(error)
+            state = NetworkOperation.State.ERRORED(error)
             schedule()
         } else fatalError(error)
     }

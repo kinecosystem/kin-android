@@ -105,18 +105,19 @@ class HorizonKinAccountContextTest {
 
         val values = mutableListOf<List<String>>()
 
-        sut.observePayments().add {
-            println("[USER A] observePayments:")
-            val localValues = mutableListOf<String>()
-            it.forEach {
-                println(it.amount)
-                localValues += it.amount.toString(0)
+        sut.observePayments()
+            .add {
+                println("[USER A] observePayments:")
+                val localValues = mutableListOf<String>()
+                it.forEach {
+                    println(it.amount)
+                    localValues += it.amount.toString(0)
+                }
+                values += localValues
+                println("-----")
             }
-            values += localValues
-            println("-----")
-        }
-            .test(2) {
-                assertEquals(listOf(listOf("3", "2", "1"), listOf("5", "4", "3", "2", "1")), values)
+            .test(2, timeout = 1000) {
+                assertEquals(listOf(listOf("3", "2", "1"), listOf("3", "2", "1"), listOf("5", "4", "3", "2", "1")), values)
             }
 
         println("[USER A] Now Print What's in Storage Now:")
