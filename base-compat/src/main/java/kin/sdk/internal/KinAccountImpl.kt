@@ -96,9 +96,8 @@ internal class KinAccountImpl(
     @Throws(OperationFailedException::class)
     override fun getBalanceSync(): Balance {
         checkValidAccount()
-
         return try {
-            accountContext.getAccount().syncAndMap { balance.toBalance() }
+            accountContext.getAccount(true).syncAndMap { balance.toBalance() }
         } catch (e: Exception) {
             throw exceptionCorrectionIfNecessary(e)
         }
@@ -194,7 +193,7 @@ internal class KinAccountImpl(
 
     override fun getBalance(): Request<Balance> {
         return Request(
-            accountContext.getAccount().map { it.balance.toBalance() },
+            accountContext.getAccount(true).map { it.balance.toBalance() },
             this::exceptionCorrectionIfNecessary
         )
     }

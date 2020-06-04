@@ -183,6 +183,33 @@ class KinAccountContextImplTest {
     }
 
     @Test
+    fun getSigningAccount_force_fetch_success() {
+        doAnswer {
+            Promise.of(Optional.of(registeredAccount))
+        }.whenever(mockStorage).getStoredAccount(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.of(registeredAccount)
+        }.whenever(mockService).getAccount(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.of(registeredAccount)
+        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount))
+
+        sut.getAccount(true).test {
+            assertNull(error)
+            assertNotNull(value)
+            assertEquals(registeredAccount, value)
+
+            verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockService).getAccount(eq(registeredAccount.id))
+            verify(mockStorage).updateAccountInStorage(eq(registeredAccount))
+            verifyZeroInteractions(mockService)
+            verifyNoMoreInteractions(mockStorage)
+        }
+    }
+
+    @Test
     fun getSigningAccount_needs_create_success() {
         val accountId = registeredAccount.id
         val unregisteredAccount = registeredAccount.updateStatus(KinAccount.Status.Unregistered)

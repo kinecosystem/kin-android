@@ -14,6 +14,10 @@ data class KinAmount(private val amount: BigDecimal) {
 
         @JvmField
         val ONE: KinAmount = KinAmount(BigDecimal.ONE)
+
+        fun max(amount: KinAmount, otherAmount: KinAmount): KinAmount {
+            return KinAmount(amount.value.max(otherAmount.value))
+        }
     }
 
     val value: BigDecimal = amount.setScale(MAX_PRECISION, BigDecimal.ROUND_HALF_UP)

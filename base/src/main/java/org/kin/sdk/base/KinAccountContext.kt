@@ -74,7 +74,7 @@ interface KinAccountReadOperationsAltIdioms {
     /**
      * @see KinAccountReadOperations.getAccount
      */
-    fun getAccount(accountCallback: Callback<KinAccount>)
+    fun getAccount(forceUpdate: Boolean = false, accountCallback: Callback<KinAccount>)
 
     /**
      * @see KinAccountReadOperations.observeBalance
@@ -91,6 +91,13 @@ interface KinAccountReadOperationsAltIdioms {
 }
 
 interface KinAccountReadOperations : KinAccountReadOperationsAltIdioms {
+    /**
+     * Returns the account info
+     * @return a [Promise] containing the [KinAccount] or an error
+     * @param forceUpdate - forces an update from the network
+     */
+    fun getAccount(forceUpdate: Boolean = false): Promise<KinAccount>
+
     /**
      * Returns the account info
      * @return a [Promise] containing the [KinAccount] or an error
@@ -288,13 +295,12 @@ class KinAccountContextReadOnlyImpl private constructor(
             KinAccountContextReadOnlyImpl(env.executors, env.service, env.storage, accountId)
     }
 
-    override fun maybeFetchAccountDetails(): Promise<KinAccount> = service.getAccount(accountId)
-
-    override fun getAccount(): Promise<KinAccount> {
+    override fun getAccount(forceUpdate: Boolean): Promise<KinAccount> {
         return storage.getStoredAccount(accountId)
             .flatMap {
                 it.map { storedAccount ->
-                    Promise.of(storedAccount)
+                    if (!forceUpdate) Promise.of(storedAccount)
+                    else maybeFetchAccountDetails()
                 }.orElse {
                     maybeFetchAccountDetails()
                 }
@@ -367,16 +373,19 @@ class KinAccountContextImpl private constructor(
 
     private val outgoingTransactions = PromiseQueue<List<KinPayment>>()
 
-    override fun getAccount(): Promise<KinAccount> =
+    override fun getAccount(forceUpdate: Boolean): Promise<KinAccount> =
         storage.getStoredAccount(accountId)
             .flatMap {
                 it.map { storedAccount ->
                     when (storedAccount.status) {
                         is KinAccount.Status.Unregistered -> registerAccount(storedAccount)
-                        is KinAccount.Status.Registered -> Promise.of(storedAccount)
+                        is KinAccount.Status.Registered -> {
+                            if (!forceUpdate) Promise.of(storedAccount)
+                            else maybeFetchAccountDetails()
+                        }
                     }
                 }.orElse {
-                    maybeFetchAccountDetails()
+                    Promise.error(IllegalStateException("Private key missing for account with id: $accountId"))
                 }
             }
 
@@ -388,9 +397,6 @@ class KinAccountContextImpl private constructor(
                     throw RuntimeException("Failed to store Account Data!")
                 } else accountToStore
             }
-
-    override fun maybeFetchAccountDetails(): Promise<KinAccount> =
-        Promise.error(IllegalStateException("Private key missing for account with id: $accountId"))
 
     override fun sendKinPayment(
         amount: KinAmount,
@@ -508,7 +514,11 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
         )
     }
 
-    protected abstract fun maybeFetchAccountDetails(): Promise<KinAccount>
+    override fun getAccount(): Promise<KinAccount> = getAccount(false)
+
+    fun maybeFetchAccountDetails(): Promise<KinAccount> =
+        service.getAccount(accountId)
+            .flatMap { storage.updateAccountInStorage(it) }
 
     private val lifecycle = DisposeBag()
     private var accountStream: Observer<KinAccount>? = null
@@ -542,8 +552,8 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
 
     // Public
 
-    override fun getAccount(accountCallback: Callback<KinAccount>) =
-        getAccount().callback(accountCallback)
+    override fun getAccount(forceUpdate: Boolean, accountCallback: Callback<KinAccount>) =
+        getAccount(forceUpdate).callback(accountCallback)
 
     override fun observePayments(mode: ObservationMode): ListObserver<KinPayment> {
         return when (mode) {

@@ -5,9 +5,9 @@ import com.google.protobuf.InvalidProtocolBufferException
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
+import org.kin.sdk.base.models.KinAmount.Companion.max
 import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.QuarkAmount
-import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.merge
 import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
@@ -247,7 +247,7 @@ class KinFileStorage @JvmOverloads internal constructor(
         return getStoredAccount(accountId)
             .map { storedAccount ->
                 storedAccount.map { account ->
-                    val newAmount = account.balance.amount - amount
+                    val newAmount = max(KinAmount.ZERO, account.balance.amount - amount)
                     KinAccount(
                         account.key,
                         balance = KinBalance(newAmount, newAmount),

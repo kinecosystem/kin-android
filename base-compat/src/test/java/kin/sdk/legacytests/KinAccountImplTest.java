@@ -92,6 +92,15 @@ public class KinAccountImplTest {
                         )
                 );
 
+        when(mockAccountContext.getAccount(true))
+                .thenReturn(
+                        Promise.Companion.of(
+                                new KinAccount(new Key.PublicKey(expectedRandomAccount.getPublicKey()),
+                                        new KinAccount.Id(expectedRandomAccount.getPublicKey()),
+                                        new KinBalance(new KinAmount(11.0)))
+                        )
+                );
+
         when(mockAccountContext.clearStorage())
                 .thenReturn(Promise.Companion.of(true));
 
@@ -462,7 +471,7 @@ public class KinAccountImplTest {
 
     @Test(expected = OperationFailedException.class)
     public void getBalanceSync_error() throws Exception {
-        when(mockAccountContext.getAccount())
+        when(mockAccountContext.getAccount(eq(true)))
                 .thenReturn(Promise.Companion.error(new RuntimeException()));
 
         KinAmount amount = new KinAmount(11.0);
