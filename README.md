@@ -17,6 +17,7 @@ Use the Kin SDK for Android to enable the use of Kin inside of your app. Include
 dependencies {
     // ...
     implementation "org.kin.sdk.android:base:${versions.kin}"
+    // or
     implementation "org.kin.sdk.android:base-compat:${versions.kin}"
 }
 repositories {
