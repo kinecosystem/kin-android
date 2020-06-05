@@ -108,7 +108,6 @@ buildscript {
         versions.googleCommonProtos = '1.14.0'
         versions.multidex = '2.0.0'
         versions.grpcNetty_tcnative_boringssl = '2.0.20.Final'
-        versions.kin_api = "6f4cd7fbb3"
         versions.grpc_validate = "0.2.0"
 
         deps.multi_dex = "androidx.multidex:multidex:$versions.multidex"
@@ -141,8 +140,6 @@ buildscript {
         deps.grpc_android = "io.grpc:grpc-android:${versions.grpcProtobuf}"
         deps.grpc_validate = "io.envoyproxy.protoc-gen-validate:pgv-java-stub:${versions.grpc_validate}"
         deps.grpc_testing = "io.grpc:grpc-testing:${versions.grpcProtobuf}"
-
-        deps.kin_api = "com.github.kinecosystem:kin-api:${versions.kin_api}"
 
         pomConfig = {
             licenses {
