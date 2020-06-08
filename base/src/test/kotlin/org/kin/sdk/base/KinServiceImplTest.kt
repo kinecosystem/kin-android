@@ -897,10 +897,10 @@ class KinServiceImplTest {
     @Test
     fun buildAndSignTransaction_success_with_memo() {
         val expected = TestUtils.kinTransactionFromXdr(
-            "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAAAAAANv\n" +
-                    "aGkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAhBy6pDvoUUywE\n" +
-                    "To/12Fol9ti5cGuxfxDfxT3Gt4ogLwAAAAAAAAAAALuu4AAAAAAAAAABwhjv+wAAAEDEKzSuo0h7\n" +
-                    "b8Xt/mBloQbGs6sFdIZPZsuaUFq3/AS41gdXehCr1GXgzpnkpQNJrjqXPrNPJxM1W+kx2qH5MqoL",
+            "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAA" +
+                    "AAAAAEAAAADb2hpAAAAAAEAAAAAAAAAAQAAAAAhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4" +
+                    "ogLwAAAAAAAAAAALuu4AAAAAAAAAABwhjv+wAAAEA48MSchM8GZ5sRgBWKKw1SgCmTKwSpsiMuen2" +
+                    "zkc2mmSnm1t8uAzvQIFpWm/YUXI+1HaH9VKdR7tBz6LXgHAgN",
             KinTransaction.RecordType.InFlight(System.currentTimeMillis())
         )
         val sourceAccount =

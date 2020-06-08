@@ -376,7 +376,11 @@ class KinServiceImpl(
                             }
                             addFee(fee.value.toInt())
                             if (memo != KinMemo.NONE) {
-                                addMemo(Memo.hash(memo.rawValue))
+                                val stellarMemo = when (memo.type) {
+                                    KinMemo.Type.NoEncoding -> Memo.hash(memo.rawValue)
+                                    is KinMemo.Type.CharsetEncoded -> Memo.text(memo.toString())
+                                }
+                                addMemo(stellarMemo)
                             }
                         }
                         .build()

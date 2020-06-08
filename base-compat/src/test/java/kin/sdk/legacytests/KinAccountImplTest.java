@@ -274,7 +274,7 @@ public class KinAccountImplTest {
 
     @Test
     public void buildAndSendTransactionAsync_withMemo() throws Exception {
-        KinTransaction kinTransaction = TestUtils.kinTransactionFromXDR("AAAAAOW4vFw4Y2Te8vHfGvFd9JxpTW/2L6jnmEejDv3pRilbAAAAZABZ2/gAAAADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAADJhY8ODfklc4sHXp+xFywL6OxdHaWwljtepeFe9KOUOAAAAAAAAAAAAIAsgAAAAAAAAAAHpRilbAAAAQN1YkzWbQdhatwAHZW4dlfVo61cbHfFFY5I6UOcnrwgMZ5bN+iaCMi6V8tEjxnKjP9BjLGJnbvg7d9iYCcQiWg4=");
+        KinTransaction kinTransaction = TestUtils.kinTransactionFromXDR("AAAAAEGrP0T7PuIGKHYAFCWxuX5itkzbZwZFXpxBMbFOpSVaAAAAZABnD30AAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAABAAAACHNvbWVNZW1vAAAAAQAAAAAAAAABAAAAAEGrP0T7PuIGKHYAFCWxuX5itkzbZwZFXpxBMbFOpSVaAAAAAAAAAAAAu67gAAAAAAAAAAFOpSVaAAAAQOfavLG+DXPps3C6p2T8As5h4HVhmMykoTK7BRWb6O+sJROjcTFztuvsAZC1jXPqI4rb3NQiU3b6T5v8LjlhUAQ=");
         KinPayment kinPayment = StellarBaseTypeConversionsKt.asKinPayments(kinTransaction).get(0);
         TransactionId expectedTransactionId = new TransactionIdImpl(kinTransaction.getTransactionHash());
 
