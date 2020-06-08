@@ -155,13 +155,22 @@ sealed class KinEnvironment {
     fun importPrivateKey(privateKey: Key.PrivateKey): Promise<Boolean> {
         return Promise.create<Boolean> { resolve, reject ->
             if (storage.getAccount(privateKey.asKinAccountId()) == null) {
-                try {
-                    resolve(storage.addAccount(KinAccount((privateKey))))
-                } catch (t: Throwable) {
-                    reject(t)
-                }
+                service.getAccount(privateKey.asKinAccountId())
+                    .then({
+                        try {
+                            resolve(storage.addAccount(it.copy(key = privateKey)))
+                        } catch (t: Throwable) {
+                            reject(t)
+                        }
+                    }, {
+                        try {
+                            resolve(storage.addAccount(KinAccount(privateKey)))
+                        } catch (t: Throwable) {
+                            reject(t)
+                        }
+                    })
             } else resolve(true)
-        }.workOn(executors.sequentialIO)
+        }
     }
 
     fun importPrivateKey(privateKey: Key.PrivateKey, callback: Callback<Boolean>) {

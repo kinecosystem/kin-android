@@ -152,7 +152,11 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.error<KinAccount>(KinService.SDKUpgradeRequired)
-        }.whenever(mockService).createAccount(any())
+        }.whenever(mockService).createAccount(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.error<KinAccount>(KinService.SDKUpgradeRequired)
+        }.whenever(mockService).getAccount(eq(registeredAccount.id))
 
         sut.getAccount().test {
             assertNotNull(error)
@@ -235,6 +239,46 @@ class KinAccountContextImplTest {
             verify(mockService).createAccount(eq(accountId))
             verify(mockStorage).getStoredAccount(eq(accountId))
             verify(mockStorage).updateAccount(eq(registeredAccount))
+            verifyNoMoreInteractions(mockService)
+            verifyNoMoreInteractions(mockStorage)
+        }
+    }
+
+    @Test
+    fun getSigningAccount_created_but_wrong_status_from_import_success() {
+        val accountId = registeredAccount.id
+        val unregisteredAccount = registeredAccount.updateStatus(KinAccount.Status.Unregistered)
+        val registeredAccountNoPrivKey =
+            KinAccount(registeredAccount.key.asPublicKey(), status = registeredAccount.status)
+        doAnswer {
+            Promise.error<KinAccount>(KinService.FatalError.PermanentlyUnavailable)
+        }.whenever(mockService).createAccount(eq(accountId))
+
+        doAnswer {
+            Promise.of(registeredAccountNoPrivKey)
+        }.whenever(mockService).getAccount(eq(accountId))
+
+        doAnswer {
+            Promise.of(registeredAccount)
+        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccountNoPrivKey))
+
+        doAnswer {
+            Promise.of(Optional.of(unregisteredAccount))
+        }.whenever(mockStorage).getStoredAccount(eq(accountId))
+
+        doAnswer {
+            true
+        }.whenever(mockStorage).updateAccount(eq(registeredAccount))
+
+        sut.getAccount().test {
+            assertNull(error)
+            assertNotNull(value)
+            assertEquals(registeredAccount, value)
+
+            verify(mockService).createAccount(eq(accountId))
+            verify(mockService).getAccount(eq(accountId))
+            verify(mockStorage).getStoredAccount(eq(accountId))
+            verify(mockStorage).updateAccountInStorage(eq(registeredAccount))
             verifyNoMoreInteractions(mockService)
             verifyNoMoreInteractions(mockStorage)
         }
