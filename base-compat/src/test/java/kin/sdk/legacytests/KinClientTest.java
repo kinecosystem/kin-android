@@ -12,6 +12,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kin.sdk.base.KinAccountContext;
 import org.kin.sdk.base.KinEnvironment;
+import org.kin.sdk.base.models.AppId;
 import org.kin.sdk.base.models.Key;
 import org.kin.sdk.base.models.QuarkAmount;
 import org.kin.sdk.base.network.services.KinService;
@@ -1066,7 +1067,8 @@ public class KinClientTest {
                         mockBackupRestore,
                         new KinAccountContext.Builder(kinEnvironment).useExistingAccount(new org.kin.sdk.base.models.KinAccount.Id(account1.getPublicKey())).build(),
                         mockKinService,
-                        NetworkEnvironment.KinStellarTestNet.INSTANCE
+                        NetworkEnvironment.KinStellarTestNet.INSTANCE,
+                        new AppId(APP_ID)
                 ),
                 kinAccount1
         );

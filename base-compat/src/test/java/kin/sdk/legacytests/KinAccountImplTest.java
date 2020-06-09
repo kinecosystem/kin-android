@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.kin.sdk.base.KinAccountContext;
 import org.kin.sdk.base.ObservationMode;
+import org.kin.sdk.base.models.AppId;
 import org.kin.sdk.base.models.Key;
 import org.kin.sdk.base.models.KinAccount;
 import org.kin.sdk.base.models.KinAmount;
@@ -57,6 +58,8 @@ import static org.mockito.Mockito.when;
 
 public class KinAccountImplTest {
 
+    private static final String APP_ID = "1a2c";
+
     private KinAccountImpl kinAccount;
     private KeyPair expectedRandomAccount;
     private KinAccount expectedRandomKinAccount;
@@ -109,7 +112,8 @@ public class KinAccountImplTest {
                 new FakeBackupRestore(),
                 mockAccountContext,
                 mockKinService,
-                NetworkEnvironment.KinStellarTestNet.INSTANCE
+                NetworkEnvironment.KinStellarTestNet.INSTANCE,
+                new AppId(APP_ID)
         );
     }
 
@@ -673,7 +677,8 @@ public class KinAccountImplTest {
                 mockBackupRestore,
                 mockAccountContext,
                 mockKinService,
-                NetworkEnvironment.KinStellarTestNet.INSTANCE
+                NetworkEnvironment.KinStellarTestNet.INSTANCE,
+                new AppId(APP_ID)
         );
 
         String exported = kinAccount.export("passw0rd");
