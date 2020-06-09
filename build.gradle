@@ -202,7 +202,7 @@ allprojects {
     ext {
         // Libraries
         groupId = "org.kin.sdk.android"
-        libraryVersion = "0.1.6"
+        libraryVersion = "0.1.7"
         siteUrl = "https://github.com/kinecosystem/kin-android"
         gitUrl = "https://github.com/kinecosystem/kin-android.git"
     }
