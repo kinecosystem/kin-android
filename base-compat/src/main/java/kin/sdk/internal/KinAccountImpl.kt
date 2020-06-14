@@ -26,6 +26,7 @@ import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinMemo
 import org.kin.sdk.base.models.toKinTransaction
 import org.kin.sdk.base.network.services.KinService
+import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.tools.Promise
 import org.kin.stellarfork.KeyPair
@@ -248,12 +249,10 @@ internal class KinAccountImpl(
         return Promise.of(transaction)
             .flatMap {
                 accountContext
-                    .sendKinPayment(
-                        KinAmount(it.amount),
-                        it.destination.asKinAccountId(),
-                        buildMemo(it.memo)
+                    .sendKinTransaction(
+                        transaction.stellarTransaction.toKinTransaction(networkEnvironment)
                     )
-                    .map { it.id.transactionHash.toTransactionId() }
+                    .map { it.first().id.transactionHash.toTransactionId() }
             }
     }
 

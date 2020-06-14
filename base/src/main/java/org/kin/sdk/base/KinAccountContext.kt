@@ -232,6 +232,18 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
         payments: List<KinPaymentItem>,
         memo: KinMemo = KinMemo.NONE
     ): Promise<List<KinPayment>>
+
+    /**
+     * Directly sends a [KinTransaction].
+     * Currently only exposed to support the kin-android:base-compat library
+     *
+     * This is not meant for other external consumption. Use at your own risk.
+     *
+     * Payments should instead be sent with [sendKinPayment] or [sendKinPayments] functions.
+     */
+    fun sendKinTransaction(
+        transaction: KinTransaction
+    ): Promise<List<KinPayment>>
 }
 
 interface KinAccountContextReadOnly : KinAccountReadOperations,
@@ -414,6 +426,46 @@ class KinAccountContextImpl private constructor(
         sendKinPayments(listOf(KinPaymentItem(amount, destinationAccount)), memo)
             .map { it.first() }
 
+    override fun sendKinTransaction(
+        transaction: KinTransaction
+    ): Promise<List<KinPayment>> {
+        return outgoingTransactions.queue(Promise.create { resolve, reject ->
+            fun attempt() =
+                service.submitTransaction(transaction)
+                    .doOnResolved { storage.advanceSequence(accountId) }
+                    .flatMap { storage.insertNewTransactionInStorage(accountId, it) }
+                    .map { it.asKinPayments() }
+                    .doOnResolved { deductFromAccountBalance(it, transaction.fee) }
+            attempt()
+                .then(
+                    resolve,
+                    { error ->
+                        when (error) {
+                            is KinService.BadSequenceNumberInRequest -> {
+                                service.getAccount(accountId)
+                                    .flatMap { storage.updateAccountInStorage(it) }
+                                    .then({
+                                        attempt()
+                                            .then(resolve, { reject.invoke(it) })
+                                    }, { reject.invoke(it) })
+                            }
+                            is KinService.InsufficientFeeInRequest -> {
+                                service.getMinFee()
+                                    .flatMap { storage.setMinFee(it) }
+                                    .then({
+                                        attempt()
+                                            .then(resolve, { reject.invoke(it) })
+                                    }, { reject.invoke(it) })
+                            }
+                            else -> {
+                                reject.invoke(error)
+                            }
+                        }
+                    }
+                )
+        })
+    }
+
     override fun sendKinPayments(
         payments: List<KinPaymentItem>,
         memo: KinMemo
@@ -424,43 +476,7 @@ class KinAccountContextImpl private constructor(
                     service.buildAndSignTransaction(it, payments, memo, fee)
                 }
             }
-            .flatMap { transaction ->
-                outgoingTransactions.queue(Promise.create { resolve, reject ->
-                    fun attempt() =
-                        service.submitTransaction(transaction)
-                            .doOnResolved { storage.advanceSequence(accountId) }
-                            .flatMap { storage.insertNewTransactionInStorage(accountId, it) }
-                            .map { it.asKinPayments() }
-                            .doOnResolved { deductFromAccountBalance(it, transaction.fee) }
-                    attempt()
-                        .then(
-                            resolve,
-                            { error ->
-                                when (error) {
-                                    is KinService.BadSequenceNumberInRequest -> {
-                                        service.getAccount(accountId)
-                                            .flatMap { storage.updateAccountInStorage(it) }
-                                            .then({
-                                                attempt()
-                                                    .then(resolve, { reject.invoke(it) })
-                                            }, { reject.invoke(it) })
-                                    }
-                                    is KinService.InsufficientFeeInRequest -> {
-                                        service.getMinFee()
-                                            .flatMap { storage.setMinFee(it) }
-                                            .then({
-                                                attempt()
-                                                    .then(resolve, { reject.invoke(it) })
-                                            }, { reject.invoke(it) })
-                                    }
-                                    else -> {
-                                        reject.invoke(error)
-                                    }
-                                }
-                            }
-                        )
-                })
-            }
+            .flatMap(::sendKinTransaction)
             .workOn(executors.parallelIO)
     }
 
