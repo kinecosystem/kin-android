@@ -32,7 +32,7 @@ data class KinAmount(private val amount: BigDecimal) {
     }
 
     fun toString(precision: Int): String {
-        return value.setScale(min(MAX_PRECISION, precision)).toString()
+        return value.setScale(min(MAX_PRECISION, precision), BigDecimal.ROUND_HALF_UP).toString()
     }
 
     override fun equals(other: Any?): Boolean {

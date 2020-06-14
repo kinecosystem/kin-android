@@ -15,11 +15,15 @@ import kin.sdk.exception.OperationFailedException
 import kin.utils.Request
 import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.ObservationMode
+import org.kin.sdk.base.models.AppId
+import org.kin.sdk.base.models.ClassicKinMemo
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.MemoSuffix
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.asKinAccountId
+import org.kin.sdk.base.models.asKinMemo
 import org.kin.sdk.base.models.toKinTransaction
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
@@ -34,7 +38,8 @@ internal class KinAccountImpl(
     private val backupRestore: BackupRestore,
     private val accountContext: KinAccountContext,
     private val kinService: KinService,
-    private val networkEnvironment: NetworkEnvironment
+    private val networkEnvironment: NetworkEnvironment,
+    private val appId: AppId
 ) : KinAccount {
     private var isDeleted = false
     private val network = networkEnvironment.toNetwork()
@@ -233,7 +238,7 @@ internal class KinAccountImpl(
                         KeyPair.fromAccountId(publicAddress).asKinAccountId()
                     )
                 ),
-                memo?.let { KinMemo(it) } ?: KinMemo.NONE,
+                memo?.let { buildMemo(it)} ?: KinMemo.NONE,
                 QuarkAmount(fee.toLong())
             )
             .map { it.asTransaction(network) }
@@ -246,11 +251,14 @@ internal class KinAccountImpl(
                     .sendKinPayment(
                         KinAmount(it.amount),
                         it.destination.asKinAccountId(),
-                        KinMemo(it.memo)
+                        buildMemo(it.memo)
                     )
                     .map { it.id.transactionHash.toTransactionId() }
             }
     }
+
+    private fun buildMemo(suffix: String): KinMemo =
+        ClassicKinMemo(appId = appId, memoSuffix = MemoSuffix(suffix)).asKinMemo()
 
     private fun sendWhitelistTransactionInternal(whitelist: String): Promise<TransactionId> {
         return Promise

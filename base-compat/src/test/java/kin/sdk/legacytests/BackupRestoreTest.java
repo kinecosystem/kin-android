@@ -9,6 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kin.sdk.base.KinEnvironment;
+import org.kin.sdk.base.models.Key;
 import org.kin.sdk.base.network.services.KinService;
 import org.kin.sdk.base.stellar.models.NetworkEnvironment;
 import org.kin.sdk.base.storage.Storage;
@@ -34,6 +35,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -83,6 +85,13 @@ public class BackupRestoreTest {
                 .setKinService(mockKinService)
                 .setStorage(mockStorage)
                 .build();
+
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
+
         return  new KinClient(ctx,
                 environment,
                 APP_ID,

@@ -378,7 +378,15 @@ class KinAccountContextImpl private constructor(
             .flatMap {
                 it.map { storedAccount ->
                     when (storedAccount.status) {
-                        is KinAccount.Status.Unregistered -> registerAccount(storedAccount)
+                        is KinAccount.Status.Unregistered -> {
+                            Promise.create { resolve, reject ->
+                                registerAccount(storedAccount)
+                                    .then(
+                                        resolve,
+                                        { maybeFetchAccountDetails().then(resolve, reject) }
+                                    )
+                            }
+                        }
                         is KinAccount.Status.Registered -> {
                             if (!forceUpdate) Promise.of(storedAccount)
                             else maybeFetchAccountDetails()

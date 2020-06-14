@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -11,6 +12,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kin.sdk.base.KinAccountContext;
 import org.kin.sdk.base.KinEnvironment;
+import org.kin.sdk.base.models.AppId;
 import org.kin.sdk.base.models.Key;
 import org.kin.sdk.base.models.QuarkAmount;
 import org.kin.sdk.base.network.services.KinService;
@@ -52,6 +54,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -90,11 +93,20 @@ public class KinClientTest {
 
     @NonNull
     private KinClient createNewKinClient() {
+        return createNewKinClient(null);
+    }
+
+    @NonNull
+    private KinClient createNewKinClient(@Nullable KinService kinService) {
 
         ctx = mock(Context.class);
         mockStorage = mock(Storage.class);
         mockBackupRestore = mock(BackupRestore.class);
-        mockKinService = mock(KinService.class);
+        if (kinService == null) {
+            this.mockKinService = mock(KinService.class);
+        } else {
+            this.mockKinService = kinService;
+        }
         ExecutorServices executors = new ExecutorServices();
         ILoggerFactory logger = LoggerFactory.getILoggerFactory();
         kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet.INSTANCE)
@@ -438,6 +450,13 @@ public class KinClientTest {
         when(mockStorage.deleteAllStorage(eq(account3KinAccountId)))
                 .thenReturn(Promise.Companion.of(true));
 
+        when(mockKinService.getAccount(eq(kinAccount1.getId())))
+                .thenReturn(Promise.Companion.of(kinAccount1));
+        when(mockKinService.getAccount(eq(kinAccount2.getId())))
+                .thenReturn(Promise.Companion.of(kinAccount2));
+        when(mockKinService.getAccount(eq(kinAccount3.getId())))
+                .thenReturn(Promise.Companion.of(kinAccount3));
+
         return new KinClient(
                 ctx,
                 fakeEnvironment,
@@ -521,6 +540,12 @@ public class KinClientTest {
 
     @Test
     public void addAccount_NewAccount() throws Exception {
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
+
         KinAccount kinAccount = kinClient.addAccount();
 
         assertNotNull(kinAccount);
@@ -530,6 +555,12 @@ public class KinClientTest {
 
     @Test
     public void createAccount_AddAccount() throws Exception {
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
+
         KinAccount kinAccount = kinClient.addAccount();
 
         assertNotNull(kinAccount);
@@ -539,6 +570,13 @@ public class KinClientTest {
 
     @Test
     public void createAccount_AddMultipleAccount() throws Exception {
+
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
+
         KinAccount kinAccount = kinClient.addAccount();
         KinAccount kinAccount2 = kinClient.addAccount();
 
@@ -569,6 +607,13 @@ public class KinClientTest {
         KeyPair account1 = createKeyStoreWithRandomAccount();
 
         kinClient = createNewKinClient();
+
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
+
 
         KinAccount kinAccount2 = kinClient.addAccount();
         KinAccount kinAccount3 = kinClient.addAccount();
@@ -602,12 +647,28 @@ public class KinClientTest {
     @Test
     public void createMultipleKinClients_SameAccounts() throws Exception {
         KinClient kinClient1 = createNewKinClient();
+
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
+
         kinClient1.addAccount();
         kinClient1.addAccount();
 
         assertEquals(kinClient1.getAccountCount(), 2);
 
-        KinClient kinClient2 = createNewKinClient();
+
+        KinService mockKinService = mock(KinService.class);
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any(org.kin.sdk.base.models.KinAccount.Id.class));
+
+        KinClient kinClient2 = createNewKinClient(mockKinService);
+
         assertTrue(kinClient2.hasAccount());
         assertEquals(kinClient2.getAccountCount(), 2);
 
@@ -751,6 +812,12 @@ public class KinClientTest {
     public void getAccountCount() throws Exception {
         fakeKeyStore = new FakeKeyStore(Arrays.asList(account1, account2, account3));
         kinClient = createNewKinClient();
+
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
 
         assertEquals(kinClient.getAccountCount(), 3);
         kinClient.deleteAccount(2);
@@ -940,6 +1007,12 @@ public class KinClientTest {
     @Test
     public void getAccountByPublicAddress() throws Exception {
 
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
+
         KinAccount kinAccount1 = kinClient.addAccount();
         KinAccount kinAccount2 = kinClient.addAccount();
 
@@ -961,6 +1034,12 @@ public class KinClientTest {
                 .setKinService(mockKinService)
                 .setStorage(mockStorage)
                 .build();
+
+        doAnswer(invocation -> {
+            org.kin.sdk.base.models.KinAccount.Id accountId = invocation.getArgument(0);
+            org.kin.sdk.base.models.KinAccount kinAccount = new org.kin.sdk.base.models.KinAccount(new Key.PublicKey(accountId.getValue()));
+            return Promise.Companion.of(kinAccount);
+        }).when(mockKinService).getAccount(any());
 
         KeyStore mockKeyStore = mock(KeyStore.class);
 
@@ -988,7 +1067,8 @@ public class KinClientTest {
                         mockBackupRestore,
                         new KinAccountContext.Builder(kinEnvironment).useExistingAccount(new org.kin.sdk.base.models.KinAccount.Id(account1.getPublicKey())).build(),
                         mockKinService,
-                        NetworkEnvironment.KinStellarTestNet.INSTANCE
+                        NetworkEnvironment.KinStellarTestNet.INSTANCE,
+                        new AppId(APP_ID)
                 ),
                 kinAccount1
         );

@@ -7,7 +7,6 @@ import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.getNetwork
-import org.kin.sdk.base.models.toUTF8Bytes
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.PaymentOperation
 import org.kin.stellarfork.Transaction
@@ -165,11 +164,11 @@ class KinTransaction @JvmOverloads constructor(
 
     val memo: KinMemo by lazy {
         transactionEnvelope.tx!!.memo?.let { memo ->
-            when {
-                memo.discriminant == MemoType.MEMO_HASH -> KinMemo(memo.hash!!.hash!!)
-                else -> memo.text?.let { KinMemo(it.toUTF8Bytes()) } ?: KinMemo.NONE
+            if (memo.discriminant == MemoType.MEMO_HASH) {
+                KinMemo(memo.hash!!.hash!!)
+            } else {
+                memo.text?.let { KinMemo(it, Charsets.UTF_8) } ?: KinMemo.NONE
             }
-
         } ?: KinMemo.NONE
     }
 

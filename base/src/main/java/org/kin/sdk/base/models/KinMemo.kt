@@ -1,14 +1,28 @@
 package org.kin.sdk.base.models
 
-data class KinMemo(val rawValue: ByteArray) {
+import java.nio.charset.Charset
+
+data class KinMemo @JvmOverloads constructor(
+    val rawValue: ByteArray,
+    val type: Type = Type.NoEncoding
+) {
+    sealed class Type(val value: Int) {
+        object NoEncoding : Type(0)
+        data class CharsetEncoded(val charset: Charset) : Type(1)
+    }
+
     companion object {
-        val NONE = KinMemo(ByteArray(0))
+        val NONE = KinMemo(ByteArray(0), Type.NoEncoding)
     }
 
     /**
-     * Text that will be encoded into a UTF8Byte representation
+     * Text that will be encoded into charset representation, defaults to UTF8 encoding
      */
-    constructor(textValue: String) : this(textValue.toUTF8Bytes())
+    @JvmOverloads
+    constructor(textValue: String, charset: Charset = Charsets.UTF_8) : this(
+        textValue.toUTF8Bytes(),
+        Type.CharsetEncoded(charset)
+    )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -23,5 +37,12 @@ data class KinMemo(val rawValue: ByteArray) {
 
     override fun hashCode(): Int {
         return rawValue.contentHashCode()
+    }
+
+    override fun toString(): String {
+        return when (type) {
+            Type.NoEncoding -> rawValue.contentToString()
+            is Type.CharsetEncoded -> String(rawValue, type.charset)
+        }
     }
 }

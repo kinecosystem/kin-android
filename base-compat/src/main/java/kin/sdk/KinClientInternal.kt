@@ -16,6 +16,7 @@ import kin.utils.Request
 import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.KinEnvironment
 import org.kin.sdk.base.KinEnvironment.Horizon
+import org.kin.sdk.base.models.AppId
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.network.services.KinService
@@ -326,7 +327,8 @@ internal class KinClientInternal {
             backupRestore,
             accountContext,
             kinEnvironment.service,
-            kinEnvironment.networkEnvironment
+            kinEnvironment.networkEnvironment,
+            AppId(appId)
         )
     }
 
