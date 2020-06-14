@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android"
+          android:color="@color/secondaryTextColor">
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="@color/secondaryTextColor"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+    <item android:state_enabled="false">
+        <shape>
+            <solid android:color="@color/secondaryTextColor"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+    <item android:state_enabled="true">
+        <shape>
+            <solid android:color="@color/colorAccent"/>
+            <corners android:radius="8dp"/>
+        </shape>
+    </item>
+</selector>

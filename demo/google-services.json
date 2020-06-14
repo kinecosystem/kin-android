@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "72986572412",
+    "firebase_url": "https://internal-kin-apps.firebaseio.com",
+    "project_id": "internal-kin-apps",
+    "storage_bucket": "internal-kin-apps.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:72986572412:android:3a632d1f691731e5637bf9",
+        "android_client_info": {
+          "package_name": "org.kin.sdk.demo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "72986572412-16dcg38j8dlgcmiull85j2iisnf3d45p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOIvL8CFWON2iaIxxxsm64RTbwnEjbIUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "72986572412-16dcg38j8dlgcmiull85j2iisnf3d45p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

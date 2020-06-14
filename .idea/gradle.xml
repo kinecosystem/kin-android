@@ -14,6 +14,10 @@
             <option value="$PROJECT_DIR$/base" />
             <option value="$PROJECT_DIR$/base-compat" />
             <option value="$PROJECT_DIR$/base-storage" />
+            <option value="$PROJECT_DIR$/demo" />
+            <option value="$PROJECT_DIR$/demo/viewmodel" />
+            <option value="$PROJECT_DIR$/demo/viewmodel-compat" />
+            <option value="$PROJECT_DIR$/demo/viewmodel-modern" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

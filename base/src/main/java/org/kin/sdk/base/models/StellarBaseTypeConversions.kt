@@ -141,10 +141,18 @@ class KinDateFormat(dateString: String) {
 
         @JvmStatic
         fun timestampToString(timestamp: Long): String {
-            return SimpleDateFormat(KIN_DATE_FORMAT).format(Date(timestamp))
+            return FORMAT.format(Date(timestamp))
+        }
+
+        val FORMAT by lazy {
+            try {
+                SimpleDateFormat(KIN_DATE_FORMAT)
+            } catch (e: Exception) {
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+            }
         }
     }
 
-    val timestamp = SimpleDateFormat(KIN_DATE_FORMAT).parse(dateString).time
+    val timestamp =FORMAT.parse(dateString).time
 }
 

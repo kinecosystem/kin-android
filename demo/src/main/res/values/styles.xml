@@ -1,0 +1,35 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:statusBarColor">#E8E9ED</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="actionBarStyle">@style/ActionBarOverride</item>
+        <item name="android:actionBarStyle">@style/ActionBarOverride</item>
+        <item name="android:windowBackground">@color/fullWhite</item>
+    </style>
+
+    <style name="ActionBarOverride" parent="@style/Widget.AppCompat.ActionBar.Solid">
+        <item name="android:background">@color/fullWhite</item>
+        <item name="android:titleTextStyle">@style/AppBarTitleOverride</item>
+        <item name="color">@color/primaryTextColor</item>
+        <item name="android:textColor">@color/primaryTextColor</item>
+
+        <item name="background">@color/fullWhite</item>
+        <item name="titleTextStyle">@style/AppBarTitleOverride</item>
+
+        <item name="android:elevation">4dp</item>
+        <item name="elevation">4dp</item>
+
+        <item name="android:colorControlNormal">@color/secondaryTextColor</item>
+        <item name="colorControlNormal">@color/secondaryTextColor</item>
+    </style>
+
+    <style name="AppBarTitleOverride" parent="@style/TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@color/primaryTextColor</item>
+    </style>
+</resources>

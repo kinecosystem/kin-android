@@ -1,0 +1,13 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.kotlin_stdlib
+    implementation project(':demo:viewmodel')
+    implementation (project(':base')) {
+        exclude module: 'libsodium-jni'
+    }
+    testImplementation deps.junit
+}
