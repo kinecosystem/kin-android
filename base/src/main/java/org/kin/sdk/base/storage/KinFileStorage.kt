@@ -248,10 +248,8 @@ class KinFileStorage @JvmOverloads internal constructor(
             .map { storedAccount ->
                 storedAccount.map { account ->
                     val newAmount = max(KinAmount.ZERO, account.balance.amount - amount)
-                    KinAccount(
-                        account.key,
-                        balance = KinBalance(newAmount, newAmount),
-                        status = account.status
+                    account.copy(
+                        balance = KinBalance(newAmount, newAmount)
                     ).also { updateAccount(it) }
                 }
             }

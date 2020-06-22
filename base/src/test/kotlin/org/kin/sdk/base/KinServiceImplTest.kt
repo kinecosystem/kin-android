@@ -67,6 +67,14 @@ class KinServiceImplTest {
                 pagingToken
             )
         )
+        val historicalKinTransaction2 = TestUtils.kinTransactionFromXdr(
+            "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7BBAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=",
+            KinTransaction.RecordType.Historical(
+                KinDateFormat("2019-12-12T21:32:43Z").timestamp,
+                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                pagingToken
+            )
+        )
 
         val getTransactionHistoryRequestLatestPage =
             GetTransactionHistoryRequest(account.id)
@@ -1497,11 +1505,11 @@ class KinServiceImplTest {
 
         ExecutorServices().sequentialScheduled.schedule({
             observer.onNext(historicalKinTransaction)
-            observer.onNext(historicalKinTransaction)
+            observer.onNext(historicalKinTransaction2)
         }, 100, TimeUnit.MILLISECONDS)
 
-        sut.streamNewTransactions(account.id).test(2) {
-            assertEquals(listOf(historicalKinTransaction, historicalKinTransaction), values)
+        sut.streamNewTransactions(account.id).test {
+            assertEquals(listOf(historicalKinTransaction, historicalKinTransaction2), values)
         }
     }
 

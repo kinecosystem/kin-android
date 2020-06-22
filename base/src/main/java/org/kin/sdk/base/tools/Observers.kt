@@ -74,6 +74,7 @@ open class ValueSubject<T>(
     private val listeners = CopyOnWriteArrayList<(T) -> Unit>()
     private var currentValue: T? = null
     private var onDisposed = mutableListOf<() -> Unit>()
+    var distinctUntilChanged: Boolean = true
 
     override fun add(listener: (T) -> Unit): Observer<T> {
         listeners.add(listener)
@@ -81,9 +82,13 @@ open class ValueSubject<T>(
         return this
     }
 
-    fun onNext(newValue: T) =
+    fun onNext(newValue: T) {
+        if (distinctUntilChanged && newValue == currentValue) {
+            return
+        }
         listeners.forEach { it(newValue) }
             .also { currentValue = newValue }
+    }
 
     override fun remove(listener: (T) -> Unit): Observer<T> {
         listeners.remove(listener)

@@ -433,8 +433,10 @@ class KinAccountContextImpl private constructor(
             fun attempt() =
                 service.submitTransaction(transaction)
                     .doOnResolved { storage.advanceSequence(accountId) }
-                    .flatMap { storage.insertNewTransactionInStorage(accountId, it) }
-                    .map { it.asKinPayments() }
+                    .flatMap {
+                        storage.insertNewTransactionInStorage(accountId, it)
+                            .map { it.asKinPayments() }
+                    }
                     .doOnResolved { deductFromAccountBalance(it, transaction.fee) }
             attempt()
                 .then(
@@ -557,6 +559,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                         accountStream = service.streamAccount(accountId).apply {
                             disposedBy(lifecycle)
                                 .flatMapPromise { kinAccount ->
+                                    println("Kin.accountStreamUpdate: $kinAccount")
                                     storage.updateAccountInStorage(kinAccount)
                                         .map { it.balance }
                                         .doOnResolved {
@@ -683,7 +686,9 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                 accountId,
                 with(payments) {
                     var totalAmount = transactionFee.toKin()
-                    payments.forEach { payment ->
+                    payments.filter {
+                        it.destinationAccountId != accountId
+                    }.forEach { payment ->
                         totalAmount += (if (!payment.destinationAccountId.equals(payment.sourceAccountId)) payment.amount else KinAmount.ZERO)
                     }
                     totalAmount
