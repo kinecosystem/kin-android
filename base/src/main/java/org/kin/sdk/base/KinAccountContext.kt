@@ -433,9 +433,9 @@ class KinAccountContextImpl private constructor(
             fun attempt() =
                 service.submitTransaction(transaction)
                     .doOnResolved { storage.advanceSequence(accountId) }
-                    .flatMap {
-                        storage.insertNewTransactionInStorage(accountId, it)
-                            .map { it.asKinPayments() }
+                    .flatMap { submittedTransaction ->
+                        storage.insertNewTransactionInStorage(accountId, submittedTransaction)
+                            .map { submittedTransaction.asKinPayments() }
                     }
                     .doOnResolved { deductFromAccountBalance(it, transaction.fee) }
             attempt()
