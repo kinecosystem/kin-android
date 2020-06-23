@@ -2,6 +2,7 @@ package org.kin.sdk.base.storage
 
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
+import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransactions
@@ -53,9 +54,9 @@ interface Storage {
 
     fun updateAccountInStorage(account: KinAccount): Promise<KinAccount>
 
-    fun deductFromAccountBalance(
+    fun updateAccountBalance(
         accountId: KinAccount.Id,
-        amount: KinAmount
+        balance: KinBalance
     ): Promise<Optional<KinAccount>>
 
     fun setMinFee(it: QuarkAmount): Promise<Optional<QuarkAmount>>

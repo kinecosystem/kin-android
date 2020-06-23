@@ -240,16 +240,15 @@ class KinFileStorage @JvmOverloads internal constructor(
             }
     }
 
-    override fun deductFromAccountBalance(
+    override fun updateAccountBalance(
         accountId: KinAccount.Id,
-        amount: KinAmount
+        balance: KinBalance
     ): Promise<Optional<KinAccount>> {
         return getStoredAccount(accountId)
             .map { storedAccount ->
                 storedAccount.map { account ->
-                    val newAmount = max(KinAmount.ZERO, account.balance.amount - amount)
                     account.copy(
-                        balance = KinBalance(newAmount, newAmount)
+                        balance = balance
                     ).also { updateAccount(it) }
                 }
             }

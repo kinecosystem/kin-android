@@ -52,7 +52,9 @@ class KinAccountContextImplTest {
 
     companion object {
         val registeredAccount = TestUtils.newKinAccount()
-            .updateStatus(KinAccount.Status.Registered(1234))
+            .updateStatus(KinAccount.Status.Registered(1234)).copy(
+                balance = KinBalance(KinAmount(1000))
+            )
         val registeredAccount2 = TestUtils.newSigningKinAccount()
             .updateStatus(KinAccount.Status.Registered(1234))
         val unregisteredAccount = TestUtils.newKinAccount()
@@ -218,7 +220,7 @@ class KinAccountContextImplTest {
         val accountId = registeredAccount.id
         val unregisteredAccount = registeredAccount.updateStatus(KinAccount.Status.Unregistered)
         val registeredAccountNoPrivKey =
-            KinAccount(registeredAccount.key.asPublicKey(), status = registeredAccount.status)
+            KinAccount(registeredAccount.key.asPublicKey(), status = registeredAccount.status, balance = KinBalance(KinAmount(1000)))
         doAnswer {
             Promise.of(registeredAccountNoPrivKey)
         }.whenever(mockService).createAccount(eq(accountId))
@@ -249,7 +251,9 @@ class KinAccountContextImplTest {
         val accountId = registeredAccount.id
         val unregisteredAccount = registeredAccount.updateStatus(KinAccount.Status.Unregistered)
         val registeredAccountNoPrivKey =
-            KinAccount(registeredAccount.key.asPublicKey(), status = registeredAccount.status)
+            KinAccount(registeredAccount.key.asPublicKey(), status = registeredAccount.status, balance = KinBalance(
+                KinAmount(1000)
+            ))
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.PermanentlyUnavailable)
         }.whenever(mockService).createAccount(eq(accountId))
@@ -316,7 +320,7 @@ class KinAccountContextImplTest {
             })
         }.apply {
             assertNull(error)
-            assertEquals(listOf(KinBalance(KinAmount.ZERO), KinBalance(KinAmount(123))), values)
+            assertEquals(listOf(KinBalance(KinAmount(1000)), KinBalance(KinAmount(123))), values)
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).getAccount(eq(registeredAccount.id))
             verify(mockStorage).updateAccountInStorage(eq(accountFromService))
@@ -347,7 +351,7 @@ class KinAccountContextImplTest {
             sut.observeBalance().add(capture)
         }.apply {
             assertNull(error)
-            assertEquals(listOf(KinBalance(KinAmount.ZERO), KinBalance(KinAmount(123))), values)
+            assertEquals(listOf(KinBalance(KinAmount(1000)), KinBalance(KinAmount(123))), values)
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).getAccount(eq(registeredAccount.id))
             verify(mockStorage).updateAccountInStorage(eq(accountFromService))
@@ -386,7 +390,7 @@ class KinAccountContextImplTest {
             })
         }.apply {
             assertNull(error)
-            assertEquals(listOf(KinBalance(KinAmount.ZERO), KinBalance(KinAmount(123))), values)
+            assertEquals(listOf(KinBalance(KinAmount(1000)), KinBalance(KinAmount(123))), values)
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).getAccount(eq(registeredAccount.id))
             verify(mockStorage).updateAccountInStorage(eq(accountFromService))
@@ -518,26 +522,26 @@ class KinAccountContextImplTest {
         val updatedAccountWithNewBalance = registeredAccount.merge(
             KinAccount(
                 registeredAccount.key,
-                balance = KinBalance(amountSpent)
+                balance = KinBalance( amountSpent)
             )
         )
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(
+        }.whenever(mockStorage).updateAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent + responseTransaction.fee.toKin())
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
 
         doAnswer {
             Promise.of(KinTransactions(listOf(responseTransaction), null, null))
         }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
 
-        sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
+        sut.sendKinPayment(KinAmount(123), destination.id).test(1000) {
             assertNull(error)
             assertEquals(responseTransaction.asKinPayments().first(), value)
 
-            verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).buildAndSignTransaction(
                 eq(registeredAccount),
                 eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
@@ -552,9 +556,9 @@ class KinAccountContextImplTest {
                 eq(registeredAccount.id),
                 eq(responseTransaction)
             )
-            verify(mockStorage).deductFromAccountBalance(
+            verify(mockStorage).updateAccountBalance(
                 eq(registeredAccount.id),
-                eq(amountSpent + responseTransaction.fee.toKin())
+                eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
             )
             verify(mockStorage).getStoredTransactions(eq(registeredAccount.id))
             verifyNoMoreInteractions(mockService)
@@ -617,9 +621,9 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(
+        }.whenever(mockStorage).updateAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent + responseTransaction.fee.toKin())
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
 
         doAnswer {
@@ -649,7 +653,7 @@ class KinAccountContextImplTest {
             assertEquals(responseTransaction.asKinPayments().first(), value)
         }
 
-        verify(mockStorage, times(3)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockStorage, times(6)).getStoredAccount(eq(registeredAccount.id))
         verify(mockService, times(3)).buildAndSignTransaction(
             eq(registeredAccount),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
@@ -662,9 +666,9 @@ class KinAccountContextImplTest {
             eq(registeredAccount.id),
             eq(responseTransaction)
         )
-        verify(mockStorage, times(3)).deductFromAccountBalance(
+        verify(mockStorage, times(3)).updateAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent + responseTransaction.fee.toKin())
+            eq(KinBalance(registeredAccount.balance.amount -amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
         verify(mockService, times(3)).canWhitelistTransactions()
@@ -738,9 +742,9 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(
+        }.whenever(mockStorage).updateAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent + responseTransaction.fee.toKin())
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
 
         doAnswer {
@@ -770,7 +774,7 @@ class KinAccountContextImplTest {
             assertEquals(responseTransaction.asKinPayments().first(), value)
         }
 
-        verify(mockStorage, times(3)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockStorage, times(8)).getStoredAccount(eq(registeredAccount.id))
         verify(mockService, times(2)).getAccount(eq(registeredAccount.id))
         verify(mockService, times(3)).buildAndSignTransaction(
             eq(registeredAccount),
@@ -789,9 +793,9 @@ class KinAccountContextImplTest {
             eq(registeredAccount.id),
             eq(responseTransaction)
         )
-        verify(mockStorage, times(3)).deductFromAccountBalance(
+        verify(mockStorage, times(3)).updateAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent + responseTransaction.fee.toKin())
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
         verify(mockService, times(3)).canWhitelistTransactions()
@@ -869,9 +873,9 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(
+        }.whenever(mockStorage).updateAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent + responseTransaction.fee.toKin())
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
 
         doAnswer {
@@ -901,7 +905,7 @@ class KinAccountContextImplTest {
             assertEquals(responseTransaction.asKinPayments().first(), value)
         }
 
-        verify(mockStorage, times(3)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockStorage, times(8)).getStoredAccount(eq(registeredAccount.id))
         verify(mockService, times(3)).buildAndSignTransaction(
             eq(registeredAccount),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
@@ -920,9 +924,9 @@ class KinAccountContextImplTest {
             eq(registeredAccount.id),
             eq(responseTransaction)
         )
-        verify(mockStorage, times(3)).deductFromAccountBalance(
+        verify(mockStorage, times(3)).updateAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent + responseTransaction.fee.toKin())
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
         verify(mockService, times(3)).canWhitelistTransactions()
@@ -1123,17 +1127,17 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(
+        }.whenever(mockStorage).updateAccountBalance(
             eq(registeredAccount.id),
-            eq(amountSpent + responseTransaction.fee.toKin())
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
         }.whenever(mockStorage2)
-            .deductFromAccountBalance(
+            .updateAccountBalance(
                 eq(registeredAccount2.id),
-                eq(amountSpent + responseTransaction.fee.toKin())
+                eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
             )
 
         val values = mutableListOf<List<String>>()
@@ -1308,7 +1312,7 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).deductFromAccountBalance(eq(registeredAccount.id), eq(amountSpent))
+        }.whenever(mockStorage).updateAccountBalance(eq(registeredAccount.id), eq(KinBalance(registeredAccount.balance.amount - amountSpent)))
 
         val values = mutableListOf<List<String>>()
 

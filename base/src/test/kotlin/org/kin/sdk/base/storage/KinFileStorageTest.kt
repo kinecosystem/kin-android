@@ -368,7 +368,7 @@ class KinFileStorageTest {
     }
 
     @Test
-    fun testDeductBalanceFromAccount() {
+    fun testUpdatetBalanceFromAccount() {
         val newAccount: KinAccount = TestUtils.newKinAccount()
         val updatedAccountWithBalance: KinAccount =
             newAccount.merge(KinAccount(key = newAccount.key, balance = KinBalance(KinAmount(100))))
@@ -377,7 +377,7 @@ class KinFileStorageTest {
 
         sut.addAccount(updatedAccountWithBalance)
 
-        sut.deductFromAccountBalance(newAccount.id, KinAmount(70)).test {
+        sut.updateAccountBalance(newAccount.id, KinBalance(KinAmount(100) - KinAmount(70))).test {
             assertEquals(value?.get(), expectedNewAccountBalance)
         }
     }

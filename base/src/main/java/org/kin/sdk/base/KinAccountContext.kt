@@ -11,7 +11,6 @@ import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
-import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
@@ -35,6 +34,7 @@ import org.kin.sdk.base.tools.ValueSubject
 import org.kin.sdk.base.tools.callback
 import org.kin.sdk.base.tools.listen
 import org.kin.stellarfork.KeyPair
+import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
 
 /**
@@ -430,14 +430,22 @@ class KinAccountContextImpl private constructor(
         transaction: KinTransaction
     ): Promise<List<KinPayment>> {
         return outgoingTransactions.queue(Promise.create { resolve, reject ->
-            fun attempt() =
-                service.submitTransaction(transaction)
-                    .doOnResolved { storage.advanceSequence(accountId) }
-                    .flatMap { submittedTransaction ->
-                        storage.insertNewTransactionInStorage(accountId, submittedTransaction)
-                            .map { submittedTransaction.asKinPayments() }
-                    }
-                    .doOnResolved { deductFromAccountBalance(it, transaction.fee) }
+            fun attempt(): Promise<List<KinPayment>> {
+                return computeExpectedNewBalance(transaction).flatMap { expectedNewBalance ->
+                    service.submitTransaction(transaction)
+                        .doOnResolved { storage.advanceSequence(accountId) }
+                        .flatMap { submittedTransaction ->
+                            storage.insertNewTransactionInStorage(accountId, submittedTransaction)
+                                .map { submittedTransaction.asKinPayments() }
+                        }
+                        .doOnResolved {
+                            // If we have an active stream then we rely on that update for balance changes
+                            if (accountStream == null) {
+                                storeAndNotifyOfBalanceUpdate(expectedNewBalance)
+                            }
+                        }
+                }
+            }
             attempt()
                 .then(
                     resolve,
@@ -547,7 +555,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
             .flatMap { storage.updateAccountInStorage(it) }
 
     private val lifecycle = DisposeBag()
-    private var accountStream: Observer<KinAccount>? = null
+    internal var accountStream: Observer<KinAccount>? = null
     private val streamLock = Any()
 
     private fun <T> Observer<T>.setupActiveStreamingUpdatesIfNecessary(mode: ObservationMode): Observer<T> {
@@ -559,7 +567,6 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                         accountStream = service.streamAccount(accountId).apply {
                             disposedBy(lifecycle)
                                 .flatMapPromise { kinAccount ->
-                                    println("Kin.accountStreamUpdate: $kinAccount")
                                     storage.updateAccountInStorage(kinAccount)
                                         .map { it.balance }
                                         .doOnResolved {
@@ -569,7 +576,10 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                                 }.resolve()
                         }
 
-                        doOnDisposed { lifecycle.dispose() }
+                        doOnDisposed {
+                            lifecycle.dispose()
+                            accountStream = null
+                        }
                     }
                 }
             }
@@ -677,23 +687,32 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
             .doOnResolved { balanceSubject.onNext(it) }
     }
 
-    protected fun deductFromAccountBalance(
-        payments: List<KinPayment>,
-        transactionFee: QuarkAmount
-    ) {
-        storage
-            .deductFromAccountBalance(
-                accountId,
-                with(payments) {
-                    var totalAmount = transactionFee.toKin()
-                    payments.filter {
+    protected fun computeExpectedNewBalance(transaction: KinTransaction): Promise<KinBalance> {
+        return storage.getStoredAccount(accountId)
+            .map {
+                val amountToDeduct = with(transaction.asKinPayments()) {
+                    var totalAmount = transaction.fee.toKin()
+                    filter {
                         it.destinationAccountId != accountId
                     }.forEach { payment ->
-                        totalAmount += (if (!payment.destinationAccountId.equals(payment.sourceAccountId)) payment.amount else KinAmount.ZERO)
+                        totalAmount += (if (!payment.destinationAccountId.equals(payment.sourceAccountId)) payment.amount else org.kin.sdk.base.models.KinAmount.ZERO)
                     }
                     totalAmount
                 }
-            )
+                it.map {
+                    val newAmount = with(it.balance.amount - amountToDeduct) {
+                        if (this.value < BigDecimal.ZERO) KinAmount.ZERO else this
+                    }
+                    it.balance.copy(
+                        amount = newAmount,
+                        pendingAmount = newAmount
+                    )
+                }.orElse(KinBalance())
+            }
+    }
+
+    protected fun storeAndNotifyOfBalanceUpdate(newBalance: KinBalance) {
+        storage.updateAccountBalance(accountId, newBalance)
             .doOnResolved { it.map { balanceSubject.onNext(it.balance) } }
             .doOnResolved {
                 storage.getStoredTransactions(accountId)
@@ -702,7 +721,6 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
             }
             .resolve()
     }
-
 
     // Idiomatic Variants of Primary Functions
 
