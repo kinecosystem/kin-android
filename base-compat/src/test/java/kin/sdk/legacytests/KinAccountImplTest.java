@@ -9,6 +9,7 @@ import org.kin.sdk.base.models.Key;
 import org.kin.sdk.base.models.KinAccount;
 import org.kin.sdk.base.models.KinAmount;
 import org.kin.sdk.base.models.KinBalance;
+import org.kin.sdk.base.models.KinMemo;
 import org.kin.sdk.base.models.KinPayment;
 import org.kin.sdk.base.models.StellarBaseTypeConversionsKt;
 import org.kin.sdk.base.models.TransactionHash;
@@ -279,14 +280,14 @@ public class KinAccountImplTest {
 
     @Test
     public void buildAndSendTransactionAsync_withMemo() throws Exception {
-        KinTransaction kinTransaction = TestUtils.kinTransactionFromXDR("AAAAAEGrP0T7PuIGKHYAFCWxuX5itkzbZwZFXpxBMbFOpSVaAAAAZABnD30AAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAABAAAACHNvbWVNZW1vAAAAAQAAAAAAAAABAAAAAEGrP0T7PuIGKHYAFCWxuX5itkzbZwZFXpxBMbFOpSVaAAAAAAAAAAAAu67gAAAAAAAAAAFOpSVaAAAAQOfavLG+DXPps3C6p2T8As5h4HVhmMykoTK7BRWb6O+sJROjcTFztuvsAZC1jXPqI4rb3NQiU3b6T5v8LjlhUAQ=");
+        KinTransaction kinTransaction = TestUtils.kinTransactionFromXDR("AAAAANjf/bJmcEcUJlHQ9wterZa4+GNRUXuNzzk80U3de+EYAAAAZABwt4MAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAABAAAADzEtMWEyYy1zb21lTWVtbwAAAAABAAAAAAAAAAEAAAAA2N/9smZwRxQmUdD3C16tlrj4Y1FRe43POTzRTd174RgAAAAAAAAAAABT7GAAAAAAAAAAAd174RgAAABAayE9lgf1HOE6GzRfl0p1WF53iIDCfJ7kScfMOLJE6hMcRJYBfxEoh60+E1fPoDXkPo9XtMMz/mdn3TwnzUslAQ==");
         KinPayment kinPayment = StellarBaseTypeConversionsKt.asKinPayments(kinTransaction).get(0);
         TransactionId expectedTransactionId = new TransactionIdImpl(kinTransaction.getTransactionHash());
 
         String expectedAccountId = kinTransaction.getSigningSource().encodeAsString();
-        BigDecimal expectedAmount = StellarBaseTypeConversionsKt.asKinPayments(kinTransaction).get(0).getAmount().getValue();
+        BigDecimal expectedAmount = new BigDecimal("55.0");
 
-        when(mockKinService.buildAndSignTransaction(any(), any(), any(), any()))
+        when(mockKinService.buildAndSignTransaction(any(), any(), eq(new KinMemo("1-1a2c-someMemo")), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
         when(mockAccountContext.sendKinTransaction(any()))
                 .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
@@ -335,6 +336,68 @@ public class KinAccountImplTest {
         verifyNoMoreInteractions(mockAccountContext);
 
         assertEquals(expectedTransactionId, transactionId[0]);
+        assertEquals("1-1a2c-someMemo", transaction[0].getMemo());
+    }
+
+    @Test
+    public void buildAndSendTransactionAsync_noMemo() throws Exception {
+        KinTransaction kinTransaction = TestUtils.kinTransactionFromXDR("AAAAANjf/bJmcEcUJlHQ9wterZa4+GNRUXuNzzk80U3de+EYAAAAZABwt4MAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAABAAAABzEtMWEyYy0AAAAAAQAAAAAAAAABAAAAANjf/bJmcEcUJlHQ9wterZa4+GNRUXuNzzk80U3de+EYAAAAAAAAAAAAU+xgAAAAAAAAAAHde+EYAAAAQBn/cX7q5P0wREQtwH5De74Rufr9GSz7yLeQyRPDb13wEEkVVzfd6ArC1enu0kERFjlz1t+i3jOZRDmfuApoKw4=");
+        KinPayment kinPayment = StellarBaseTypeConversionsKt.asKinPayments(kinTransaction).get(0);
+        TransactionId expectedTransactionId = new TransactionIdImpl(kinTransaction.getTransactionHash());
+
+        String expectedAccountId = kinTransaction.getSigningSource().encodeAsString();
+        BigDecimal expectedAmount = new BigDecimal("55.0");
+
+        when(mockKinService.buildAndSignTransaction(any(), any(), eq(new KinMemo("1-1a2c-")), any()))
+                .thenReturn(Promise.Companion.of(kinTransaction));
+        when(mockAccountContext.sendKinTransaction(any()))
+                .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
+
+        final Transaction[] transaction = new Transaction[1];
+
+        UtilsKt.latchOperation(countDownLatch -> {
+            kinAccount.buildTransaction(expectedAccountId, expectedAmount, 100).run(new ResultCallback<Transaction>() {
+                @Override
+                public void onResult(Transaction result) {
+                    transaction[0] = result;
+                    countDownLatch.countDown();
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    countDownLatch.countDown();
+                }
+            });
+            return null;
+        });
+
+        final TransactionId[] transactionId = new TransactionId[1];
+
+        UtilsKt.latchOperation(countDownLatch -> {
+            kinAccount.sendTransaction(transaction[0]).run(new ResultCallback<TransactionId>() {
+                @Override
+                public void onResult(TransactionId result) {
+                    transactionId[0] = result;
+                    countDownLatch.countDown();
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    countDownLatch.countDown();
+                }
+            });
+            return null;
+        });
+
+        verify(mockKinService).buildAndSignTransaction(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinTransaction(any());
+        verify(mockAccountContext).getAccount();
+
+        verifyNoMoreInteractions(mockKinService);
+        verifyNoMoreInteractions(mockAccountContext);
+
+        assertEquals(expectedTransactionId, transactionId[0]);
+        assertEquals("1-1a2c-", transaction[0].getMemo());
     }
 
     @Test

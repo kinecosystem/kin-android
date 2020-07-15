@@ -239,7 +239,7 @@ internal class KinAccountImpl(
                         KeyPair.fromAccountId(publicAddress).asKinAccountId()
                     )
                 ),
-                memo?.let { buildMemo(it)} ?: KinMemo.NONE,
+                buildMemo(memo ?: ""),
                 QuarkAmount(fee.toLong())
             )
             .map { it.asTransaction(network) }
