@@ -23,9 +23,7 @@ dependencies {
 }
 repositories {
     // ...
-    maven {
-        url  "https://kinecosystem.bintray.com/kin-android"
-    }
+    jcenter()
 }
 ```
 Alternatively...there is a shaded artifact for those that are having difficuly resolving common dependencies (e.g. grpc, guava, other google transitive deps)

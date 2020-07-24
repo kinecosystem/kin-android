@@ -21,9 +21,7 @@ dependencies {
 }
 repositories {
     // ...
-    maven {
-        url  "https://kinecosystem.bintray.com/kin-android"
-    }
+    jcenter()
 }
 ```
 
