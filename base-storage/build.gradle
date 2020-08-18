@@ -10,7 +10,6 @@ buildscript {
 
 apply plugin: "java"
 apply plugin: "com.google.protobuf"
-apply plugin: "maven"
 apply plugin: "maven-publish"
 apply plugin: 'com.jfrog.bintray'
 
@@ -61,7 +60,6 @@ protobuf {
 }
 
 jar {
-    baseName = 'base-storage'
     manifest {
         attributes('kin-storage': project.name,
                 'Version': project.version)

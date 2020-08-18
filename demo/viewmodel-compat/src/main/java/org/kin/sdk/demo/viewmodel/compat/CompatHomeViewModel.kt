@@ -4,12 +4,12 @@ import android.app.Activity
 import kin.backupandrestore.BackupAndRestoreManager
 import kin.sdk.KinClient
 import org.kin.sdk.demo.viewmodel.HomeViewModel
-import org.kin.sdk.demo.viewmodel.Navigator
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.WalletViewModel
-import org.kin.sdk.demo.viewmodel.tools.BaseViewModel
+import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 
 class CompatHomeViewModel(
-    private val navigator: Navigator,
+    private val navigator: DemoNavigator,
     args: HomeViewModel.NavigationArgs,
     private val testNetClient: KinClient,
     private val mainNetClient: KinClient
@@ -122,7 +122,7 @@ class CompatHomeViewModel(
         updateAccounts()
     }
 
-    override fun getDefaultState(): HomeViewModel.State = HomeViewModel.State(args.resolverType, emptyList(), emptyList())
+    override fun getDefaultState(): HomeViewModel.State = HomeViewModel.State(args.resolverType, emptyList(), emptyList(), emptyList())
 
     init {
         createNewAccountIfNeededAndRefreshAccountList()

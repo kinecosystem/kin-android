@@ -21,7 +21,5 @@ interface KinAccountApi {
         request: GetAccountRequest,
         onCompleted: (GetAccountResponse) -> Unit
     )
-
-    fun streamAccount(kinAccountId: KinAccount.Id): Observer<KinAccount>
 }
 

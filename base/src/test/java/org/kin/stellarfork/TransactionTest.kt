@@ -258,11 +258,10 @@ class TransactionTest {
         val account =
             Account(source, 2908908335136768L)
         try {
-            val transaction =
-                Transaction.Builder(
-                    account,
-                    testNetwork
-                ).build()
+            Transaction.Builder(
+                account,
+                testNetwork
+            ).build()
             Assert.fail()
         } catch (exception: RuntimeException) {
             Assert.assertTrue(exception.message!!.contains("At least one operation required"))

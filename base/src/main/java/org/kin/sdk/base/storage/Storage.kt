@@ -1,7 +1,7 @@
 package org.kin.sdk.base.storage
 
+import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.KinAccount
-import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.stellar.models.KinTransaction
@@ -22,6 +22,7 @@ interface Storage {
     fun putTransactions(key: KinAccount.Id, transactions: KinTransactions)
     fun removeAllTransactions(key: KinAccount.Id): Boolean
 
+    fun removeAllInvoices(account: KinAccount.Id): Boolean
 
     fun getTransactions(key: KinAccount.Id): KinTransactions?
 
@@ -50,6 +51,15 @@ interface Storage {
         newTransaction: KinTransaction
     ): Promise<List<KinTransaction>>
 
+    fun addInvoiceLists(
+        accountId: KinAccount.Id,
+        invoiceLists: List<InvoiceList>
+    ): Promise<List<InvoiceList>>
+
+    fun getInvoiceListsMapForAccountId(
+        account: KinAccount.Id
+    ): Promise<Map<InvoiceList.Id, InvoiceList>>
+
     fun getStoredAccount(accountId: KinAccount.Id): Promise<Optional<KinAccount>>
 
     fun updateAccountInStorage(account: KinAccount): Promise<KinAccount>
@@ -59,7 +69,7 @@ interface Storage {
         balance: KinBalance
     ): Promise<Optional<KinAccount>>
 
-    fun setMinFee(it: QuarkAmount): Promise<Optional<QuarkAmount>>
+    fun setMinFee(minFee: QuarkAmount): Promise<Optional<QuarkAmount>>
 
     fun getMinFee(): Promise<Optional<QuarkAmount>>
 

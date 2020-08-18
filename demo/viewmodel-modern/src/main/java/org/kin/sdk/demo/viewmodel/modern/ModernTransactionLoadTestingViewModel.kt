@@ -1,16 +1,17 @@
 package org.kin.sdk.demo.viewmodel.modern
 
 import org.kin.sdk.base.KinAccountContext
+import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
-import org.kin.sdk.base.models.KinMemo
-import org.kin.sdk.demo.viewmodel.Navigator
+import org.kin.sdk.demo.di.modern.DemoAppConfig
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.TransactionLoadTestingViewModel
-import org.kin.sdk.demo.viewmodel.tools.BaseViewModel
+import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 import kotlin.math.floor
 
 class ModernTransactionLoadTestingViewModel(
-    navigator: Navigator,
+    @Suppress("UNUSED_PARAMETER") navigator: DemoNavigator,
     args: TransactionLoadTestingViewModel.NavigationArgs,
     private val kinAccountContext: KinAccountContext
 ) : TransactionLoadTestingViewModel,
@@ -42,7 +43,10 @@ class ModernTransactionLoadTestingViewModel(
         kinAccountContext.sendKinPayment(
             KinAmount(10),
             KinAccount.Id(destinationAddress),
-            KinMemo.NONE
+            KinBinaryMemo.Builder(DemoAppConfig.DEMO_APP_IDX.value)
+                .setTranferType(KinBinaryMemo.TransferType.P2P)
+                .build()
+                .toKinMemo()
         ).then({
             val endTime = System.nanoTime()
             val totalTime = endTime - startTime

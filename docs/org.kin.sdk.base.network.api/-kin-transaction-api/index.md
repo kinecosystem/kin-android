@@ -30,4 +30,5 @@
 
 | Name | Summary |
 |---|---|
+| [AgoraKinTransactionsApi](../../org.kin.sdk.base.network.api.proto/-agora-kin-transactions-api/index.md) | `class AgoraKinTransactionsApi : `[`GrpcApi`](../../org.kin.sdk.base.network.api.proto/-grpc-api/index.md)`, `[`KinTransactionApi`](./index.md)`, `[`KinTransactionWhitelistingApi`](../-kin-transaction-whitelisting-api/index.md) |
 | [HorizonKinApi](../../org.kin.sdk.base.network.api.rest/-horizon-kin-api/index.md) | `class HorizonKinApi : `[`KinJsonApi`](../../org.kin.sdk.base.network.api.rest/-kin-json-api/index.md)`, `[`KinAccountApi`](../-kin-account-api/index.md)`, `[`KinTransactionApi`](./index.md) |

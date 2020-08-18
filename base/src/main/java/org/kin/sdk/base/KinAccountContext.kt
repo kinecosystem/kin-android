@@ -4,6 +4,9 @@ import org.kin.sdk.base.KinAccountContextImpl.ExistingAccountBuilder
 import org.kin.sdk.base.KinAccountContextImpl.NewAccountBuilder
 import org.kin.sdk.base.KinAccountContextReadOnlyImpl.ReadOnlyAccountBuilder
 import org.kin.sdk.base.ObservationMode.Passive
+import org.kin.sdk.base.models.KinBinaryMemo
+import org.kin.sdk.base.models.AppIdx
+import org.kin.sdk.base.models.Invoice
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
@@ -11,6 +14,7 @@ import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
@@ -18,6 +22,9 @@ import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.merge
 import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
+import org.kin.sdk.base.network.api.agora.sha224Hash
+import org.kin.sdk.base.network.api.agora.toProto
+import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.storage.Storage
@@ -27,6 +34,7 @@ import org.kin.sdk.base.tools.ExecutorServices
 import org.kin.sdk.base.tools.ListObserver
 import org.kin.sdk.base.tools.ListSubject
 import org.kin.sdk.base.tools.Observer
+import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.base.tools.PromiseQueue
 import org.kin.sdk.base.tools.ValueListener
@@ -36,6 +44,7 @@ import org.kin.sdk.base.tools.listen
 import org.kin.stellarfork.KeyPair
 import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Describes the mode by which updates are
@@ -148,6 +157,9 @@ interface KinPaymentReadOperationsAltIdioms {
 }
 
 interface KinPaymentReadOperations : KinPaymentReadOperationsAltIdioms {
+
+    fun calculateFee(numberOfOperations: Int): Promise<QuarkAmount>
+
     /**
      * Retrieves the last N [KinPayment]s sent or received by the
      * account and listens for future payments over time.
@@ -187,6 +199,7 @@ interface KinPaymentWriteOperationsAltIdioms {
         amount: KinAmount,
         destinationAccount: KinAccount.Id,
         memo: KinMemo = KinMemo.NONE,
+        invoice: Optional<Invoice> = Optional.empty(),
         paymentCallback: Callback<KinPayment>
     )
 
@@ -201,6 +214,17 @@ interface KinPaymentWriteOperationsAltIdioms {
 }
 
 interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
+
+    val appInfoProvider: AppInfoProvider?
+
+    fun payInvoice(
+        invoice: Invoice,
+        destinationAccount: KinAccount.Id,
+        processingAppIdx: AppIdx = appInfoProvider?.appInfo?.appIndex
+            ?: throw RuntimeException("Need to specify an AppIdx"),
+        type: KinBinaryMemo.TransferType = KinBinaryMemo.TransferType.Spend
+    ): Promise<KinPayment>
+
     /**
      * Send an amount of Kin to a [destinationAccount] to the Kin Blockchain for processing.
      *
@@ -213,7 +237,8 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
     fun sendKinPayment(
         amount: KinAmount,
         destinationAccount: KinAccount.Id,
-        memo: KinMemo = KinMemo.NONE
+        memo: KinMemo = KinMemo.NONE,
+        invoice: Optional<Invoice> = Optional.empty()
     ): Promise<KinPayment>
 
     /**
@@ -255,6 +280,8 @@ interface KinAccountContext : KinAccountContextReadOnly, KinPaymentWriteOperatio
     class Builder(private val env: KinEnvironment) {
 
         constructor(envBuilder: KinEnvironment.Horizon.Builder.CompletedBuilder) : this(envBuilder.build())
+
+        constructor(envBuilder: KinEnvironment.Agora.Builder.CompletedBuilder) : this(envBuilder.build())
 
         fun createNewAccount() = NewAccountBuilder(env)
 
@@ -346,7 +373,8 @@ class KinAccountContextImpl private constructor(
     override val executors: ExecutorServices,
     override val service: KinService,
     override val storage: Storage,
-    override val accountId: KinAccount.Id
+    override val accountId: KinAccount.Id,
+    override val appInfoProvider: AppInfoProvider?
 ) : KinAccountContextBase(), KinAccountContext {
 
     /**
@@ -360,7 +388,8 @@ class KinAccountContextImpl private constructor(
             env.executors,
             env.service,
             env.storage,
-            setupNewAccount(env.storage).id
+            setupNewAccount(env.storage).id,
+            (env as? KinEnvironment.Agora)?.appInfoProvider
         )
 
         private fun setupNewAccount(storage: Storage): KinAccount {
@@ -380,7 +409,13 @@ class KinAccountContextImpl private constructor(
         private val accountId: KinAccount.Id
     ) {
         fun build(): KinAccountContext =
-            KinAccountContextImpl(env.executors, env.service, env.storage, accountId)
+            KinAccountContextImpl(
+                env.executors,
+                env.service,
+                env.storage,
+                accountId,
+                (env as? KinEnvironment.Agora)?.appInfoProvider
+            )
     }
 
     private val outgoingTransactions = PromiseQueue<List<KinPayment>>()
@@ -418,24 +453,46 @@ class KinAccountContextImpl private constructor(
                 } else accountToStore
             }
 
+    override fun payInvoice(
+        invoice: Invoice,
+        destinationAccount: KinAccount.Id,
+        processingAppIdx: AppIdx,
+        type: KinBinaryMemo.TransferType
+    ): Promise<KinPayment> {
+        return sendKinPayment(
+            invoice.total,
+            destinationAccount,
+            KinBinaryMemo.Builder(processingAppIdx.value)
+                .setForeignKey(listOf(invoice).toProto().sha224Hash().decode())
+                .setTranferType(type)
+                .build()
+                .toKinMemo(),
+            Optional.of(invoice)
+        )
+    }
+
     override fun sendKinPayment(
         amount: KinAmount,
         destinationAccount: KinAccount.Id,
-        memo: KinMemo
+        memo: KinMemo,
+        invoice: Optional<Invoice>
     ): Promise<KinPayment> =
-        sendKinPayments(listOf(KinPaymentItem(amount, destinationAccount)), memo)
+        sendKinPayments(listOf(KinPaymentItem(amount, destinationAccount, invoice)), memo)
             .map { it.first() }
 
     override fun sendKinTransaction(
         transaction: KinTransaction
     ): Promise<List<KinPayment>> {
-        return outgoingTransactions.queue(Promise.create { resolve, reject ->
-            fun attempt(): Promise<List<KinPayment>> {
-                return computeExpectedNewBalance(transaction).flatMap { expectedNewBalance ->
+        return outgoingTransactions.queue(
+            computeExpectedNewBalance(transaction)
+                .flatMap { expectedNewBalance ->
                     service.submitTransaction(transaction)
                         .doOnResolved { storage.advanceSequence(accountId) }
                         .flatMap { submittedTransaction ->
-                            storage.insertNewTransactionInStorage(accountId, submittedTransaction)
+                            storage.insertNewTransactionInStorage(
+                                accountId,
+                                submittedTransaction.copy(invoiceList = transaction.invoiceList)
+                            )
                                 .map { submittedTransaction.asKinPayments() }
                         }
                         .doOnResolved {
@@ -445,49 +502,59 @@ class KinAccountContextImpl private constructor(
                             }
                         }
                 }
-            }
-            attempt()
-                .then(
-                    resolve,
-                    { error ->
-                        when (error) {
-                            is KinService.BadSequenceNumberInRequest -> {
-                                service.getAccount(accountId)
-                                    .flatMap { storage.updateAccountInStorage(it) }
-                                    .then({
-                                        attempt()
-                                            .then(resolve, { reject.invoke(it) })
-                                    }, { reject.invoke(it) })
-                            }
-                            is KinService.InsufficientFeeInRequest -> {
-                                service.getMinFee()
-                                    .flatMap { storage.setMinFee(it) }
-                                    .then({
-                                        attempt()
-                                            .then(resolve, { reject.invoke(it) })
-                                    }, { reject.invoke(it) })
-                            }
-                            else -> {
-                                reject.invoke(error)
-                            }
-                        }
-                    }
-                )
-        })
+        )
     }
 
     override fun sendKinPayments(
         payments: List<KinPaymentItem>,
         memo: KinMemo
     ): Promise<List<KinPayment>> {
-        return getAccount()
-            .flatMap {
-                getFee().flatMap { fee ->
-                    service.buildAndSignTransaction(it, payments, memo, fee)
+        val MAX_ATTEMPTS = 2
+        fun attempt(number: Int) =
+            getAccount()
+                .flatMap {
+                    calculateFee(payments.size).flatMap { fee ->
+                        service.buildAndSignTransaction(it, payments, memo, fee)
+                    }
                 }
-            }
-            .flatMap(::sendKinTransaction)
-            .workOn(executors.parallelIO)
+                .flatMap(::sendKinTransaction)
+                .workOn(executors.parallelIO)
+
+        return Promise.create { resolve, reject ->
+            var attemptNumber = 0
+            attempt(attemptNumber)
+                .then(
+                    resolve,
+                    { error ->
+                        if (attemptNumber >= MAX_ATTEMPTS) {
+                            reject(error)
+                        } else {
+                            when (error) {
+                                is KinService.FatalError.BadSequenceNumberInRequest -> {
+                                    service.getAccount(accountId)
+                                        .flatMap { storage.updateAccountInStorage(it) }
+                                        .then({
+                                            attempt(++attemptNumber)
+                                                .then(resolve, { reject.invoke(it) })
+                                        }, { reject.invoke(it) })
+
+                                }
+                                is KinService.FatalError.InsufficientFeeInRequest -> {
+                                    service.getMinFee()
+                                        .flatMap { storage.setMinFee(it) }
+                                        .then({
+                                            attempt(++attemptNumber)
+                                                .then(resolve, { reject.invoke(it) })
+                                        }, { reject.invoke(it) })
+                                }
+                                else -> {
+                                    reject.invoke(error)
+                                }
+                            }
+                        }
+                    }
+                )
+        }
     }
 
     // Idiomatic Variants of Primary Functions
@@ -504,6 +571,7 @@ class KinAccountContextImpl private constructor(
         amount: KinAmount,
         destinationAccount: KinAccount.Id,
         memo: KinMemo,
+        invoice: Optional<Invoice>,
         paymentCallback: Callback<KinPayment>
     ) = sendKinPayment(amount, destinationAccount, memo).callback(paymentCallback)
 
@@ -569,9 +637,15 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                                 .flatMapPromise { kinAccount ->
                                     storage.updateAccountInStorage(kinAccount)
                                         .map { it.balance }
-                                        .doOnResolved {
-                                            balanceSubject.onNext(it)
-                                            fetchUpdatedTransactionHistory().resolve()
+                                        .doOnResolved { balance ->
+                                            // Yea...this 5s delay is gross but reads aren't
+                                            // deterministic with the account update events so
+                                            // instead of polling (worse), we delay for a
+                                            // 'best effort' history update.
+                                            // TODO: Maybe we can do better with a future event for history updates.
+                                            Promise.defer { fetchUpdatedTransactionHistory() }
+                                                .doOnResolved { balanceSubject.onNext(balance) }
+                                                .resolveIn(5, TimeUnit.SECONDS)
                                         }
                                 }.resolve()
                         }
@@ -594,10 +668,11 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
 
     override fun observePayments(mode: ObservationMode): ListObserver<KinPayment> {
         return when (mode) {
-            Passive -> with(paymentsSubject) { requestInvalidation() } as ListObserver<KinPayment>
-            ObservationMode.Active -> with(paymentsSubject) { requestInvalidation() }.setupActiveStreamingUpdatesIfNecessary(
-                mode
-            ) as ListObserver<KinPayment>
+            Passive -> paymentsSubject.apply { requestInvalidation() }
+            ObservationMode.Active -> paymentsSubject.apply {
+                requestInvalidation()
+                setupActiveStreamingUpdatesIfNecessary(mode)
+            }
             ObservationMode.ActiveNewOnly -> {
                 ListSubject<KinPayment>()
                     .apply {
@@ -626,6 +701,22 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
 
     override fun clearStorage(): Promise<Boolean> = storage.deleteAllStorage(accountId)
 
+
+    override fun calculateFee(numberOfOperations: Int): Promise<QuarkAmount> =
+        service.canWhitelistTransactions()
+            .flatMap {
+                if (it) Promise.of(KinAmount.ZERO.toQuarks())
+                else {
+                    storage.getMinFee()
+                        .flatMap {
+                            it.map { Promise.of(it) }
+                                .orElse {
+                                    service.getMinFee()
+                                        .doOnResolved { storage.setMinFee(it).resolve() }
+                                }
+                        }.map { QuarkAmount(it.value * numberOfOperations) }
+                }
+            }
 
     // Internal
 
@@ -661,21 +752,6 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
             .flatMap { storage.upsertOldTransactionsInStorage(accountId, it) }
     }
 
-    protected fun getFee() = service.canWhitelistTransactions()
-        .flatMap {
-            if (it) Promise.of(KinAmount.ZERO.toQuarks())
-            else {
-                storage.getMinFee()
-                    .flatMap {
-                        it.map { Promise.of(it) }
-                            .orElse {
-                                service.getMinFee()
-                                    .doOnResolved { storage.setMinFee(it).resolve() }
-                            }
-                    }
-            }
-        }
-
     protected fun fetchUpdatedTransactionHistory(): Promise<List<KinTransaction>> =
         requestNextPage().map { it }
             .doOnResolved { paymentsSubject.onNext(it.asKinPayments(true)) }
@@ -695,7 +771,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                     filter {
                         it.destinationAccountId != accountId
                     }.forEach { payment ->
-                        totalAmount += (if (!payment.destinationAccountId.equals(payment.sourceAccountId)) payment.amount else org.kin.sdk.base.models.KinAmount.ZERO)
+                        totalAmount += (if (!payment.destinationAccountId.equals(payment.sourceAccountId)) payment.amount else KinAmount.ZERO)
                     }
                     totalAmount
                 }

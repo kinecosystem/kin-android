@@ -1,5 +1,6 @@
 package org.kin.sdk.base.stellar.models
 
+import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinMemo
@@ -18,10 +19,11 @@ import org.kin.stellarfork.xdr.TransactionResultCode
 import org.kin.stellarfork.xdr.XdrDataInputStream
 import java.io.ByteArrayInputStream
 
-class KinTransaction @JvmOverloads constructor(
+data class KinTransaction @JvmOverloads constructor(
     val envelopeXdrBytes: ByteArray,
     val recordType: RecordType = RecordType.InFlight(System.currentTimeMillis()),
-    val networkEnvironment: NetworkEnvironment
+    val networkEnvironment: NetworkEnvironment,
+    val invoiceList: InvoiceList? = null
 ) {
     sealed class RecordType(val value: Int) {
         abstract val timestamp: Long
@@ -190,12 +192,14 @@ class KinTransaction @JvmOverloads constructor(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (javaClass != other?.javaClass) return false
+        if (other !is KinTransaction) return false
 
-        other as KinTransaction
+        if (!envelopeXdrBytes.contentEquals(other.envelopeXdrBytes)) return false
+        if (recordType != other.recordType) return false
+        if (networkEnvironment != other.networkEnvironment) return false
+        if (invoiceList != other.invoiceList) return false
 
-        return this.envelopeXdrBytes.contentEquals(other.envelopeXdrBytes) &&
-                this.recordType.equals(other.recordType)
+        return true
     }
 
     override fun hashCode(): Int {

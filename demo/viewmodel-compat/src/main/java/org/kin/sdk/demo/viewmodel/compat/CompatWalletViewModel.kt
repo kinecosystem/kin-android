@@ -3,22 +3,22 @@ package org.kin.sdk.demo.viewmodel.compat
 import android.app.Activity
 import android.util.Log
 import kin.backupandrestore.BackupAndRestoreManager
+import kin.sdk.AccountStatus
 import kin.sdk.Balance
 import kin.sdk.KinClient
 import kin.sdk.ListenerRegistration
-import kin.sdk.PaymentInfo
 import kin.utils.ResultCallback
-import org.kin.sdk.demo.viewmodel.Navigator
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.SendTransactionViewModel
 import org.kin.sdk.demo.viewmodel.TransactionLoadTestingViewModel
 import org.kin.sdk.demo.viewmodel.WalletOnboarding
 import org.kin.sdk.demo.viewmodel.WalletViewModel
-import org.kin.sdk.demo.viewmodel.tools.BaseViewModel
+import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 import java.math.BigDecimal
 import java.math.BigInteger
 
 class CompatWalletViewModel(
-    private val navigator: Navigator,
+    private val navigator: DemoNavigator,
     args: WalletViewModel.NavigationArgs,
     private val client: KinClient
 ) : WalletViewModel, BaseViewModel<WalletViewModel.NavigationArgs, WalletViewModel.State>(args) {
@@ -56,9 +56,8 @@ class CompatWalletViewModel(
         }
     }
 
-    private inner class ShowScanCodeActionViewModel(override val publicAddress: String) : WalletViewModel.ShowScanCodeActionViewModel
-
-    private inner class CopyAddressActionViewModel(override val publicAddress: String) : WalletViewModel.CopyAddressActionViewModel
+    private inner class CopyAddressActionViewModel(override val publicAddress: String) :
+        WalletViewModel.CopyAddressActionViewModel
 
     private inner class ExportWalletActionViewModel : WalletViewModel.ExportWalletActionViewModel {
         override fun onItemTapped(activity: Any) {
@@ -66,30 +65,47 @@ class CompatWalletViewModel(
         }
     }
 
-    private inner class SendTransactionActionViewModel : WalletViewModel.SendTransactionActionViewModel {
+    private inner class SendTransactionActionViewModel :
+        WalletViewModel.SendTransactionActionViewModel {
         override fun onItemTapped() {
-            navigator.navigateTo(SendTransactionViewModel.NavigationArgs(args.walletIndex, args.publicAddress))
+            navigator.navigateTo(
+                SendTransactionViewModel.NavigationArgs(
+                    args.walletIndex,
+                    args.publicAddress
+                )
+            )
         }
     }
 
-    private inner class LatencyTestTransactionActionViewModel : WalletViewModel.LatencyTestTransactionActionViewModel {
+    private inner class LatencyTestTransactionActionViewModel :
+        WalletViewModel.LatencyTestTransactionActionViewModel {
         override fun onItemTapped() {
-            navigator.navigateTo(TransactionLoadTestingViewModel.NavigationArgs(args.walletIndex, args.publicAddress))
+            navigator.navigateTo(
+                TransactionLoadTestingViewModel.NavigationArgs(
+                    args.walletIndex,
+                    args.publicAddress
+                )
+            )
         }
     }
 
-    private inner class PaymentHistoryItemViewModel(
+    private data class PaymentHistoryItemViewModel(
         override val amount: BigDecimal,
         override val memo: String,
         override val sourceWallet: String,
         override val date: Long
-    ) : WalletViewModel.PaymentHistoryItemViewModel
+    ) : WalletViewModel.PaymentHistoryItemViewModel {
+        override fun onItemTapped() {
+        }
+    }
 
     private val wallet = client.getAccount(args.walletIndex)
 
     override fun getDefaultState() = WalletViewModel.State(
-        wallet.publicAddress!!,
-        null,
+        WalletViewModel.WalletHeaderViewModel(
+            wallet.publicAddress!!,
+        null
+        ),
         WalletViewModel.WalletStatus.Unknown,
         listOf(
             CopyAddressActionViewModel(wallet.publicAddress!!),
@@ -104,6 +120,51 @@ class CompatWalletViewModel(
         listeners.add(observeBalance())
         listeners.add(observeAccountCreation())
         listeners.add(observePayments())
+
+        wallet.status.run(object : ResultCallback<Int> {
+            override fun onResult(result: Int?) {
+                when {
+                    result == AccountStatus.CREATED -> {
+// Fund Account
+                        wallet.balance.run(object : ResultCallback<Balance> {
+                            override fun onResult(result: Balance) {
+
+                                if(result.value().toBigInteger() != BigInteger.ZERO) {
+                                    return
+                                }
+
+                                try {
+                                    WalletOnboarding().fundAccount(
+                                        wallet.publicAddress!!,
+                                        BigInteger.valueOf(10000)
+                                    ) { ex ->
+                                        if (ex != null) {
+                                            Log.e("KIN", "error funding wallet", ex)
+                                        }
+
+                                        checkBalance()
+                                    }
+                                } catch (ex: Throwable) {
+
+                                }
+                            }
+
+                            override fun onError(e: java.lang.Exception?) {
+
+                            }
+                        })
+                    }
+                    else -> {
+
+                    }
+                }
+            }
+
+            override fun onError(e: java.lang.Exception?) {
+                TODO("Not yet implemented")
+            }
+
+        })
     }
 
     private fun observePayments(): ListenerRegistration {
@@ -142,11 +203,13 @@ class CompatWalletViewModel(
     }
 
     private fun makeStateInactive(previousState: WalletViewModel.State): WalletViewModel.State {
-        return previousState.copy(walletActions = listOf(
-            CopyAddressActionViewModel(wallet.publicAddress!!),
-            OnboardActionViewModel(),
-            DeleteWalletActionViewModel()
-        ), walletStatus = WalletViewModel.WalletStatus.Inactive)
+        return previousState.copy(
+            walletActions = listOf(
+                CopyAddressActionViewModel(wallet.publicAddress!!),
+                OnboardActionViewModel(),
+                DeleteWalletActionViewModel()
+            ), walletStatus = WalletViewModel.WalletStatus.Inactive
+        )
     }
 
     private fun makeStateActive(previousState: WalletViewModel.State): WalletViewModel.State {
@@ -155,13 +218,15 @@ class CompatWalletViewModel(
             return previousState
         }
 
-        return previousState.copy(walletActions = listOf(
-            CopyAddressActionViewModel(wallet.publicAddress!!),
-            SendTransactionActionViewModel(),
-            LatencyTestTransactionActionViewModel(),
-            ExportWalletActionViewModel(),
-            DeleteWalletActionViewModel()
-        ), walletStatus = WalletViewModel.WalletStatus.Active)
+        return previousState.copy(
+            walletActions = listOf(
+                CopyAddressActionViewModel(wallet.publicAddress!!),
+                SendTransactionActionViewModel(),
+                LatencyTestTransactionActionViewModel(),
+                ExportWalletActionViewModel(),
+                DeleteWalletActionViewModel()
+            ), walletStatus = WalletViewModel.WalletStatus.Active
+        )
     }
 
     private fun checkBalance() {
@@ -171,7 +236,7 @@ class CompatWalletViewModel(
                     if (balance == null) {
                         makeStateInactive(previousState)
                     } else {
-                        makeStateActive(previousState).copy(balance = balance.value())
+                        makeStateActive(previousState).copy(walletHeaderViewModel = previousState.walletHeaderViewModel.copy(balance = balance.value()))
                     }
                 }
             }
@@ -198,7 +263,7 @@ class CompatWalletViewModel(
     private fun observeBalance(): ListenerRegistration {
         val balanceListener = wallet.addBalanceListener { balance ->
             updateState { previousState ->
-                makeStateActive(previousState).copy(balance = balance?.value() ?: BigDecimal.ZERO)
+                makeStateActive(previousState).copy(walletHeaderViewModel = previousState.walletHeaderViewModel.copy(balance = balance?.value() ?: BigDecimal.ZERO))
             }
         }
 

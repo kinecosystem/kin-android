@@ -46,3 +46,7 @@ data class KinMemo @JvmOverloads constructor(
         }
     }
 }
+
+fun KinMemo.getAgoraMemo(): KinBinaryMemo? {
+    return try { KinBinaryMemo.decode(rawValue) } catch (e: Exception) { null }
+}

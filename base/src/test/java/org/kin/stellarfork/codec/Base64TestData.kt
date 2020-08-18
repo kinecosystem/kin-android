@@ -1110,6 +1110,7 @@ object Base64TestData {
     // Some utility code to help test chunked reads of the InputStream.
     private const val SIZE_KEY = 0
     private const val LAST_READ_KEY = 1
+    @Suppress("NAME_SHADOWING")
     @JvmOverloads
     @Throws(IOException::class)
     fun streamToBytes(`in`: InputStream, buf: ByteArray = ByteArray(7)): ByteArray {

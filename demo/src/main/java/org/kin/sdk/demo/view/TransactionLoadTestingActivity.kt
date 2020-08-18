@@ -8,26 +8,30 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
+import org.kin.sdk.demo.ResolverProvider
 import org.kin.sdk.demo.R
-import org.kin.sdk.demo.view.custom.ActionListItemView
-import org.kin.sdk.demo.view.tools.BaseActivity
-import org.kin.sdk.demo.view.custom.PrimaryButton
-import org.kin.sdk.demo.view.custom.PrimaryTextView
-import org.kin.sdk.demo.view.custom.StandardDialog
-import org.kin.sdk.demo.view.custom.StandardEditText
-import org.kin.sdk.demo.view.custom.VerticalRecyclerView
-import org.kin.sdk.demo.view.custom.WalletStatusHeaderView
-import org.kin.sdk.demo.view.tools.addBase32ChangedListener
-import org.kin.sdk.demo.view.tools.addTo
-import org.kin.sdk.demo.view.tools.build
-import org.kin.sdk.demo.view.tools.dip
-import org.kin.sdk.demo.view.tools.updateItems
+import org.kin.sdk.design.view.tools.BaseActivity
+import org.kin.sdk.design.view.widget.PrimaryButton
+import org.kin.sdk.design.view.widget.internal.PrimaryTextView
+import org.kin.sdk.design.view.widget.internal.StandardDialog
+import org.kin.sdk.design.view.widget.internal.StandardEditText
+import org.kin.sdk.design.view.widget.internal.VerticalRecyclerView
+import org.kin.sdk.design.view.tools.addBase32ChangedListener
+import org.kin.sdk.design.view.tools.addTo
+import org.kin.sdk.design.view.tools.build
+import org.kin.sdk.design.view.tools.dip
+import org.kin.sdk.design.view.tools.updateItems
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.TransactionLoadTestingViewModel
 
-class TransactionLoadTestingActivity : BaseActivity<TransactionLoadTestingViewModel, TransactionLoadTestingViewModel.NavigationArgs, TransactionLoadTestingViewModel.State>() {
+class TransactionLoadTestingActivity : BaseActivity<TransactionLoadTestingViewModel, TransactionLoadTestingViewModel.NavigationArgs, TransactionLoadTestingViewModel.State, ResolverProvider, DemoNavigator>() {
     object BundleKeys {
         const val walletIndex: String = "TransactionLoadTestingActivity.WALLET_INDEX"
         const val publicAddress: String = "TransactionLoadTestingActivity.PUBLIC_ADDRESS"
+    }
+
+    override val navigator: DemoNavigator by lazy {
+        ActivityNavigatorImpl(this)
     }
 
     private lateinit var startButton: PrimaryButton
@@ -35,7 +39,7 @@ class TransactionLoadTestingActivity : BaseActivity<TransactionLoadTestingViewMo
     private lateinit var testResults: VerticalRecyclerView
 
     override fun createViewModel(bundle: Bundle): TransactionLoadTestingViewModel {
-        return resolver.resolve(TransactionLoadTestingViewModel.NavigationArgs(
+        return resolver.resolver.resolve(TransactionLoadTestingViewModel.NavigationArgs(
             bundle.getInt(BundleKeys.walletIndex),
             bundle.getString(BundleKeys.publicAddress)!!
         ), navigator)
@@ -61,7 +65,9 @@ class TransactionLoadTestingActivity : BaseActivity<TransactionLoadTestingViewMo
                 build {
                     layout<PrimaryTextView, TransactionLoadTestingViewModel.TestRunViewModel> {
                         create { context ->
-                            PrimaryTextView(context).apply {
+                            PrimaryTextView(
+                                context
+                            ).apply {
                                 setPadding(0.dip, 4.dip, 0.dip, 4.dip)
                             }
                         }

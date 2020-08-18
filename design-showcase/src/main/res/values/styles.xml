@@ -1,0 +1,13 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/kin_sdk_purple</item>
+        <item name="colorPrimaryDark">@color/kin_sdk_purple_dark</item>
+        <item name="colorAccent">@color/kin_sdk_purple</item>
+        <item name="android:statusBarColor">#E8E9ED</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+</resources>

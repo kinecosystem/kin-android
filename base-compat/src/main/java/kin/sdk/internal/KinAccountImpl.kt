@@ -26,7 +26,6 @@ import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinMemo
 import org.kin.sdk.base.models.toKinTransaction
 import org.kin.sdk.base.network.services.KinService
-import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.tools.Promise
 import org.kin.stellarfork.KeyPair
@@ -156,7 +155,7 @@ internal class KinAccountImpl(
     }
 
     private fun exceptionCorrectionIfNecessary(e: Exception): Exception {
-        return if (e is KinService.SDKUpgradeRequired) e
+        return if (e is KinService.FatalError.SDKUpgradeRequired) e
         else OperationFailedException(e)
     }
 
@@ -230,18 +229,21 @@ internal class KinAccountImpl(
         fee: Int,
         memo: String?
     ): Promise<Transaction> {
-        return kinService
-            .buildAndSignTransaction(
-                accountContext.getAccount().sync(),
-                listOf(
-                    KinPaymentItem(
-                        KinAmount(amount),
-                        KeyPair.fromAccountId(publicAddress).asKinAccountId()
+        return accountContext.getAccount()
+            .flatMap { account ->
+                kinService
+                    .buildAndSignTransaction(
+                        account,
+                        listOf(
+                            KinPaymentItem(
+                                KinAmount(amount),
+                                KeyPair.fromAccountId(publicAddress).asKinAccountId()
+                            )
+                        ),
+                        buildMemo(memo ?: ""),
+                        QuarkAmount(fee.toLong())
                     )
-                ),
-                buildMemo(memo ?: ""),
-                QuarkAmount(fee.toLong())
-            )
+            }
             .map { it.asTransaction(network) }
     }
 

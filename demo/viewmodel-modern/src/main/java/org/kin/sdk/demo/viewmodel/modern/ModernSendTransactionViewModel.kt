@@ -1,16 +1,17 @@
 package org.kin.sdk.demo.viewmodel.modern
 
 import org.kin.sdk.base.KinAccountContext
+import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
-import org.kin.sdk.base.models.KinMemo
-import org.kin.sdk.demo.viewmodel.Navigator
+import org.kin.sdk.demo.di.modern.DemoAppConfig.Companion.DEMO_APP_IDX
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.SendTransactionViewModel
-import org.kin.sdk.demo.viewmodel.tools.BaseViewModel
+import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 import java.math.BigInteger
 
 class ModernSendTransactionViewModel(
-    navigator: Navigator,
+    @Suppress("UNUSED_PARAMETER") navigator: DemoNavigator,
     args: SendTransactionViewModel.NavigationArgs,
     private val kinAccountContext: KinAccountContext
 ) : SendTransactionViewModel,
@@ -48,15 +49,18 @@ class ModernSendTransactionViewModel(
     }
 
     override fun onSendTapped(completed: (error: Throwable?) -> Unit) {
-        updateState {
+
+        withState {
             kinAccountContext.sendKinPayment(
-                KinAmount(it.amount),
-                KinAccount.Id(it.destinationAddress),
-                KinMemo.NONE
+                KinAmount(amount),
+                KinAccount.Id(destinationAddress),
+                KinBinaryMemo.Builder(DEMO_APP_IDX.value)
+                    .setTranferType(KinBinaryMemo.TransferType.P2P)
+                    .build()
+                    .toKinMemo()
             ).then({
                 completed(null)
             }, completed)
-            it
         }
     }
 }

@@ -6,10 +6,13 @@ sealed class ApiConfig(
     val tlsPort: Int
 ) {
     private companion object {
-        private const val TLS_PORT = 8085 //443
+        private const val TLS_PORT = 443
 
         const val TestNetHorizonEndpoint = "https://horizon-testnet.kininfrastructure.com/"
         const val MainNetHorizonEndpoint = "https://horizon.kinfederation.com"
+
+        const val TestNetAgoraEndpoint = "api.agorainfra.dev"
+        const val MainNetAgoraEndpoint = "api.agorainfra.net"
     }
 
     object TestNetHorizon :
@@ -17,6 +20,12 @@ sealed class ApiConfig(
 
     object MainNetHorizon :
         ApiConfig(MainNetHorizonEndpoint, NetworkEnvironment.KinStellarMainNet, TLS_PORT)
+
+    object TestNetAgora :
+        ApiConfig(TestNetAgoraEndpoint, NetworkEnvironment.KinStellarTestNet, TLS_PORT)
+
+    object MainNetAgora :
+        ApiConfig(MainNetAgoraEndpoint, NetworkEnvironment.KinStellarMainNet, TLS_PORT)
 
     class CustomConfig(
         networkEndpoint: String,

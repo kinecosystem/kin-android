@@ -1,8 +1,8 @@
 # <img src="../assets/kin-logo.png" height="32" alt="Kin Logo"> Base Module
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
-[![Download](https://api.bintray.com/packages/kinecosystem/kin-android/base-compat/images/download.svg) ](https://bintray.com/kinecosystem/kin-android/base-compat/_latestVersion)
+[![Download](https://api.bintray.com/packages/kinecosystem/kin-android/base/images/download.svg) ](https://bintray.com/kinecosystem/kin-android/base/_latestVersion)
 
-The [:base](../base) module is the foundation upon which the rest of the sdk stands on, however can be used on it's own to headlessly access the Kin Blockchain.
+The [:base](../base) module is the foundation upon which the rest of the sdk stands on, however can be used on it's own to headlessly access the Kin Blockchain. It's pure jvm, but used as the bases for other Android specific modules in the SDK.
 
 
 <img src="../assets/kotlin.png" height="24" alt="Kin Logo"> This is a Kotlin first library, but is also fully available to Java developers.
@@ -22,10 +22,50 @@ repositories {
 }
 ```
 
+## Overview
+The base module contains two main components that are to be instantiated and used by the developer:
+- a `KinEnvironment` instance to describe the network (test or production), and provide some external dependencies
+- a `KinAccountContext` instance to access functionality of a Kin account on the Kin Blockchain and also provides local storage for your private key, and data cache for account and payment history data.
+Below you'll find a general overview on how to make use of the base module, but also consider diving into the specific documentation [found here](https://kinecosystem.github.io/kin-android/docs) for more details or [check out some of the other modules](../) that work together with base.
+
 ## Quick Start
 Everything starts with a `KinEnvironment` instance that describes which blockchain, services, and storage will be used.
+
+### Agora Kin Environment
+The Agora Kin Environment is now the preferred method of communicating to the Kin Blockchain. Agora is a both a gateway to submit payments, but also a history collected that can be used to resolve your full payment history.  
+When submitting payments, a developer should properly configure an [Agora webhook](https://docs.kin.org/how-it-works#webhooks)., which acts as a delegate to approve and optionally co-sign a transaction to mediate transaction fees.
+Agora can also store additional meta-data about your transaction concerning what your payments were for. This bundle of information is called an `Invoice`, and is offchain data which is referenced by the payment's associated Memo, both which you can read more about down below in the [Sending Payments section](#sending-payments)
+
+You'll also need to tell the SDK a bit about your app in an AppInfoProvider implementation to work with some features (like paying and resolving Invoices and the [spend](../spend) module UI)
+There are two bundles of information an App provides through this interface:
+- An AppInfo object to describe the App. This contains your Apps unique App Index whcih you can obtain by registering [here](https://docs.kin.org/app-registration)
+- Passthrough Auth User Credentials are passed onto the webhook when submitting a transaction
+For more information regarding webhooks and webhook integration please read more about [how it works](https://docs.kin.org/how-it-works#webhooks).
 ```kotlin
-val environment: KinEnvironment =
+val environment: KinEnvironment = 
+    KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+        .setAppInfoProvider(object : AppInfoProvider {
+                    override val appInfo: AppInfo =
+                        AppInfo(
+                            DemoAppConfig.DEMO_APP_IDX,
+                            DemoAppConfig.DEMO_APP_ACCOUNT_ID,
+                            "Kin Demo App",
+                            R.drawable.app_icon
+                        )
+    
+                    override fun getPassthroughAppUserCredentials(): AppUserCreds {
+                        return AppUserCreds("demo_app_uid", "demo_app_user_passkey")
+                    }
+                })
+        .setStorage(KinFileStorage.Builder("path/to/storage/location"))
+        .build()
+```
+
+### Horizon Kin Environment
+Horizon access from the SDK has been deprecated. While it's still included in the SDK and can be used it may become unavailable in a future blockchain migration.
+```kotlin
+// DEPCRECATED - SEE KinEnvironment.Agora
+val environment: KinEnvironment = 
     KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
         .setStorage(KinFileStorage.Builder("path/to/storage/location"))
         .build()
@@ -64,6 +104,7 @@ For `KinAccount`s that you do **not** have a `Key.PrivateKey` for and only desir
 ```kotlin
 .useExistingAccountReadOnly(KinAccount.Id("GATG_example_and_fake_key"))
 ```
+
 ## Sending Payments
 Sending `KinPayment`s are easy. Just add the amount and the destination `KinAccount.Id`.
 
@@ -93,6 +134,74 @@ context.sendKinPayments(
 }
 ```
 
+ Paymments made within this library are automatically retried, if the error permits being retried, up to 5 times with exponential backoff starting at 1 second after the first attempt (i.e. 1s, 2s, 4s, 8s intervals)
+
+### Are there Fees?
+It depends. Normally by default payments on the Kin Blockchain are charged a minimal fee of 100 Quark (1 Quark = 0.001 Kin) each. The minimum required fee is dictated by the Blockchain. Fees on the Kin blockchain are an anti-spam feature intended to prevent malicious actors from spamming the network. Registered Kin apps are given a whitelisted account, which they can use to exempt their or their users' transactions using the [Sign Transaction webhook](https://docs.kin.org/how-it-works#sign-transaction).
+
+When using KinAccountContext configured with the Agora KinEnvironment, by default a fee will not be added to the payment unless you specifically want your users to pay fees instead of you providing whitelisting. This can be achieved by overridintg and setting the `isWhitelistingAvailable` parameter to false in the `KinTransactionWhitelistingApi` instance when configuring your `KinEnvironment` instance.
+
+### How can I add more data to the payment?
+#### Memos
+Memos are only 32 bytes of data that are stored on the blockchain with your payment data. Because of this, it's recommended to only include data you can use to reference a larger set of data off chain.
+
+#### *Kin Binary Memo Format (Recommended)*
+The Kin Binary Memo Format is defined by [this spec](https://github.com/kinecosystem/agora-api-internal/blob/master/spec/memo.md) and includes the follow fields:
+- Version: the memo encoding version (primarily used by the SDKs for interpreting memos).
+- Transaction Type: the 'type' of the transaction the memo is embedded in.
+- App Index: a 16-bit value that refers to the app the transaction is related to. Replaces app IDs.
+- Foreign Key: the identifier in an auxiliary transaction service that contains metadata about what a transaction is for.
+
+Apps that are migrating from the old AppId format can check out details [here](https://docs.kin.org/how-it-works#memo-format-and-app-index)
+
+Use the `KinBinaryMemo.Builder` class to construct a `KinBinaryMemo`.
+The `KinBinaryMemo.TransferType` is important to set appropriately for the type of payment your are making (Earn/Spend/P2P) (See KDoc definitions for more details).
+The new foreign key field primarily serves as a way for apps to include a reference to some other data stored off-chain, to help address memo space limitations. This field has a max limit of 230 bits. One option available to developers for storing off-chain data is [invoices](#invoices), which can help developers provide their users with richer transaction data and history. However, developers are free to use the foreign key to reference data hosted by their own services.
+```kotlin
+ KinBinaryMemo.Builder(appIndex)
+            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setForeignKey(someForeignKeyModel.toByteArray())
+            .build()
+```
+#### *Text Memos (Old style memos)*
+In this SDK you can provide a text based memo by using the `ClassicKinMemo` class. This format should only be used be existing incumbant apps that have been issued AppIds and have yet to upgrade to the new Kin Binary Memo Format.
+
+#### Invoices
+[Invoices](https://docs.kin.org/how-it-works#invoices) are a great way to leverage Agora to store data about your payments off chain for you to retrieve later (e.g. in your payment history). They can be submitted to agora via the optional invoice field of `sendKinPayment` method with a properly formatted KinBinaryMemo which is used to reference the applicable Invoice data at a later time.
+
+An invoice for a payment contains a list of line items, which contain the following information:
+- **title**: the title of a line item.
+- **amount**: the amount of a line item.
+- **description** (optional): the description of the line item.
+- **sku** (optional): an app-specific identifier. This can be anything developers wish to include (e.g. a product ID).
+
+There `Invoice.Builder` class can be used to construct an Invoice for which to operate on. As an app that sells a set of digital goods or services you may wish to transform the information you have in your own models into an Invoice object and reference it later via it's identifier stored in the SKU.
+```kotlin
+val invoice = Invoice.Builder()
+            .addLineItem(
+                LineItem.Builder("Start a Chat", KinAmount(50))
+                    .setSKU(SKU(someProductIdModel.toByteArray()))
+                    .build()
+            )
+            .build()
+```
+
+To Execute a payment for an `Invoice` you can make use of the `payInvoice` convenience function on `KinAccountContext`. This essentially calls `sendPayment` on your behalf with the correctly formatted `KinBinaryMemo` and TransferType of `KinBinaryMemo.TransferType.Spend`. Invoices can and should also be used for other TransferTypes such as P2P and Earns.
+
+*The destinationKinAccountId must match the expected & registered desginationKinAppIdx provided [during registration](https://docs.kin.org/app-registration)*
+```kotlin
+context.payInvoice(invoice, destinationKinAccountId, destinationKinAppIdx).then { kinPayment ->
+    // Payment Completed
+}
+```
+
+If an `Invoice` was included with the submission than the optional invoice field on a `KinPayment` will be populated with the Invoice. This is especially helpful when observing your [payment history](#retrieving-payment-history)
+```kotlin
+kinPayment.invoice
+```
+
+*Note:* If you are paying for an `Invoice` you *must* use the Kin Binary Memo Format for the memo.*
+
 ## Retrieving Account Data
 The `KinAccount.Id` for a given `KinAccountContext` instance is always available
 ```kotlin
@@ -116,11 +225,11 @@ context.observeBalance()
     }.disposedBy(lifecycle)
 ```
 
-## Retrieving Payment Data
+## Retrieving Payment History
 Weather you're looking for the full payment history, or just to be notified of new payments you can observe any changes to payments for a given account with:
 ```kotlin
 context.observePayments()
-    .add { payments: List<KinPayment> ->
+    .add { payments: List<KinPayment> -> 
         // Will emit the full payment history by default
         // @see ObserverMode for more details
     }
@@ -151,7 +260,7 @@ dependencies {
     implementation "org.kin.sdk.android:base-shaded:${versions.kin}"
 }
 ```
-This variant is recommended when encountering dependency collisions (e.g. duplicate classes, incompatible versions, etc).
+This variant is recommended when encountering dependency collisions (e.g. duplicate classes, incompatible versions, etc).  
 If you are still encountering difficulties with dependency collisions with this variant we recommend forking the library and adding additional libraries you want to shade to the list included under the shadowJar task configured in [../base/build.gradle](build.gradle)
 
 
@@ -161,7 +270,7 @@ Instead of Promise .then tail calls in Java...
 context.getAccount(new Callback<KinAccount>() {
         @Override
         public void onCompleted(@Nullable KinAccount value, @Nullable Throwable error) {
-
+                
         }
     });
 ```

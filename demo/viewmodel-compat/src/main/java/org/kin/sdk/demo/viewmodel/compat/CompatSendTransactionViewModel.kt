@@ -4,14 +4,14 @@ import kin.sdk.KinClient
 import kin.sdk.Transaction
 import kin.sdk.TransactionId
 import kin.utils.ResultCallback
-import org.kin.sdk.demo.viewmodel.Navigator
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.SendTransactionViewModel
-import org.kin.sdk.demo.viewmodel.tools.BaseViewModel
+import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 import java.lang.Exception
 import java.math.BigInteger
 
 class CompatSendTransactionViewModel(
-    navigator: Navigator,
+    @Suppress("UNUSED_PARAMETER") navigator: DemoNavigator,
     args: SendTransactionViewModel.NavigationArgs,
     client: KinClient
 ) : SendTransactionViewModel, BaseViewModel<SendTransactionViewModel.NavigationArgs, SendTransactionViewModel.State>(args) {

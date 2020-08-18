@@ -4,14 +4,14 @@ import kin.sdk.KinClient
 import kin.sdk.Transaction
 import kin.sdk.TransactionId
 import kin.utils.ResultCallback
-import org.kin.sdk.demo.viewmodel.Navigator
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.TransactionLoadTestingViewModel
-import org.kin.sdk.demo.viewmodel.tools.BaseViewModel
+import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 import java.math.BigDecimal
 import kotlin.math.floor
 
 class CompatTransactionLoadTestingViewModel(
-    navigator: Navigator,
+    @Suppress("UNUSED_PARAMETER") navigator: DemoNavigator,
     args: TransactionLoadTestingViewModel.NavigationArgs,
     private val client: KinClient
 ) : TransactionLoadTestingViewModel,

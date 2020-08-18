@@ -2,15 +2,19 @@ package org.kin.sdk.base.storage
 
 import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
+import org.kin.agora.gen.common.v3.Model
+import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
-import org.kin.sdk.base.models.KinAmount
-import org.kin.sdk.base.models.KinAmount.Companion.max
 import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.QuarkAmount
+import org.kin.sdk.base.models.SHA224Hash
+import org.kin.sdk.base.models.getAgoraMemo
 import org.kin.sdk.base.models.merge
 import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
+import org.kin.sdk.base.network.api.agora.toInvoiceList
+import org.kin.sdk.base.network.api.agora.toProto
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransactions
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
@@ -144,6 +148,18 @@ class KinFileStorage @JvmOverloads internal constructor(
         return true
     }
 
+    override fun removeAllInvoices(account: KinAccount.Id): Boolean {
+        val invoicesDir = directoryForInvoices(account)
+        val invoicesFileNames = subdirectories(invoicesDir)
+
+        invoicesFileNames.forEach { fileName ->
+            val removed = removeFile(invoicesDir, fileName)
+            if (!removed) return false
+        }
+
+        return true
+    }
+
     override fun getTransactions(key: KinAccount.Id): KinTransactions? {
         val transactionsDir = directoryForTransactions(key)
         val transactionsFile = fileNameForTransactions(key)
@@ -154,9 +170,21 @@ class KinFileStorage @JvmOverloads internal constructor(
     }
 
     override fun getStoredTransactions(accountId: KinAccount.Id): Promise<KinTransactions?> {
-        return Promise.create<KinTransactions?> { resolve, _ ->
-            val transactions = getTransactions(accountId)
-            resolve(transactions)
+        return getInvoiceListsMapForAccountId(accountId).flatMap { invoiceListMap ->
+            Promise.create<KinTransactions?> { resolve, _ ->
+                val transactions = getTransactions(accountId)
+                val transactionsWithInvoices = transactions?.copy(
+                    items = transactions.items.map { transaction ->
+                        transaction.memo.getAgoraMemo()?.let {
+                            transaction.copy(
+                                invoiceList =
+                                invoiceListMap[InvoiceList.Id(SHA224Hash.just(it.foreignKeyBytes))]
+                            )
+                        } ?: transaction
+                    }
+                )
+                resolve(transactionsWithInvoices)
+            }
         }.workOn(executors.sequentialIO)
     }
 
@@ -167,16 +195,18 @@ class KinFileStorage @JvmOverloads internal constructor(
         if (transactions.isEmpty()) {
             return Promise.of(transactions)
         }
-        return Promise.create<List<KinTransaction>> { resolve, _ ->
-            putTransactions(
-                accountId,
-                KinTransactions(
-                    transactions,
-                    transactions.findHeadHistoricalTransaction(),
-                    transactions.findTailHistoricalTransaction()
+        return addInvoiceLists(accountId, transactions.mapNotNull { it.invoiceList }).flatMap {
+            Promise.create<List<KinTransaction>> { resolve, _ ->
+                putTransactions(
+                    accountId,
+                    KinTransactions(
+                        transactions,
+                        transactions.findHeadHistoricalTransaction(),
+                        transactions.findTailHistoricalTransaction()
+                    )
                 )
-            )
-            resolve(transactions)
+                resolve(transactions)
+            }
         }.workOn(executors.sequentialIO)
     }
 
@@ -216,8 +246,69 @@ class KinFileStorage @JvmOverloads internal constructor(
     ): Promise<List<KinTransaction>> {
         return getStoredTransactions(accountId)
             .map { it?.items ?: emptyList() }
-            .map { it.toMutableList().apply { add(0, newTransaction) } }
+            .map { listOf(newTransaction) + it }
             .flatMap { storeTransactions(accountId, it) }
+    }
+
+    override fun getInvoiceListsMapForAccountId(account: KinAccount.Id): Promise<Map<InvoiceList.Id, InvoiceList>> {
+        return Promise.create { resolve, reject ->
+            try {
+                val bytes = readFile(
+                    directoryForInvoices(account),
+                    fileNameForInvoices(account)
+                )
+
+                val map = if (bytes.isEmpty()) {
+                    emptyMap()
+                } else {
+                    val invoices: org.kin.gen.storage.v1.Storage.Invoices =
+                        org.kin.gen.storage.v1.Storage.Invoices.parseFrom(bytes)
+
+                    invoices.invoiceListsMap
+                        .mapKeys {
+                            InvoiceList.Id(SHA224Hash(it.key))
+                        }
+                        .mapValues {
+                            Model.InvoiceList.parseFrom(it.value.networkInvoiceList.toByteArray())
+                                .toInvoiceList()
+                        }
+                }
+                resolve(map)
+
+            } catch (t: Throwable) {
+                reject(t)
+            }
+        }
+    }
+
+    override fun addInvoiceLists(
+        accountId: KinAccount.Id,
+        invoiceLists: List<InvoiceList>
+    ): Promise<List<InvoiceList>> {
+
+        fun putInvoiceListsForAccountId(
+            account: KinAccount.Id,
+            invoiceLists: Map<InvoiceList.Id, InvoiceList>
+        ): Boolean = writeToFile(
+            directoryForInvoices(account),
+            fileNameForInvoices(account),
+            invoiceLists.toInvoices().toByteArray()
+        )
+
+        if (invoiceLists.isEmpty()) {
+            return Promise.of(emptyList())
+        }
+
+        return getInvoiceListsMapForAccountId(accountId)
+            .map {
+                val updatedInvoiceLists = it.toMutableMap().apply {
+                    invoiceLists.forEach { invoiceList ->
+                        put(invoiceList.id, invoiceList)
+                    }
+                }
+                putInvoiceListsForAccountId(accountId, updatedInvoiceLists)
+                updatedInvoiceLists.values.toList()
+            }
     }
 
     override fun getStoredAccount(accountId: KinAccount.Id): Promise<Optional<KinAccount>> {
@@ -255,7 +346,7 @@ class KinFileStorage @JvmOverloads internal constructor(
     }
 
     override fun setMinFee(minFee: QuarkAmount): Promise<Optional<QuarkAmount>> {
-        return Promise.create<Optional<QuarkAmount>> { resolve, reject ->
+        return Promise.create<Optional<QuarkAmount>> { resolve, _ ->
             resolve(
                 if (writeToFile(
                         directoryForConfig(),
@@ -272,7 +363,7 @@ class KinFileStorage @JvmOverloads internal constructor(
     }
 
     override fun getMinFee(): Promise<Optional<QuarkAmount>> {
-        return Promise.create<Optional<QuarkAmount>> { resolve, reject ->
+        return Promise.create<Optional<QuarkAmount>> { resolve, _ ->
             val bytes = readFile(
                 directoryForConfig(),
                 fileNameForConfig
@@ -297,7 +388,11 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun deleteAllStorage(accountId: KinAccount.Id): Promise<Boolean> {
         return Promise.create<Boolean> { resolve, _ ->
-            resolve(removeAccount(accountId) and removeAllTransactions(accountId))
+            resolve(
+                removeAllInvoices(accountId)
+                        and removeAllTransactions(accountId)
+                        and removeAccount(accountId)
+            )
         }.workOn(executors.sequentialIO)
     }
 
@@ -343,7 +438,8 @@ class KinFileStorage @JvmOverloads internal constructor(
      * Config: <Environment Directory>/config
      * Account Directory: <Environment Directory>/kin_accounts/<public key>
      * KinAccount object: <Account Directory>/account_info
-     * KinTransaction: <Account Directory>/<account_id>_transactions
+     * KinTransactions: <Account Directory>/<account_id>_transactions/<account_id>_transactions
+     * Invoices: <Account Directory>/<account_id>_invoices/<account_id>_invoices
      */
 
     private fun envDirectory(): String =
@@ -363,8 +459,15 @@ class KinFileStorage @JvmOverloads internal constructor(
         return "${directoryForAccount(accountId)}_transactions"
     }
 
+    private fun directoryForInvoices(accountId: KinAccount.Id): String {
+        return "${directoryForAccount(accountId)}_invoices"
+    }
+
     private fun fileNameForTransactions(accountId: KinAccount.Id): String =
         "${accountId.hashCode()}_transactions"
+
+    private fun fileNameForInvoices(accountId: KinAccount.Id): String =
+        "${accountId.hashCode()}_invoices"
 
     private fun writeToFile(directory: String, fileName: String, body: ByteArray): Boolean {
         var outputStream: FileOutputStream? = null
@@ -510,6 +613,21 @@ class KinFileStorage @JvmOverloads internal constructor(
             .build()
     }
 
+    fun Map<InvoiceList.Id, InvoiceList>.toInvoices(): org.kin.gen.storage.v1.Storage.Invoices {
+        return org.kin.gen.storage.v1.Storage.Invoices.newBuilder()
+            .apply {
+                this@toInvoices.entries.forEach {
+                    this@apply.putInvoiceLists(
+                        it.key.invoiceHash.encodedValue,
+                        org.kin.gen.storage.v1.Storage.InvoiceListBlob.newBuilder()
+                            .setNetworkInvoiceList(it.value.toProto().toByteString())
+                            .build()
+                    )
+                }
+            }
+            .build()
+    }
+
 
     // ------------------------------------------------------------------------
     // endregion
@@ -533,7 +651,8 @@ class KinFileStorage @JvmOverloads internal constructor(
         val status = when (this.status) {
             StorageKinAccount.Status.REGISTERED -> KinAccount.Status.Registered(sequence)
             StorageKinAccount.Status.UNREGISTERED -> KinAccount.Status.Unregistered
-            StorageKinAccount.Status.UNRECOGNIZED -> throw InvalidProtocolBufferException("Unrecognized account status.")
+            StorageKinAccount.Status.UNRECOGNIZED,
+            null -> throw InvalidProtocolBufferException("Unrecognized account status.")
         }
         return KinAccount(key = key, balance = balance, status = status)
     }

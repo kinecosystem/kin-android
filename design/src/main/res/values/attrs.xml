@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<!--    <attr name="kin_design_brandColor" format="color"/>-->
+<!--    <attr name="kin_design_brandColorHover" format="color"/>-->
+<!--    <attr name="kin_design_alertColor" format="color"/>-->
+<!--    <attr name="kin_design_alertColorHover" format="color"/>-->
+<!--    <attr name="kin_design_warningColor" format="color"/>-->
+<!--    <attr name="kin_design_warningColorHover" format="color"/>-->
+<!--    <attr name="kin_design_successColor" format="color"/>-->
+<!--    <attr name="kin_design_successColorHover" format="color"/>-->
+
+<!--    <attr name="kin_design_gray1Color" format="color"/>-->
+<!--    <attr name="kin_design_gray2Color" format="color"/>-->
+<!--    <attr name="kin_design_gray3Color" format="color"/>-->
+<!--    <attr name="kin_design_gray4Color" format="color"/>-->
+<!--    <attr name="kin_design_gray5Color" format="color"/>-->
+
+<!--    <attr name="kin_design_blackColor" format="color"/>-->
+<!--    <attr name="kin_design_whiteColor" format="color"/>-->
+
+<!--    <attr name="kin_design_backgroundColor" format="color"/>-->
+
+<!--    <attr name="kin_design_primaryTextColor" format="color"/>-->
+<!--    <attr name="kin_design_secondaryTextColor" format="color"/>-->
+<!--    <attr name="kin_design_tertiaryTextColor" format="color"/>-->
+<!--    <attr name="kin_design_buttonTextColor" format="color"/>-->
+
+
+    <declare-styleable name="KinAmountView">
+        <attr name="amount" format="float"/>
+        <attr name="textSize" format="float"/>
+        <attr name="textColor" format="color"/>
+    </declare-styleable>
+
+</resources>

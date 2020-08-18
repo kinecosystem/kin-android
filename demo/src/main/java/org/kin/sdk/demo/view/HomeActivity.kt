@@ -7,25 +7,31 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.RecyclerView
 import org.kin.sdk.demo.R
-import org.kin.sdk.demo.view.custom.ActionListItemView
-import org.kin.sdk.demo.view.custom.PrimaryButton
-import org.kin.sdk.demo.view.custom.VerticalRecyclerView
+import org.kin.sdk.demo.ResolverProvider
 import org.kin.sdk.demo.view.custom.WalletListItemView
-import org.kin.sdk.demo.view.tools.BaseActivity
-import org.kin.sdk.demo.view.tools.RecyclerViewTools
-import org.kin.sdk.demo.view.tools.addTo
-import org.kin.sdk.demo.view.tools.build
-import org.kin.sdk.demo.view.tools.dip
-import org.kin.sdk.demo.view.tools.updateItems
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.HomeViewModel
 import org.kin.sdk.demo.viewmodel.HomeViewModel.NavigationArgs.ResolverType.Compat
 import org.kin.sdk.demo.viewmodel.HomeViewModel.NavigationArgs.ResolverType.Modern
+import org.kin.sdk.design.view.tools.BaseActivity
+import org.kin.sdk.design.view.tools.RecyclerViewTools
+import org.kin.sdk.design.view.tools.addTo
+import org.kin.sdk.design.view.tools.build
+import org.kin.sdk.design.view.tools.dip
+import org.kin.sdk.design.view.tools.updateItems
+import org.kin.sdk.design.view.widget.PrimaryButton
+import org.kin.sdk.design.view.widget.internal.ActionListItemView
+import org.kin.sdk.design.view.widget.internal.VerticalRecyclerView
 
 class HomeActivity :
-    BaseActivity<HomeViewModel, HomeViewModel.NavigationArgs, HomeViewModel.State>() {
+    BaseActivity<HomeViewModel, HomeViewModel.NavigationArgs, HomeViewModel.State, ResolverProvider, DemoNavigator>() {
 
     object BundleKeys {
         const val resolverType: String = "HomeActivity.RESOLVER_TYPE"
+    }
+
+    override val navigator: DemoNavigator by lazy {
+        ActivityNavigatorImpl(this)
     }
 
     private lateinit var modernButton: PrimaryButton
@@ -36,10 +42,10 @@ class HomeActivity :
         val resolverType =
             HomeViewModel.NavigationArgs.ResolverType.fromValue(bundle.getInt(BundleKeys.resolverType))
         when (resolverType) {
-            Modern -> applicationResolver.resolver = applicationResolver.modernResolver
-            Compat -> applicationResolver.resolver = applicationResolver.compatResolver
+            Modern -> resolver.resolver = resolver.modernResolver
+            Compat -> resolver.resolver = resolver.compatResolver
         }
-        return resolver.resolve(HomeViewModel.NavigationArgs(resolverType), navigator)
+        return resolver.resolver.resolve(HomeViewModel.NavigationArgs(resolverType), navigator)
     }
 
     override fun createView(context: Context): ViewGroup {
@@ -77,6 +83,16 @@ class HomeActivity :
                         view.title = getString(R.string.title_import_kin)
                         view.description = getString(R.string.description_import_kin)
                         view.setOnClickListener { viewModel.onItemTapped(this@HomeActivity) }
+                    }
+                }
+
+                layout<ActionListItemView, HomeViewModel.InvoiceItemViewModel> {
+                    create(::ActionListItemView)
+
+                    bind { view, viewModel ->
+                        view.title = getString(R.string.title_invoices)
+                        view.description = getString(R.string.description_invoices)
+                        view.setOnClickListener { viewModel.onItemTapped() }
                     }
                 }
             }
@@ -137,13 +153,13 @@ class HomeActivity :
 
         walletItems.updateItems(
             if (allWallets.isNotEmpty()) {
-                allWallets
+                state.otherActions + allWallets
             } else {
                 listOf(RecyclerViewTools.placeholder(R.string.placeholder_no_wallets))
             }
         )
 
-        when(state.resolverType) {
+        when (state.resolverType) {
             Modern -> {
                 modernButton.isEnabled = false
                 compatButton.isEnabled = true

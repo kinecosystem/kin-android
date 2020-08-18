@@ -61,7 +61,7 @@ interface IKeyPair {
 /**
  * Holds a Stellar keypair.
  */
-data class KeyPair @JvmOverloads
+data class KeyPair
 /**
  * Creates a new KeyPair from the given public and private keys.
  *

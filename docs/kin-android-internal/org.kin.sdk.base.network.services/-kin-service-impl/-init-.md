@@ -1,0 +1,5 @@
+[kin-android](../../index.md) / [org.kin.sdk.base.network.services](../index.md) / [KinServiceImpl](index.md) / [&lt;init&gt;](./-init-.md)
+
+# &lt;init&gt;
+
+`KinServiceImpl(networkEnvironment: `[`NetworkEnvironment`](../../org.kin.sdk.base.stellar.models/-network-environment/index.md)`, networkOperationsHandler: `[`NetworkOperationsHandler`](../../org.kin.sdk.base.tools/-network-operations-handler/index.md)`, accountApi: `[`KinAccountApi`](../../org.kin.sdk.base.network.api/-kin-account-api/index.md)`, transactionApi: `[`KinTransactionApi`](../../org.kin.sdk.base.network.api/-kin-transaction-api/index.md)`, streamingApi: `[`KinStreamingApi`](../../org.kin.sdk.base.network.api/-kin-streaming-api/index.md)`, accountCreationApi: `[`KinAccountCreationApi`](../../org.kin.sdk.base.network.api/-kin-account-creation-api/index.md)`, transactionWhitelistingApi: `[`KinTransactionWhitelistingApi`](../../org.kin.sdk.base.network.api/-kin-transaction-whitelisting-api/index.md)`)`

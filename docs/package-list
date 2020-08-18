@@ -16,6 +16,8 @@ $dokka.location:org.kin.sdk.base.models$toEnvelopeXdrBytes(org.kin.stellarfork.T
 $dokka.location:org.kin.sdk.base.models$toKinTransaction(org.kin.stellarfork.Transaction, org.kin.sdk.base.stellar.models.NetworkEnvironment)org.kin.sdk.base.models/org.kin.stellarfork.-transaction/to-kin-transaction.md
 $dokka.location:org.kin.sdk.base.models$toUTF8Bytes(kotlin.String)org.kin.sdk.base.models/kotlin.-string/to-u-t-f8-bytes.md
 $dokka.location:org.kin.sdk.base.models$toUTF8String(kotlin.ByteArray)org.kin.sdk.base.models/kotlin.-byte-array/to-u-t-f8-string.md
+$dokka.location:org.kin.sdk.base.network.api.proto$toAcknowledgedKinTransaction(org.kin.gen.transaction.v3.TransactionService.HistoryItem, org.kin.sdk.base.stellar.models.NetworkEnvironment)org.kin.sdk.base.network.api.proto/org.kin.gen.transaction.v3.-transaction-service.-history-item/to-acknowledged-kin-transaction.md
+$dokka.location:org.kin.sdk.base.network.api.proto$toHistoricalKinTransaction(org.kin.gen.transaction.v3.TransactionService.HistoryItem, org.kin.sdk.base.stellar.models.NetworkEnvironment)org.kin.sdk.base.network.api.proto/org.kin.gen.transaction.v3.-transaction-service.-history-item/to-historical-kin-transaction.md
 kin.sdk
 kin.sdk.exception
 kin.sdk.internal
@@ -23,6 +25,7 @@ kin.utils
 org.kin.sdk.base
 org.kin.sdk.base.models
 org.kin.sdk.base.network.api
+org.kin.sdk.base.network.api.proto
 org.kin.sdk.base.network.api.rest
 org.kin.sdk.base.network.services
 org.kin.sdk.base.stellar.models

@@ -10,7 +10,6 @@ buildscript {
 
 apply plugin: 'java-library'
 apply plugin: 'kotlin'
-apply plugin: "maven"
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
@@ -83,6 +82,7 @@ dependencies {
     implementation deps.grpc_stub
     implementation deps.grpc_protobuf
     implementation deps.grpc_okhttp
+    implementation deps.agora_api
     implementation project(':base-storage')
     implementation 'com.github.joshjdevl.libsodiumjni:libsodium-jni:2.0.1'
 
@@ -118,10 +118,6 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier = 'javadoc'
     from javadoc.destinationDir
-}
-
-jar {
-    baseName = 'base'
 }
 
 artifacts {
@@ -220,3 +216,4 @@ afterEvaluate {
         }
     }
 }
+

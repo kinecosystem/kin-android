@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--   Colours -->
+    <color name="kin_sdk_purple">#6F41E8</color>
+    <color name="kin_sdk_purple_dark">#663ED1</color>
+    <color name="kin_sdk_red">#F35041</color>
+    <color name="kin_sdk_red_dark">#DB4B3E</color>
+    <color name="kin_sdk_yellow">#FFC34F</color>
+    <color name="kin_sdk_yellow_dark">#DB4B3E</color>
+    <color name="kin_sdk_green">#31D174</color>
+    <color name="kin_sdk_green_dark">#30BD6B</color>
+
+    <!--   Grays -->
+    <color name="kin_sdk_gray_1">#666666</color>
+    <color name="kin_sdk_gray_2">#8D8D94FF</color>
+    <color name="kin_sdk_gray_3">#BABBC2</color>
+    <color name="kin_sdk_gray_4">#E6E6EB</color>
+    <color name="kin_sdk_gray_5">#F0F0F5</color>
+
+    <!--  Black/White  -->
+    <color name="kin_sdk_black">#272729</color>
+    <color name="kin_sdk_white">#FFFFFF</color>
+
+    <!--   TODO: move to attrs -->
+    <color name="kin_sdk_primaryTextColor">#272729</color>
+    <color name="kin_sdk_secondaryTextColor">#666666</color>
+    <color name="kin_sdk_tertiaryTextColor">#BABBC2</color>
+    <color name="kin_sdk_additiveColor">#6F41E8</color>
+    <color name="kin_sdk_destructiveColor">#F35041</color>
+</resources>

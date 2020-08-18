@@ -63,6 +63,14 @@ message KinTransactions {
     string tail_paging_token = 3;
 }
 
+message InvoiceListBlob {
+    bytes networkInvoiceList = 1;
+}
+
+message Invoices {
+    map<string, InvoiceListBlob> invoiceLists = 1;
+}
+
 message KinConfig {
     int64 min_fee = 1;
 }

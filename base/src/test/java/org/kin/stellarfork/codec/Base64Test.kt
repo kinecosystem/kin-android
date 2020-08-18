@@ -257,6 +257,7 @@ class Base64Test {
     }
 
     @Test
+    @Suppress("UNUSED_VALUE")
     fun testConstructors() {
         var base64: Base64
         base64 = Base64()
@@ -3501,7 +3502,7 @@ class Base64Test {
     fun testUrlSafe() { // test random data of sizes 0 thru 150
         for (i in 0..150) {
             val randomData = Base64TestData.randomData(i, true)
-            val encoded = randomData!![1]
+            val encoded = randomData[1]
             val decoded = randomData[0]
             val result = decodeBase64(encoded)
             Assert.assertTrue("url-safe i=$i", Arrays.equals(decoded, result))

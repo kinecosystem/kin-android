@@ -33,7 +33,7 @@ class TransactionLightDeserializerTest {
         val operations =
             transaction.operations
         assertNotNull(operations)
-        assertEquals(operations!!.size, 1)
+        assertEquals(operations.size, 1)
         assertTrue(operations[0] is CreateAccountOperation)
         val createAccountOperation =
             operations[0] as CreateAccountOperation
@@ -64,7 +64,7 @@ class TransactionLightDeserializerTest {
             ledgerEntryChanges.ledgerEntryStates[0]
         assertTrue(sentAccountState is TrustLineLedgerEntryChange)
         val sentAccountTrustLineState =
-            sentAccountState as TrustLineLedgerEntryChange
+            sentAccountState
         assertEquals(
             "GA62NHJCFCAEOZXTBA7DG6PTGSHYJP2UTMYFCZV2OQKDC3CMXBFMIICL",
             sentAccountTrustLineState.account!!.accountId
@@ -84,7 +84,7 @@ class TransactionLightDeserializerTest {
             ledgerEntryChanges.ledgerEntryStates[1]
         assertTrue(receivedAccountState is TrustLineLedgerEntryChange)
         val recievedAccountTrustLineState =
-            receivedAccountState as TrustLineLedgerEntryChange
+            receivedAccountState
         assertEquals(
             "GDHPNRNU5PCP46DPW3MHK74XQU3BOMVBJKCTW3DV4WZNBOJB6JTJTFXC",
             recievedAccountTrustLineState.account!!.accountId
@@ -104,7 +104,7 @@ class TransactionLightDeserializerTest {
             ledgerEntryChanges.ledgerEntryUpdates[0]
         assertTrue(sentAccountUpdate is TrustLineLedgerEntryChange)
         val sentAccountTrustLineUpdate =
-            sentAccountUpdate as TrustLineLedgerEntryChange
+            sentAccountUpdate
         assertEquals(
             "GA62NHJCFCAEOZXTBA7DG6PTGSHYJP2UTMYFCZV2OQKDC3CMXBFMIICL",
             sentAccountTrustLineUpdate.account!!.accountId
@@ -124,7 +124,7 @@ class TransactionLightDeserializerTest {
             ledgerEntryChanges.ledgerEntryUpdates[1]
         assertTrue(receivedAccountUpdate is TrustLineLedgerEntryChange)
         val receivedAccountTrustLineUpdate =
-            receivedAccountUpdate as TrustLineLedgerEntryChange
+            receivedAccountUpdate
         assertEquals(
             "GDHPNRNU5PCP46DPW3MHK74XQU3BOMVBJKCTW3DV4WZNBOJB6JTJTFXC",
             receivedAccountTrustLineUpdate.account!!.accountId

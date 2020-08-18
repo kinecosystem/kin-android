@@ -1,0 +1,19 @@
+<resources>
+    <string name="kin_sdk_description_payment_flow_confirm_kin">Spend %1d Kin in %2s? Your new balance will be %3d Kin.</string>
+    <string name="kin_sdk_description_payment_flow_processing">Confirming your transaction</string>
+    <string name="kin_sdk_description_confirmed">Confirmed</string>
+    <string name="kin_sdk_title_close">Close</string>
+    <string name="kin_sdk_title_confirm">Confirm</string>
+
+    <!-- Spend Flow Error Reasons  -->
+    <string name="kin_sdk_error_reason_unknown">Oops! For some reason the payment did not go through.</string>
+    <string name="kin_sdk_error_reason_payment_cancelled">This payment has been cancelled</string>
+    <string name="kin_sdk_error_reason_already_purchased">The seller has indicated you have previously made this purchase and that no payment is necessary. No additional payment was made.</string>
+    <string name="kin_sdk_error_reason_insufficient_balance">The current balance of %1d Kin in the account is insufficient to pay for this request. Please acquire more kin and try again.</string>
+    <string name="kin_sdk_error_reason_unknown_payer_account">The account specified to pay is unknown or is unable to locate or access it\'s private key.</string>
+    <string name="kin_sdk_error_reason_unknown_invoice">There is something wrong with the payment. (Misconfigured/Unknown Invoice)</string>
+    <string name="kin_sdk_error_reason_misconfigured_request">There is something wrong with the payment. (Misconfigured Request)</string>
+    <string name="kin_sdk_error_reason_denied_by_service">This payment was denied by the processor without a reason.</string>
+    <string name="kin_sdk_error_reason_sdk_upgrade_required">An app update is required to process this request. Please update your app to the newest version and try again.</string>
+    <string name="kin_sdk_error_reason_bad_network">Uhoh, the system had trouble processing your payment. Please make sure you have access to the internet and try again.</string>
+</resources>

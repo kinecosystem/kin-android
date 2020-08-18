@@ -6,8 +6,15 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation deps.kotlin_stdlib
     implementation project(':demo:viewmodel')
-    implementation (project(':base')) {
+    api (project(':base')) {
         exclude module: 'libsodium-jni'
     }
+    implementation (project(":base-viewmodel-impl")) {
+        exclude module: 'libsodium-jni'
+    }
+    api deps.grpc_stub
+    api deps.grpc_protobuf
+    api deps.grpc_okhttp
+    api deps.okhttp
     testImplementation deps.junit
 }

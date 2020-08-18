@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Kin Wallet Demo</string>
+    <string name="app_name">Kin Demo</string>
     <string name="title_active_wallets">Active Wallets</string>
     <string name="title_main_network">Main Network</string>
     <string name="title_test_network">Test Network</string>
@@ -10,11 +10,13 @@
     <string name="title_show_wallet_code">Show Wallet Scan Code</string>
     <string name="title_onboard_wallet">Onboard Wallet</string>
     <string name="description_onboard_wallet">Register the wallet with the blockchain</string>
+    <string name="title_fund_wallet">Fund Wallet</string>
+    <string name="description_fund_wallet">Fund the wallet with 10K Kin</string>
     <string name="placeholder_no_history">There\'s no history for this wallet yet. When Kin is sent or received, the history will appear here</string>
     <string name="title_send_transaction">Send Kin</string>
     <string name="title_test_transaction_latency">Test Transaction Latency</string>
     <string name="description_send_transaction">Transfer Kin to another wallet</string>
-    <string name="description_test_transaction_latency">Perform repeated transactions to measure latency</string>
+    <string name="description_test_transaction_latency">Perform repeated payments to measure latency</string>
     <string name="title_export_wallet">Export Wallet</string>
     <string name="description_export_wallet">Create an encrypted backup of your wallet key</string>
     <string name="title_home_screen">Kin Wallet Demo</string>
@@ -24,10 +26,7 @@
     <string name="hint_fee_amount">Fee</string>
     <string name="hint_payment_amount">Amount</string>
     <string name="hint_public_address">Destination Address</string>
-    <string name="title_loading">Loading...</string>
     <string name="button_delete">Delete</string>
-    <string name="button_ok">OK</string>
-    <string name="button_cancel">Cancel</string>
     <string name="title_confirm_delete">Delete Wallet?</string>
     <string name="description_confirm_delete">You will not be able to access the Kin in this wallet</string>
     <string name="title_error">Error</string>
@@ -38,4 +37,20 @@
     <string name="title_import_kin">Import Wallet</string>
     <string name="description_export_kin">Backup the wallet\'s private key</string>
     <string name="description_import_kin">Restore with a previous backup</string>
+    <string name="title_create_invoice">Create Invoice</string>
+    <string name="title_invoices">Invoices</string>
+    <string name="description_invoices">Create &amp; demo pay invoices</string>
+    <string name="hint_title">Title</string>
+    <string name="hint_description">Description</string>
+    <string name="hint_sku">SKU</string>
+    <string name="title_add_line_item">Add Line Item</string>
+    <string name="title_line_items">Line Items</string>
+    <string name="invoice_id">Invoice Id</string>
+    <string name="title_pay_now">Pay Now</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="fee">Fee</string>
+    <string name="total">Total</string>
+    <string name="cancel">Cancel</string>
+    <string name="title_confirm">Confirm</string>
+    <string name="title_items">Items</string>
 </resources>

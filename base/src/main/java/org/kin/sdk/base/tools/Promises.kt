@@ -2,9 +2,13 @@ package org.kin.sdk.base.tools
 
 import org.kin.sdk.base.tools.Promise.State
 import java.util.Collections
+import java.util.Timer
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.schedule
+import kotlin.concurrent.timer
 
 class PromisedCallback<T>(
     val onSuccess: (value: T) -> Unit,
@@ -68,6 +72,8 @@ interface Promise<out T> {
 
     fun resolve()
 
+    fun resolveIn(amount: Long, unit: TimeUnit)
+
     fun <S> flatMap(
         onResolved: (T) -> Promise<S>,
         onRejected: (Throwable) -> Promise<S>
@@ -85,9 +91,7 @@ interface Promise<out T> {
     fun <S> map(
         onResolved: (T) -> S
     ): Promise<S>
-
     fun doOnResolved(onResolved: (T) -> Unit): Promise<T>
-
     fun doOnError(onRejected: (Throwable) -> Unit): Promise<T>
 }
 
@@ -214,13 +218,11 @@ private class SimplePromise<out T>(
         }
     }
 
-    @KinExperimental
     override fun workOn(executor: ExecutorService): Promise<T> {
         if (workExecutor == null) workExecutor = executor
         return this
     }
 
-    @KinExperimental
     override fun resolveOn(executor: ExecutorService): Promise<T> {
         resolveExecutor = executor
         return this
@@ -303,5 +305,11 @@ private class SimplePromise<out T>(
 
     override fun resolve() {
         maybeDoWork()
+    }
+
+    override fun resolveIn(amount: Long, unit: TimeUnit) {
+        Timer().schedule(unit.toMillis(amount)) {
+            resolve()
+        }
     }
 }

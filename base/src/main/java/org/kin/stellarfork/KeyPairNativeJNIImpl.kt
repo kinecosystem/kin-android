@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package org.kin.stellarfork
 
 import org.kin.stellarfork.StrKey.decodeStellarAccountId

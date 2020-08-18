@@ -8,4 +8,4 @@
 
 | Name | Summary |
 |---|---|
-| [build](build.md) | `fun build(): `[`KinEnvironment`](../../../index.md) |
+| [build](build.md) | `fun build(): Horizon` |

@@ -1,6 +1,6 @@
 package org.kin.sdk.demo.viewmodel
 
-import org.kin.sdk.demo.viewmodel.tools.ViewModel
+import org.kin.sdk.design.viewmodel.tools.ViewModel
 import java.math.BigDecimal
 
 interface WalletViewModel : ViewModel<WalletViewModel.NavigationArgs, WalletViewModel.State> {
@@ -14,14 +14,17 @@ interface WalletViewModel : ViewModel<WalletViewModel.NavigationArgs, WalletView
     }
 
     data class State(
-        val publicAddress: String,
-        val balance: BigDecimal?,
+        val walletHeaderViewModel: WalletHeaderViewModel,
         val walletStatus: WalletStatus,
         val walletActions: List<WalletActionViewModel>,
         val paymentHistoryItems: List<PaymentHistoryItemViewModel>
     )
 
+    data class WalletHeaderViewModel(val publicAddress: String, val balance: BigDecimal?)
+
     interface PaymentHistoryItemViewModel {
+        fun onItemTapped()
+
         val amount: BigDecimal
         val memo: String
         val sourceWallet: String
@@ -42,11 +45,11 @@ interface WalletViewModel : ViewModel<WalletViewModel.NavigationArgs, WalletView
         val publicAddress: String
     }
 
-    interface ShowScanCodeActionViewModel : WalletActionViewModel {
-        val publicAddress: String
+    interface OnboardActionViewModel : WalletActionViewModel {
+        fun onItemTapped(completed: (ex: Throwable?) -> Unit)
     }
 
-    interface OnboardActionViewModel : WalletActionViewModel {
+    interface FundActionViewModel : WalletActionViewModel {
         fun onItemTapped(completed: (ex: Throwable?) -> Unit)
     }
 
@@ -56,5 +59,9 @@ interface WalletViewModel : ViewModel<WalletViewModel.NavigationArgs, WalletView
 
     interface ExportWalletActionViewModel : WalletActionViewModel {
         fun onItemTapped(activity: Any)
+    }
+
+    interface InvoicesActionItemViewModel : WalletActionViewModel {
+        fun onItemTapped()
     }
 }

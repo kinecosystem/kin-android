@@ -9,21 +9,27 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
 import androidx.core.widget.addTextChangedListener
+import org.kin.sdk.demo.ResolverProvider
 import org.kin.sdk.demo.R
-import org.kin.sdk.demo.view.tools.BaseActivity
-import org.kin.sdk.demo.view.custom.PrimaryButton
-import org.kin.sdk.demo.view.custom.StandardDialog
-import org.kin.sdk.demo.view.custom.StandardEditText
-import org.kin.sdk.demo.view.tools.addBase32ChangedListener
-import org.kin.sdk.demo.view.tools.addIntegerChangedListener
-import org.kin.sdk.demo.view.tools.addTo
-import org.kin.sdk.demo.view.tools.dip
+import org.kin.sdk.design.view.tools.BaseActivity
+import org.kin.sdk.design.view.widget.PrimaryButton
+import org.kin.sdk.design.view.widget.internal.StandardDialog
+import org.kin.sdk.design.view.widget.internal.StandardEditText
+import org.kin.sdk.design.view.tools.addBase32ChangedListener
+import org.kin.sdk.design.view.tools.addIntegerChangedListener
+import org.kin.sdk.design.view.tools.addTo
+import org.kin.sdk.design.view.tools.dip
+import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.SendTransactionViewModel
 
-class SendTransactionActivity : BaseActivity<SendTransactionViewModel, SendTransactionViewModel.NavigationArgs, SendTransactionViewModel.State>() {
+class SendTransactionActivity : BaseActivity<SendTransactionViewModel, SendTransactionViewModel.NavigationArgs, SendTransactionViewModel.State, ResolverProvider, DemoNavigator>() {
     object BundleKeys {
         const val walletIndex: String = "SendTransactionActivity.WALLET_INDEX"
         const val walletPublicAddress: String = "SendTransactionActivity.WALLET_PUBLIC_ADDRESS"
+    }
+
+    override val navigator: DemoNavigator by lazy {
+        ActivityNavigatorImpl(this)
     }
 
     private lateinit var sendButton: PrimaryButton
@@ -33,7 +39,7 @@ class SendTransactionActivity : BaseActivity<SendTransactionViewModel, SendTrans
     private lateinit var publicAddressView: StandardEditText
 
     override fun createViewModel(bundle: Bundle): SendTransactionViewModel {
-        return resolver.resolve(SendTransactionViewModel.NavigationArgs(bundle.getInt(BundleKeys.walletIndex), bundle.getString(BundleKeys.walletPublicAddress)!!), navigator)
+        return resolver.resolver.resolve(SendTransactionViewModel.NavigationArgs(bundle.getInt(BundleKeys.walletIndex), bundle.getString(BundleKeys.walletPublicAddress)!!), navigator)
     }
 
     override fun createView(context: Context): ViewGroup {

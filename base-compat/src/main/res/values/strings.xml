@@ -4,7 +4,7 @@
     <string name="backup_and_restore_restore">Restore</string>
     <string name="backup_and_restore_backup">Backup</string>
 
-    <string name="backup_and_restore_steps_format">%d/%d</string>
+    <string name="backup_and_restore_steps_format">%1$d/%2$d</string>
 
     <!--Sentences-->
     <string name="backup_and_restore_upload_qr_title">Load your Kin from a backup</string>

@@ -30,8 +30,8 @@ class BaseNCodecTest {
         codec = object : BaseNCodec(0, 0, 0, 0) {
             override fun decode(pArray: ByteArray, i: Int, length: Int) {}
             override fun encode(pArray: ByteArray, i: Int, length: Int) {}
-            override fun isInAlphabet(b: Byte): Boolean {
-                return b == 'O'.toByte() || b == 'K'.toByte() // allow OK
+            override fun isInAlphabet(value: Byte): Boolean {
+                return value == 'O'.toByte() || value == 'K'.toByte() // allow OK
             }
         }
     }

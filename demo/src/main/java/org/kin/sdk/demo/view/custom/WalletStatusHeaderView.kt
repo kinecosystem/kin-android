@@ -6,19 +6,20 @@ import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import org.kin.sdk.demo.R
-import org.kin.sdk.demo.view.tools.MeasureSpecTools
-import org.kin.sdk.demo.view.tools.addTo
-import org.kin.sdk.demo.view.tools.dip
+import org.kin.sdk.design.view.tools.MeasureSpecTools
+import org.kin.sdk.design.view.tools.addTo
+import org.kin.sdk.design.view.tools.dip
+import org.kin.sdk.design.view.tools.resolveColor
+import org.kin.sdk.design.view.widget.internal.CodeStyleTextView
+import org.kin.sdk.design.view.widget.KinAmountView
 import java.math.BigDecimal
 
 class WalletStatusHeaderView(context: Context) : LinearLayout(context) {
     private val balanceView = with(
-        PrimaryTextView(
-            context
-        )
+        KinAmountView(context)
     ) {
         textSize = 40f
-        typeface = Typeface.create(
+        innerTextView.typeface = Typeface.create(
             "sans-serif-medium",
             Typeface.NORMAL
         )
@@ -27,7 +28,7 @@ class WalletStatusHeaderView(context: Context) : LinearLayout(context) {
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            setMargins(12.dip, 24.dip, 12.dip, 8.dip)
+            setMargins(16.dip, 24.dip, 16.dip, 8.dip)
             gravity = Gravity.CENTER_HORIZONTAL
         })
     }
@@ -38,13 +39,13 @@ class WalletStatusHeaderView(context: Context) : LinearLayout(context) {
         )
     ) {
         textSize = 19f
-        setTextColor(resources.getColor(R.color.secondaryTextColor))
+        setTextColor(context.resolveColor(R.color.kin_sdk_secondaryTextColor))
 
         addTo(this@WalletStatusHeaderView, LayoutParams(
             ViewGroup.LayoutParams.WRAP_CONTENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         ).apply {
-            setMargins(12.dip, 0.dip, 12.dip, 24.dip)
+            setMargins(16.dip, 0.dip, 16.dip, 24.dip)
             gravity = Gravity.CENTER_HORIZONTAL
         })
     }
@@ -60,7 +61,11 @@ class WalletStatusHeaderView(context: Context) : LinearLayout(context) {
 
     var balance: BigDecimal? = null
         set(value) {
-            balanceView.setText(value?.let { "${value.toDouble()} KIN" } ?: " ")
+            if (value != null) {
+                balanceView.amount = value
+            } else {
+                balanceView.innerTextView.text = " "
+            }
             field = value
         }
 

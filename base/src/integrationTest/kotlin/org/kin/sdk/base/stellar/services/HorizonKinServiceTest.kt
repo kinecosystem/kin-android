@@ -15,18 +15,19 @@ import org.kin.sdk.base.models.toAccount
 import org.kin.sdk.base.models.toKeyPair
 import org.kin.sdk.base.models.toKinTransaction
 import org.kin.sdk.base.models.toSigningKeyPair
+import org.kin.sdk.base.network.api.proto.AgoraKinTransactionsApi
+import org.kin.sdk.base.network.api.rest.DefaultHorizonKinAccountCreationApi
+import org.kin.sdk.base.network.api.rest.DefaultHorizonKinTransactionWhitelistingApi
 import org.kin.sdk.base.network.api.FriendBotApi
+import org.kin.sdk.base.network.api.rest.HorizonKinApi
+import org.kin.sdk.base.stellar.models.ApiConfig
+import org.kin.sdk.base.stellar.models.KinTransaction
+import org.kin.sdk.base.tools.latchOperation
 import org.kin.sdk.base.network.api.KinAccountApi
 import org.kin.sdk.base.network.api.KinAccountCreationApi
 import org.kin.sdk.base.network.api.KinTransactionApi
 import org.kin.sdk.base.network.api.KinTransactionWhitelistingApi
-import org.kin.sdk.base.network.api.rest.DefaultHorizonKinAccountCreationApi
-import org.kin.sdk.base.network.api.rest.DefaultHorizonKinTransactionWhitelistingApi
-import org.kin.sdk.base.network.api.rest.HorizonKinApi
-import org.kin.sdk.base.stellar.models.ApiConfig
-import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
-import org.kin.sdk.base.tools.latchOperation
 import org.kin.stellarfork.AssetTypeNative
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.Memo
@@ -62,7 +63,7 @@ class HorizonKinServiceTest {
 
     @Before
     fun setUp() {
-        Security.insertProviderAt(Conscrypt.newProvider(), 1);
+        Security.insertProviderAt(Conscrypt.newProvider(), 0);
         val okHttpClient = OkHttpClient.Builder().build()
 
         val api = HorizonKinApi(
@@ -122,7 +123,10 @@ class HorizonKinServiceTest {
             response?.result
         )
         assertEquals(
-            DEFAULT_FEE_IN_QUARKS, response?.minFee
+            when (sutTransactionsApi) {
+                is AgoraKinTransactionsApi -> DEFAULT_WHITELISTED_FEE_IN_QUARKS
+                else -> DEFAULT_FEE_IN_QUARKS
+            }, response?.minFee
         )
     }
 

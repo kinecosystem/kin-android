@@ -1,6 +1,7 @@
 package org.kin.sdk.base.tools
 
 
+@Suppress("UNCHECKED_CAST")
 class Optional<T> private constructor(private val _value: T) {
 
     fun get(): T? {

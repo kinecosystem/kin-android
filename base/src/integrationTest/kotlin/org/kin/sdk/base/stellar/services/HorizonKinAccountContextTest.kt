@@ -35,7 +35,7 @@ class HorizonKinAccountContextTest {
 
     @Before
     fun setUp() {
-        Security.insertProviderAt(Conscrypt.newProvider(), 1);
+        Security.insertProviderAt(Conscrypt.newProvider(), 0);
 
         lifecycle = DisposeBag()
 
@@ -117,7 +117,13 @@ class HorizonKinAccountContextTest {
                 println("-----")
             }
             .test(2, timeout = 1000) {
-                assertEquals(listOf(listOf("3", "2", "1"), listOf("3", "2", "1"), listOf("5", "4", "3", "2", "1")), values)
+                assertEquals(
+                    listOf(
+                        listOf("3", "2", "1"),
+                        listOf("3", "2", "1"),
+                        listOf("5", "4", "3", "2", "1")
+                    ), values
+                )
             }
 
         println("[USER A] Now Print What's in Storage Now:")

@@ -11,6 +11,7 @@
 | [org.kin.sdk.base](org.kin.sdk.base/index.md) |  |
 | [org.kin.sdk.base.models](org.kin.sdk.base.models/index.md) |  |
 | [org.kin.sdk.base.network.api](org.kin.sdk.base.network.api/index.md) |  |
+| [org.kin.sdk.base.network.api.proto](org.kin.sdk.base.network.api.proto/index.md) |  |
 | [org.kin.sdk.base.network.api.rest](org.kin.sdk.base.network.api.rest/index.md) |  |
 | [org.kin.sdk.base.network.services](org.kin.sdk.base.network.services/index.md) |  |
 | [org.kin.sdk.base.stellar.models](org.kin.sdk.base.stellar.models/index.md) |  |

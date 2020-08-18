@@ -73,7 +73,7 @@ class PromiseTest {
     @Test
     fun testNoDoubleWork() {
         val workCount = AtomicInteger(0)
-        val promise = Promise.create<Int> { resolve, reject ->
+        val promise = Promise.create<Int> { resolve, _ ->
             val count = workCount.incrementAndGet()
 
             if (count > 1) {
@@ -89,7 +89,7 @@ class PromiseTest {
 
     @Test
     fun testFailure_throwError() {
-        Promise.create<Int> { res, rej ->
+        Promise.create<Int> { _, _ ->
             throw error
         }.test {
             assertNotNull(error)
@@ -190,7 +190,7 @@ class PromiseTest {
 
     @Test
     fun testResolveWhileResolving() {
-        val promise = Promise.create<Int> { resolve, reject ->
+        val promise = Promise.create<Int> { resolve, _ ->
             resolve(1)
         }
 
@@ -268,7 +268,7 @@ class PromiseTest {
         latchOperationValueCapture<Int>(2) { capture ->
             q.queue(Promise.of(1)).then(capture, capture)
             q.queue(Promise.of(2)).then(capture, capture)
-            q.queue(Promise.create { resolve, _ ->
+            q.queue(Promise.create { _, _ ->
                 throw Exception()
             }).then(capture, capture)
         }.test {

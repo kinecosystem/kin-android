@@ -9,7 +9,11 @@
 | Name | Summary |
 |---|---|
 | [CustomConfig](-custom-config/index.md) | `class CustomConfig : `[`ApiConfig`](./index.md) |
+| [MainNetAgoraAccounts](-main-net-agora-accounts.md) | `object MainNetAgoraAccounts : `[`ApiConfig`](./index.md) |
+| [MainNetAgoraTransactions](-main-net-agora-transactions.md) | `object MainNetAgoraTransactions : `[`ApiConfig`](./index.md) |
 | [MainNetHorizon](-main-net-horizon.md) | `object MainNetHorizon : `[`ApiConfig`](./index.md) |
+| [TestNetAgoraAccounts](-test-net-agora-accounts.md) | `object TestNetAgoraAccounts : `[`ApiConfig`](./index.md) |
+| [TestNetAgoraTransactions](-test-net-agora-transactions.md) | `object TestNetAgoraTransactions : `[`ApiConfig`](./index.md) |
 | [TestNetHorizon](-test-net-horizon.md) | `object TestNetHorizon : `[`ApiConfig`](./index.md) |
 
 ### Properties

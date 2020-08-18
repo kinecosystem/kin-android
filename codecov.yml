@@ -40,3 +40,6 @@ ignore:
   - "**/kin/backupandrestore/base/*.*"
   - "**/kin/backupandrestore/utils/*.*"
   - "**/kin/backupandrestore/widget/*.*"
+  - "**/Tls12SocketFactory.*"
+  - "**/OkHttpChannelBuilderForcedTls12.*"
+  - "**/AppUserAuthInterceptor.*"

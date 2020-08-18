@@ -3,14 +3,14 @@ executors:
   kin-executor:
     working_directory: ~/code
     docker:
-      - image: circleci/android:api-29
+      - image: circleci/android@sha256:b6646fdf7457f61825526e7bfce364d8e533da6ceb1cdb98e371e94348ecc834
     resource_class: xlarge
     environment:
       JVM_OPTS: -Xmx3200m
 
 references:
   gradle_key: &gradle_key
-                jars-{{ checksum "build.gradle" }}-{{ checksum "base/build.gradle" }}-{{ checksum "base-compat/build.gradle" }}-{{ checksum "base-storage/build.gradle" }}
+                jars-{{ checksum "build.gradle" }}-{{ checksum "base/build.gradle" }}-{{ checksum "base-compat/build.gradle" }}-{{ checksum "base-storage/build.gradle" }}-{{ checksum "demo/build.gradle" }}-{{ checksum "design/build.gradle" }}-{{ checksum "design-showcase/build.gradle" }}-{{ checksum "base-viewmodel/build.gradle" }}-{{ checksum "base-viewmodel-impl/build.gradle" }}-{{ checksum "spend/build.gradle" }}
 
   restore_gradle_cache: &restore_gradle_cache
     restore_cache:

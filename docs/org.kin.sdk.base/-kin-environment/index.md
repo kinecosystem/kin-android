@@ -8,6 +8,7 @@
 
 | Name | Summary |
 |---|---|
+| [Agora](-agora/index.md) | `class Agora : `[`KinEnvironment`](./index.md) |
 | [Horizon](-horizon/index.md) | `class Horizon : `[`KinEnvironment`](./index.md) |
 
 ### Properties

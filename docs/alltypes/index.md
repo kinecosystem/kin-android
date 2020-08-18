@@ -30,6 +30,16 @@ Account was not created on the blockchain
 
 |
 
+##### [org.kin.sdk.base.network.api.proto.AgoraKinAccountsApi](../org.kin.sdk.base.network.api.proto/-agora-kin-accounts-api/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.api.proto.AgoraKinTransactionsApi](../org.kin.sdk.base.network.api.proto/-agora-kin-transactions-api/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.stellar.models.ApiConfig](../org.kin.sdk.base.stellar.models/-api-config/index.md)
 
 
@@ -128,6 +138,16 @@ Provides blockchain network details
 ##### [org.kin.sdk.base.network.api.FriendBotApi](../org.kin.sdk.base.network.api/-friend-bot-api/index.md)
 
 This is valid for testnet only
+
+
+|
+
+##### [org.kin.sdk.base.network.api.proto.GrpcApi](../org.kin.sdk.base.network.api.proto/-grpc-api/index.md)
+
+
+| (extensions in package org.kin.sdk.base.network.api.proto)
+
+##### [org.kin.gen.transaction.v3.TransactionService.HistoryItem](../org.kin.sdk.base.network.api.proto/org.kin.gen.transaction.v3.-transaction-service.-history-item/index.md)
 
 
 |

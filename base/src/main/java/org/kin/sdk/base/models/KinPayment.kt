@@ -9,15 +9,13 @@ data class KinPayment @JvmOverloads constructor(
     val fee: QuarkAmount,
     val memo: KinMemo,
     val timestamp: Long,
-    val extra: Addendum? = null
+    val invoice: Invoice? = null
 ) {
     data class Id(val transactionHash: TransactionHash, val offset: Int) {
         val value: ByteArray by lazy {
             transactionHash.rawValue + offset.toByte()
         }
     }
-
-    data class Addendum(val data: ByteArray?)
 
     sealed class Status(val value: Int) {
         object InFlight : Status(0)

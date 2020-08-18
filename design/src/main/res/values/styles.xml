@@ -1,0 +1,24 @@
+<resources>
+
+    <!-- set the rounded drawable as background to your bottom sheet -->
+    <style name="BottomSheet" parent="@style/Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@drawable/bg_bottom_sheet_dialog_fragment</item>
+    </style>
+
+    <style name="BaseBottomSheetDialog" parent="@style/Theme.Design.Light.BottomSheetDialog">
+        <item name="android:windowIsFloating">false</item>
+        <item name="bottomSheetStyle">@style/BottomSheet</item>
+    </style>
+
+    <style name="BottomSheetDialogTheme" parent="BaseBottomSheetDialog" />
+
+    <style name="Theme.Bottom.Dialog" parent="Theme.MaterialComponents.DayNight.Dialog">
+        <item name="windowNoTitle">true</item>
+        <item name="colorPrimary">@color/kin_sdk_purple</item>
+        <item name="colorPrimaryVariant">@color/kin_sdk_purple_dark</item>
+        <item name="colorOnPrimary">@color/kin_sdk_primaryTextColor</item>
+        <item name="colorSecondary">@color/kin_sdk_purple</item>
+        <item name="colorSecondaryVariant">@color/kin_sdk_purple_dark</item>
+        <item name="colorOnSecondary">@color/kin_sdk_secondaryTextColor</item>
+    </style>
+</resources>

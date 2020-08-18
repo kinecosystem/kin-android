@@ -1,5 +1,6 @@
 package org.kin.sdk.base
 
+import io.grpc.ManagedChannel
 import okhttp3.OkHttpClient
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
@@ -7,13 +8,23 @@ import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.network.api.FriendBotApi
 import org.kin.sdk.base.network.api.KinAccountApi
 import org.kin.sdk.base.network.api.KinAccountCreationApi
+import org.kin.sdk.base.network.api.KinStreamingApi
 import org.kin.sdk.base.network.api.KinTransactionApi
 import org.kin.sdk.base.network.api.KinTransactionWhitelistingApi
-import org.kin.sdk.base.network.api.rest.DefaultHorizonKinAccountCreationApi
-import org.kin.sdk.base.network.api.rest.DefaultHorizonKinTransactionWhitelistingApi
-import org.kin.sdk.base.network.api.rest.HorizonKinApi
+import org.kin.sdk.base.network.api.agora.AgoraKinAccountsApi
+import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApi
+import org.kin.sdk.base.network.api.agora.AppUserAuthInterceptor
+import org.kin.sdk.base.network.api.agora.OkHttpChannelBuilderForcedTls12
+import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinAccountCreationApi
+import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinTransactionWhitelistingApi
+import org.kin.sdk.base.network.api.horizon.HorizonKinApi
+import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.network.services.KinServiceImpl
+import org.kin.sdk.base.repository.AppInfoRepository
+import org.kin.sdk.base.repository.InMemoryAppInfoRepositoryImpl
+import org.kin.sdk.base.repository.InMemoryInvoiceRepositoryImpl
+import org.kin.sdk.base.repository.InvoiceRepository
 import org.kin.sdk.base.stellar.models.ApiConfig
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.storage.KinFileStorage
@@ -35,6 +46,7 @@ sealed class KinEnvironment {
     internal abstract val executors: ExecutorServices
     internal abstract val networkHandler: NetworkOperationsHandler
 
+    @Deprecated("Please use [KinEnvironment.Agora] instead. Horizon may dissapear in a future blockchain migration.")
     class Horizon private constructor(
         internal val okHttpClient: OkHttpClient,
         override val networkEnvironment: NetworkEnvironment,
@@ -81,6 +93,7 @@ sealed class KinEnvironment {
                         networkHandler,
                         api as KinAccountApi,
                         api as KinTransactionApi,
+                        api as KinStreamingApi,
                         accountCreationApi ?: DefaultHorizonKinAccountCreationApi(
                             networkEnvironment.horizonApiConfig(),
                             FriendBotApi(okHttpClient)
@@ -105,50 +118,188 @@ sealed class KinEnvironment {
                 }
             }
 
-            internal fun setOkHttpClient(okHttpClient: OkHttpClient): Builder {
+            internal fun setOkHttpClient(okHttpClient: OkHttpClient): Builder = apply {
                 this.okHttpClient = okHttpClient
-                return this
             }
 
-            internal fun setExecutorServices(executors: ExecutorServices): Builder {
+            internal fun setExecutorServices(executors: ExecutorServices): Builder = apply {
                 this.executors = executors
-                return this
             }
 
-            internal fun setNetworkOperationsHandler(networkHandler: NetworkOperationsHandler): Builder {
-                this.networkHandler = networkHandler
-                return this
-            }
+            internal fun setNetworkOperationsHandler(networkHandler: NetworkOperationsHandler): Builder =
+                apply {
+                    this.networkHandler = networkHandler
+                }
 
-            fun setLogger(logger: ILoggerFactory): Builder {
+            fun setLogger(logger: ILoggerFactory): Builder = apply {
                 this.logger = logger
-                return this
             }
 
-            fun setKinService(kinService: KinService): Builder {
+            fun setKinService(kinService: KinService): Builder = apply {
                 this.service = kinService
-                return this
             }
 
-            fun setKinAccountCreationApi(accountCreationApi: KinAccountCreationApi): Builder {
-                this.accountCreationApi = accountCreationApi
-                return this
-            }
+            fun setKinAccountCreationApi(accountCreationApi: KinAccountCreationApi): Builder =
+                apply {
+                    this.accountCreationApi = accountCreationApi
+                }
 
-            fun setKinTransactionWhitelistingApi(transactionWhitelistingApi: KinTransactionWhitelistingApi): Builder {
-                this.transactionWhitelistingApi = transactionWhitelistingApi
-                return this
-            }
+            fun setKinTransactionWhitelistingApi(transactionWhitelistingApi: KinTransactionWhitelistingApi): Builder =
+                apply {
+                    this.transactionWhitelistingApi = transactionWhitelistingApi
+                }
 
             fun setStorage(storage: Storage): CompletedBuilder {
                 this.storage = storage
                 return CompletedBuilder()
             }
 
-            fun setStorage(fileStorageBuilder: KinFileStorage.Builder): CompletedBuilder {
-                this.storageBuilder = fileStorageBuilder
-                return CompletedBuilder()
+            fun setStorage(fileStorageBuilder: KinFileStorage.Builder): CompletedBuilder =
+                with(this) {
+                    this.storageBuilder = fileStorageBuilder
+                    CompletedBuilder()
+                }
+        }
+    }
+
+    class Agora private constructor(
+        private val managedChannel: ManagedChannel,
+        override val networkEnvironment: NetworkEnvironment,
+        override val logger: ILoggerFactory,
+        override val storage: Storage,
+        override val executors: ExecutorServices,
+        override val networkHandler: NetworkOperationsHandler,
+        override val service: KinService,
+        val appInfoRepository: AppInfoRepository = InMemoryAppInfoRepositoryImpl(),
+        val invoiceRepository: InvoiceRepository = InMemoryInvoiceRepositoryImpl(),
+        val appInfoProvider: AppInfoProvider
+    ) : KinEnvironment() {
+        class Builder(private val networkEnvironment: NetworkEnvironment) {
+            private var managedChannel: ManagedChannel? = null
+            private var executors: ExecutorServices? = null
+            private var logger: ILoggerFactory? = null
+            private var networkHandler: NetworkOperationsHandler? = null
+            private var appInfoProvider: AppInfoProvider? = null
+            private var service: KinService? = null
+
+            private lateinit var storage: Storage
+            private var storageBuilder: KinFileStorage.Builder? = null
+
+            inner class CompletedBuilder internal constructor() {
+                private fun NetworkEnvironment.horizonApiConfig() = when (this) {
+                    NetworkEnvironment.KinStellarTestNet -> ApiConfig.TestNetHorizon
+                    NetworkEnvironment.KinStellarMainNet -> ApiConfig.MainNetHorizon
+                }
+
+                fun build(): Agora {
+                    val logger = logger ?: LoggerFactory.getILoggerFactory()
+                    val executors = executors ?: ExecutorServices()
+                    val networkHandler = networkHandler ?: NetworkOperationsHandlerImpl(
+                        executors.sequentialScheduled,
+                        executors.parallelIO,
+                        logger,
+                        shouldRetryError = { it is KinService.FatalError.TransientFailure }
+                    )
+                    val appInfoProvider = appInfoProvider
+                        ?: throw KinEnvironmentBuilderException("Must provide an ApplicationDelegate!")
+                    val managedChannel =
+                        managedChannel ?: networkEnvironment.agoraApiConfig()
+                            .asManagedChannel()
+                    val accountsApi = AgoraKinAccountsApi(managedChannel, networkEnvironment)
+                    val transactionsApi =
+                        AgoraKinTransactionsApi(
+                            managedChannel,
+                            networkEnvironment
+                        )
+                    val service = service ?: KinServiceImpl(
+                        networkEnvironment,
+                        networkHandler,
+                        accountsApi,
+                        transactionsApi,
+                        accountsApi,
+                        accountsApi,
+                        transactionsApi
+                    )
+
+                    val storageBuilder = storageBuilder
+                    if (!this@Builder::storage.isInitialized && storageBuilder != null) {
+                        storage = storageBuilder.setNetworkEnvironment(networkEnvironment).build()
+                    }
+
+                    return Agora(
+                        managedChannel,
+                        networkEnvironment = networkEnvironment,
+                        logger = logger,
+                        storage = storage,
+                        executors = executors,
+                        networkHandler = networkHandler,
+                        service = service,
+                        appInfoProvider = appInfoProvider
+                    ).apply {
+                        appInfoRepository.addAppInfo(appInfoProvider.appInfo)
+
+                        with(storage) {
+                            getAllAccountIds().forEach {
+                                getInvoiceListsMapForAccountId(it)
+                                    .flatMap {
+                                        invoiceRepository.addAllInvoices(it.values.map { it.invoices }
+                                            .reduce { acc, list -> acc + list })
+                                    }.resolve()
+                            }
+                        }
+                    }
+                }
+
+                private fun NetworkEnvironment.agoraApiConfig() = when (this) {
+                    NetworkEnvironment.KinStellarTestNet -> ApiConfig.TestNetAgora
+                    NetworkEnvironment.KinStellarMainNet -> ApiConfig.MainNetAgora
+                }
+
+                private fun ApiConfig.asManagedChannel() =
+                    OkHttpChannelBuilderForcedTls12.forAddress(networkEndpoint, tlsPort)
+                        .intercept(
+                            *listOf(
+                                AppUserAuthInterceptor(appInfoProvider!!)
+                            ).toTypedArray()
+                        )
+                        .build()
             }
+
+            internal fun setManagedChannel(managedChannel: ManagedChannel): Builder = apply {
+                this.managedChannel = managedChannel
+            }
+
+            internal fun setExecutorServices(executors: ExecutorServices): Builder = apply {
+                this.executors = executors
+            }
+
+            internal fun setNetworkOperationsHandler(networkHandler: NetworkOperationsHandler): Builder =
+                apply {
+                    this.networkHandler = networkHandler
+                }
+
+            fun setLogger(logger: ILoggerFactory): Builder = apply {
+                this.logger = logger
+            }
+
+            fun setAppInfoProvider(appInfoProvider: AppInfoProvider) = apply {
+                this.appInfoProvider = appInfoProvider
+            }
+
+            fun setKinService(kinService: KinService): Builder = apply {
+                this.service = kinService
+            }
+
+            fun setStorage(storage: Storage): CompletedBuilder = with(this) {
+                this.storage = storage
+                CompletedBuilder()
+            }
+
+            fun setStorage(fileStorageBuilder: KinFileStorage.Builder): Builder.CompletedBuilder =
+                with(this) {
+                    this.storageBuilder = fileStorageBuilder
+                    CompletedBuilder()
+                }
         }
     }
 
@@ -186,6 +337,10 @@ sealed class KinEnvironment {
             }
         }
     }
+
+    class KinEnvironmentBuilderException(s: String) : IllegalStateException(s)
 }
+
+
 
 

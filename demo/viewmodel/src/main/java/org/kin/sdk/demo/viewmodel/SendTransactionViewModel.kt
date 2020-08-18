@@ -1,6 +1,6 @@
 package org.kin.sdk.demo.viewmodel
 
-import org.kin.sdk.demo.viewmodel.tools.ViewModel
+import org.kin.sdk.design.viewmodel.tools.ViewModel
 import java.math.BigInteger
 
 interface SendTransactionViewModel : ViewModel<SendTransactionViewModel.NavigationArgs, SendTransactionViewModel.State> {

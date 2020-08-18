@@ -24,4 +24,5 @@ with the Kin Blockchain to developers.
 
 | Name | Summary |
 |---|---|
+| [AgoraKinAccountsApi](../../org.kin.sdk.base.network.api.proto/-agora-kin-accounts-api/index.md) | `class AgoraKinAccountsApi : `[`GrpcApi`](../../org.kin.sdk.base.network.api.proto/-grpc-api/index.md)`, `[`KinAccountApi`](../-kin-account-api/index.md)`, `[`KinAccountCreationApi`](./index.md) |
 | [DefaultHorizonKinAccountCreationApi](../../org.kin.sdk.base.network.api.rest/-default-horizon-kin-account-creation-api/index.md) | `class DefaultHorizonKinAccountCreationApi : `[`KinAccountCreationApi`](./index.md) |

@@ -9,11 +9,8 @@ import org.kin.sdk.base.models.toKeyPair
 import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.network.api.KinAccountCreationApi.CreateAccountRequest
 import org.kin.sdk.base.network.api.KinAccountCreationApi.CreateAccountResponse
-import org.kin.sdk.base.network.api.rest.KinFriendBotApi
-import org.kin.stellarfork.CreateAccountOperation
+import org.kin.sdk.base.network.api.horizon.KinFriendBotApi
 import org.kin.stellarfork.KeyPair
-import org.kin.stellarfork.Network
-import org.kin.stellarfork.Transaction
 import org.kin.stellarfork.Util
 import org.kin.stellarfork.requests.RequestBuilder
 import org.kin.stellarfork.responses.HttpResponseException

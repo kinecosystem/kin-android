@@ -2,4 +2,4 @@
 
 # build
 
-`fun build(): `[`KinEnvironment`](../../../index.md)
+`fun build(): Horizon`

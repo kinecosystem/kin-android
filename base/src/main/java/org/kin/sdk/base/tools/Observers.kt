@@ -35,8 +35,10 @@ interface Observer<T> : Disposable<T> {
     fun remove(listener: (T) -> Unit): Observer<T>
     fun listenerCount(): Int
     fun requestInvalidation(): Observer<T>
+    fun <V> map(function: (T) -> V): Observer<V>
     fun <V> mapPromise(map: (T) -> V): Promise<V>
     fun <V> flatMapPromise(promise: (T) -> Promise<V>): Promise<V>
+    fun filter(function: (T) -> Boolean): Observer<T>
 }
 
 /**
@@ -45,6 +47,16 @@ interface Observer<T> : Disposable<T> {
  */
 interface Callback<T> : Function<T> {
     fun onCompleted(value: T? = null, error: Throwable? = null)
+}
+
+class ObservableCallback<T>(
+    val onNext: (value: T) -> Unit,
+    val onCompleted: () -> Unit,
+    val onError: ((error: Throwable) -> Unit)? = { throw it }
+) {
+    operator fun invoke(value: T) = onNext(value)
+    operator fun invoke() = onCompleted()
+    operator fun invoke(error: Throwable) = onError?.invoke(error)
 }
 
 /**
@@ -71,15 +83,14 @@ fun <T> ListObserver<T>.listen(listener: ValueListener<List<T>>): ListObserver<T
 open class ValueSubject<T>(
     private val triggerInvalidation: (() -> Unit)? = null
 ) : Observer<T> {
-    private val listeners = CopyOnWriteArrayList<(T) -> Unit>()
+    private val listeners by lazy { CopyOnWriteArrayList<(T) -> Unit>() }
     private var currentValue: T? = null
-    private var onDisposed = mutableListOf<() -> Unit>()
+    private val onDisposed by lazy { mutableListOf<() -> Unit>() }
     var distinctUntilChanged: Boolean = true
 
-    override fun add(listener: (T) -> Unit): Observer<T> {
+    override fun add(listener: (T) -> Unit): Observer<T> = apply {
         listeners.add(listener)
         currentValue?.let { listener(it) }
-        return this
     }
 
     fun onNext(newValue: T) {
@@ -87,12 +98,11 @@ open class ValueSubject<T>(
             return
         }
         listeners.forEach { it(newValue) }
-            .also { currentValue = newValue }
+        currentValue = newValue
     }
 
-    override fun remove(listener: (T) -> Unit): Observer<T> {
+    override fun remove(listener: (T) -> Unit): Observer<T> = apply {
         listeners.remove(listener)
-        return this
     }
 
     override fun listenerCount(): Int = listeners.size
@@ -103,26 +113,22 @@ open class ValueSubject<T>(
         onDisposed.clear()
     }
 
-    override fun disposedBy(disposeBag: DisposeBag): Observer<T> {
+    override fun disposedBy(disposeBag: DisposeBag): Observer<T> = apply {
         disposeBag.add(this)
-        return this
     }
 
-    override fun requestInvalidation(): Observer<T> {
+    override fun requestInvalidation(): Observer<T> = apply {
         triggerInvalidation?.invoke()
-        return this
     }
 
-    override fun doOnDisposed(onDisposed: () -> Unit): Observer<T> {
+    override fun doOnDisposed(onDisposed: () -> Unit): Observer<T> = apply {
         this.onDisposed.add(onDisposed)
-        return this
     }
 
     override fun <V> mapPromise(map: (T) -> V): Promise<V> {
         return Promise.create { resolve, reject ->
             add {
                 try {
-                    map(it)
                     resolve(map(it))
                 } catch (t: Throwable) {
                     reject(t)
@@ -134,6 +140,35 @@ open class ValueSubject<T>(
     override fun <V> flatMapPromise(promise: (T) -> Promise<V>): Promise<V> {
         return Promise.create { resolve, reject ->
             add { promise(it).then(resolve, reject) }
+        }
+    }
+
+    override fun <V> map(function: (T) -> V): Observer<V> {
+        val thiz = this
+        return ValueSubject<V>().apply {
+            val innerSubject = this
+            thiz.add {
+                innerSubject.onNext(function(it))
+            }
+            innerSubject.doOnDisposed { thiz.dispose() }
+            thiz.doOnDisposed { innerSubject.dispose() }
+        }
+    }
+
+    override fun filter(function: (T) -> Boolean): Observer<T> {
+        val thiz = this
+        return ValueSubject<T>().also { downstream ->
+            thiz.add {
+                if (function(it)) {
+                    downstream.onNext(it)
+                }
+            }
+            downstream.doOnDisposed {
+                thiz.dispose()
+            }
+            thiz.doOnDisposed {
+                downstream.dispose()
+            }
         }
     }
 }

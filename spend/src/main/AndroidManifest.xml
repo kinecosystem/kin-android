@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.kin.spend">
+
+    <application>
+        <activity
+            android:name="org.kin.sdk.spend.view.PaymentFlowActivity"
+            android:theme="@style/Theme.Bottom.Dialog" />
+    </application>
+
+</manifest>

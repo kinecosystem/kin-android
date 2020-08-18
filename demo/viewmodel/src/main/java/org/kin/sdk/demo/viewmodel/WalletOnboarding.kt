@@ -42,4 +42,30 @@ class WalletOnboarding(private val host: String = "friendbot-testnet.kininfrastr
             }
         })
     }
+
+    fun fundAccount(publicAddress: String, fundingAmount: BigInteger, callback: (ex: Exception?) -> Unit) {
+        val activateRequest = Request.Builder()
+            .url(HttpUrl.Builder()
+                .scheme("https")
+                .host(host)
+                .addEncodedPathSegment("fund")
+                .addQueryParameter("addr", publicAddress)
+                .addQueryParameter("amount", fundingAmount.toString())
+                .build())
+            .build()
+
+        okHttpClient.newCall(activateRequest).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                if (response.code() in 200..299) {
+                    callback(null)
+                } else {
+                    callback(IllegalStateException("status=${response.code()}\n${response.body()?.string()}"))
+                }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                callback(e)
+            }
+        })
+    }
 }

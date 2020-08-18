@@ -1,6 +1,7 @@
 package org.kin.sdk.base.network.services
 
 import okhttp3.OkHttpClient
+import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
@@ -18,6 +19,7 @@ import org.kin.sdk.base.network.api.KinAccountApi.GetAccountResponse
 import org.kin.sdk.base.network.api.KinAccountCreationApi
 import org.kin.sdk.base.network.api.KinAccountCreationApi.CreateAccountRequest
 import org.kin.sdk.base.network.api.KinAccountCreationApi.CreateAccountResponse
+import org.kin.sdk.base.network.api.KinStreamingApi
 import org.kin.sdk.base.network.api.KinTransactionApi
 import org.kin.sdk.base.network.api.KinTransactionApi.GetMinFeeForTransactionResponse
 import org.kin.sdk.base.network.api.KinTransactionApi.GetTransactionHistoryRequest
@@ -26,19 +28,23 @@ import org.kin.sdk.base.network.api.KinTransactionApi.GetTransactionResponse
 import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionRequest
 import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionResponse
 import org.kin.sdk.base.network.api.KinTransactionWhitelistingApi
-import org.kin.sdk.base.network.api.rest.KinFriendBotApi
-import org.kin.sdk.base.network.services.KinService.BadSequenceNumberInRequest
+import org.kin.sdk.base.network.api.agora.sha224Hash
+import org.kin.sdk.base.network.api.agora.toProto
+import org.kin.sdk.base.network.api.horizon.KinFriendBotApi
+import org.kin.sdk.base.network.services.KinService.FatalError.BadSequenceNumberInRequest
 import org.kin.sdk.base.network.services.KinService.FatalError.IllegalRequest
 import org.kin.sdk.base.network.services.KinService.FatalError.IllegalResponse
+import org.kin.sdk.base.network.services.KinService.FatalError.InsufficientBalanceForSourceAccountInRequest
+import org.kin.sdk.base.network.services.KinService.FatalError.InsufficientFeeInRequest
+import org.kin.sdk.base.network.services.KinService.FatalError.InvoiceErrorsInRequest
 import org.kin.sdk.base.network.services.KinService.FatalError.ItemNotFound
 import org.kin.sdk.base.network.services.KinService.FatalError.PermanentlyUnavailable
+import org.kin.sdk.base.network.services.KinService.FatalError.SDKUpgradeRequired
 import org.kin.sdk.base.network.services.KinService.FatalError.TransientFailure
 import org.kin.sdk.base.network.services.KinService.FatalError.UnexpectedServiceError
-import org.kin.sdk.base.network.services.KinService.InsufficientBalanceForSourceAccountInRequest
-import org.kin.sdk.base.network.services.KinService.InsufficientFeeInRequest
+import org.kin.sdk.base.network.services.KinService.FatalError.UnknownAccountInRequest
+import org.kin.sdk.base.network.services.KinService.FatalError.WebhookRejectedTransaction
 import org.kin.sdk.base.network.services.KinService.Order
-import org.kin.sdk.base.network.services.KinService.SDKUpgradeRequired
-import org.kin.sdk.base.network.services.KinService.UnknownAccountInRequest
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.tools.NetworkOperationsHandler
@@ -93,7 +99,7 @@ interface KinService {
         object Descending : Order(1)
     }
 
-    sealed class FatalError(reason: Throwable) : Exception() {
+    sealed class FatalError(reason: Throwable) : RuntimeException(reason) {
 
         open class TransientFailure(reason: Throwable? = null) :
             FatalError(IOException("The request was retried until limit was exceeded", reason))
@@ -115,26 +121,32 @@ interface KinService {
 
         object PermanentlyUnavailable :
             FatalError(Exception("This operation is not supported under this configuration"))
+
+        object UnknownAccountInRequest :
+            FatalError(IllegalStateException("Unknown Account"))
+
+        object BadSequenceNumberInRequest :
+            FatalError(IllegalArgumentException("Bad Sequence Number"))
+
+        object InsufficientFeeInRequest :
+            FatalError(IllegalArgumentException("Insufficient Fee"))
+
+        object InsufficientBalanceForSourceAccountInRequest :
+            FatalError(IllegalStateException("Insufficient Balance"))
+
+        object WebhookRejectedTransaction :
+            FatalError(Exception("This transaction was rejected by the configured webhook without a reason"))
+
+        data class InvoiceErrorsInRequest(val invoiceErrors: List<SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError>) :
+            FatalError(IllegalArgumentException("Invoice Errors"))
+
+        /**
+         * It is expected that this error is handled gracefully by notifying users
+         * to upgrade to a newer version of the software that should contain a more
+         * recent version of this SDK.
+         */
+        object SDKUpgradeRequired : FatalError(Exception("Please upgrade to a newer version of the SDK"))
     }
-
-    object UnknownAccountInRequest :
-        FatalError.Denied(IllegalStateException("Unknown Account"))
-
-    object BadSequenceNumberInRequest :
-        FatalError.IllegalRequest(IllegalArgumentException("Bad Sequence Number"))
-
-    object InsufficientFeeInRequest :
-        FatalError.IllegalRequest(IllegalArgumentException("Insufficient Fee"))
-
-    object InsufficientBalanceForSourceAccountInRequest :
-        FatalError.Denied(IllegalStateException("Insufficient Balance"))
-
-    /**
-     * It is expected that this error is handled gracefully by notifying users
-     * to upgrade to a newer version of the software that should contain a more
-     * recent version of this SDK.
-     */
-    object SDKUpgradeRequired : RuntimeException("Please upgrade to a newer version of the SDK")
 
     /**
      * WARNING: This *ONLY* works in test environments.
@@ -186,6 +198,7 @@ class KinServiceImpl(
     private val networkOperationsHandler: NetworkOperationsHandler,
     private val accountApi: KinAccountApi,
     private val transactionApi: KinTransactionApi,
+    private val streamingApi: KinStreamingApi,
     private val accountCreationApi: KinAccountCreationApi,
     private val transactionWhitelistingApi: KinTransactionWhitelistingApi
 ) : KinService {
@@ -367,11 +380,14 @@ class KinServiceImpl(
                         .apply {
                             paymentItems.forEach {
                                 addOperation(
-                                    PaymentOperation.Builder(
-                                        it.destinationAccount.toKeyPair(),
-                                        AssetTypeNative,
-                                        it.amount.toString()
-                                    ).build()
+                                    PaymentOperation
+                                        .Builder(
+                                            it.destinationAccount.toKeyPair(),
+                                            AssetTypeNative,
+                                            it.amount.toString()
+                                        )
+                                        .setSourceAccount(sourceKinAccount.toAccount().keypair)
+                                        .build()
                                 )
                             }
                             addFee(fee.value.toInt())
@@ -385,7 +401,7 @@ class KinServiceImpl(
                         }
                         .build()
                         .apply { sign(sourceKinAccount.toSigningKeyPair()) }
-                        .toKinTransaction(networkEnvironment)
+                        .toKinTransaction(networkEnvironment, paymentItems.toInvoiceList())
                 respond(transaction);
             } else {
                 respond(IllegalRequest(IllegalAccessException("Account is null")))
@@ -397,7 +413,12 @@ class KinServiceImpl(
         return whitelistIfNeccessary(transaction)
             .flatMap { transactionToSend ->
                 networkOperationsHandler.queueWork<KinTransaction> { respond ->
-                    transactionApi.submitTransaction(SubmitTransactionRequest(transactionToSend.envelopeXdrBytes)) { response ->
+                    transactionApi.submitTransaction(
+                        SubmitTransactionRequest(
+                            transactionToSend.envelopeXdrBytes,
+                            transaction.invoiceList
+                        )
+                    ) { response ->
                         val error: Exception? = when (response.result) {
                             SubmitTransactionResponse.Result.Ok -> response.transaction?.let {
                                 respond(it); null
@@ -410,6 +431,10 @@ class KinServiceImpl(
                                 UnknownAccountInRequest
                             SubmitTransactionResponse.Result.InsufficientBalance ->
                                 InsufficientBalanceForSourceAccountInRequest
+                            is SubmitTransactionResponse.Result.InvoiceErrors ->
+                                InvoiceErrorsInRequest(response.result.errors)
+                            SubmitTransactionResponse.Result.WebhookRejected ->
+                                WebhookRejectedTransaction
                             is SubmitTransactionResponse.Result.UndefinedError ->
                                 UnexpectedServiceError(response.result.error)
                             is SubmitTransactionResponse.Result.TransientFailure ->
@@ -424,11 +449,11 @@ class KinServiceImpl(
     }
 
     override fun streamAccount(kinAccountId: KinAccount.Id): Observer<KinAccount> {
-        return accountApi.streamAccount(kinAccountId)
+        return streamingApi.streamAccount(kinAccountId)
     }
 
     override fun streamNewTransactions(kinAccountId: KinAccount.Id): Observer<KinTransaction> {
-        return transactionApi.streamNewTransactions(kinAccountId)
+        return streamingApi.streamNewTransactions(kinAccountId)
     }
 
     override val testService: KinTestService by lazy {
@@ -467,4 +492,11 @@ class KinServiceImpl(
                 } else Promise.of(kinTransaction)
             }
     }
+
+    private fun List<KinPaymentItem>.toInvoiceList(): InvoiceList? =
+        with(mapNotNull { it.invoice }.map { it.get() }.filterNotNull()) {
+            if (isNotEmpty()) {
+                InvoiceList(InvoiceList.Id(toProto().sha224Hash()), this)
+            } else null
+        }
 }

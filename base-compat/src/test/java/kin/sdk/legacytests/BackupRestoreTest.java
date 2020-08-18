@@ -16,7 +16,8 @@ import org.kin.sdk.base.storage.Storage;
 import org.kin.sdk.base.tools.Promise;
 import org.kin.stellarfork.KeyPair;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -33,7 +34,6 @@ import kin.sdk.internal.KeyStoreImpl;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -92,7 +92,7 @@ public class BackupRestoreTest {
             return Promise.Companion.of(kinAccount);
         }).when(mockKinService).getAccount(any());
 
-        return  new KinClient(ctx,
+        return new KinClient(ctx,
                 environment,
                 APP_ID,
                 "",
@@ -103,15 +103,31 @@ public class BackupRestoreTest {
     }
 
     @Test
-    public void backupAndRestore_Success() throws CryptoException, CorruptedDataException {
-        Random random = new Random();
+    public void backupAndRestore_Success() throws Throwable {
+        Random random = new Random(System.currentTimeMillis());
+
+        List<KeyPair> kinAccounts = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
             KeyPair keyPair = KeyPair.random();
-            String passphrase = String.valueOf(random.nextLong());
-            String exportedJson = backupRestore.exportWallet(keyPair, passphrase);
-            KeyPair importKeyPair = backupRestore.importWallet(exportedJson, passphrase);
-            assertEquals(importKeyPair.getAccountId(), keyPair.getAccountId());
-            assertArrayEquals(importKeyPair.getSecretSeed(), keyPair.getSecretSeed());
+            kinAccounts.add(keyPair);
+        }
+
+        List<Throwable> errors = new ArrayList<>();
+        kinAccounts.parallelStream()
+                .forEach((keyPair) -> {
+                    try {
+                        String passphrase = String.valueOf(random.nextLong());
+                        String exportedJson = backupRestore.exportWallet(keyPair, passphrase);
+                        KeyPair importKeyPair = backupRestore.importWallet(exportedJson, passphrase);
+                        assertEquals(importKeyPair.getAccountId(), keyPair.getAccountId());
+                        assertArrayEquals(importKeyPair.getSecretSeed(), keyPair.getSecretSeed());
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        errors.add(t);
+                    }
+                });
+        if (errors.size() > 0) {
+            throw errors.get(0);
         }
     }
 
@@ -198,13 +214,29 @@ public class BackupRestoreTest {
     }
 
     @Test
-    public void backupRestore() throws Exception {
+    public void backupRestore() throws Throwable {
+
+        List<KinAccount> kinAccounts = new ArrayList<>();
         for (int i = 0; i < 50; i++) {
             KinAccount kinAccount = kinClient1.addAccount();
-            String uuid = UUID.randomUUID().toString();
-            String exported = kinAccount.export(uuid);
-            KinAccount kinAccount2 = kinClient2.importAccount(exported, uuid);
-            assertEquals(kinAccount2.getPublicAddress(), kinAccount.getPublicAddress());
+            kinAccounts.add(kinAccount);
+        }
+
+        List<Throwable> errors = new ArrayList<>();
+        kinAccounts.parallelStream()
+                .forEach((kinAccount) -> {
+                    try {
+                        String uuid = UUID.randomUUID().toString();
+                        String exported = kinAccount.export(uuid);
+                        KinAccount kinAccount2 = kinClient2.importAccount(exported, uuid);
+                        assertEquals(kinAccount2.getPublicAddress(), kinAccount.getPublicAddress());
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        errors.add(t);
+                    }
+                });
+        if (errors.size() > 0) {
+            throw errors.get(0);
         }
     }
 

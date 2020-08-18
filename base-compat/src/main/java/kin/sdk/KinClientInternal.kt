@@ -17,8 +17,12 @@ import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.KinEnvironment
 import org.kin.sdk.base.KinEnvironment.Horizon
 import org.kin.sdk.base.models.AppId
+import org.kin.sdk.base.models.AppIdx
+import org.kin.sdk.base.models.AppInfo
+import org.kin.sdk.base.models.AppUserCreds
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.asPrivateKey
+import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.storage.KinFileStorage
@@ -26,13 +30,21 @@ import org.kin.sdk.base.storage.Storage
 import org.kin.sdk.base.tools.Promise
 import org.kin.stellarfork.KeyPair
 import org.slf4j.Logger
-import java.util.ArrayList
 import java.util.HashMap
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * An account manager for a [KinAccount].
  */
 internal class KinClientInternal {
+
+    private class DummyAppInfoProvider : AppInfoProvider {
+        override val appInfo: AppInfo = AppInfo(AppIdx.TEST_APP_IDX, org.kin.sdk.base.models.KinAccount.Id(ByteArray(0)), "", 123)
+
+        override fun getPassthroughAppUserCredentials(): AppUserCreds {
+            return AppUserCreds("", "")
+        }
+    }
     companion object {
         private const val STORE_NAME_PREFIX = "KinKeyStore_"
 
@@ -51,7 +63,8 @@ internal class KinClientInternal {
             environment: Environment,
             storage: Storage
         ): KinEnvironment {
-            return Horizon.Builder(environmentToNetworkEnvironment(environment))
+            return KinEnvironment.Agora.Builder(environmentToNetworkEnvironment(environment))
+                .setAppInfoProvider(DummyAppInfoProvider())
                 .setStorage(storage)
                 .build()
         }
@@ -75,7 +88,7 @@ internal class KinClientInternal {
 
     private val kinEnvironment: KinEnvironment
 
-    private var kinAccounts: MutableList<KinAccountImpl>
+    private var kinAccounts: CopyOnWriteArrayList<KinAccountImpl>
     private val log: Logger
 
     /**
@@ -123,7 +136,7 @@ internal class KinClientInternal {
         this.keyStore = keyStore
         this.storage = storage
         this.kinEnvironment = kinEnvironment
-        this.kinAccounts = ArrayList(1)
+        this.kinAccounts = CopyOnWriteArrayList()
         this.log = kinEnvironment.logger.getLogger(javaClass.simpleName)
         validateAppId(appId)
         loadAccounts()
@@ -181,22 +194,19 @@ internal class KinClientInternal {
     }
 
     private fun updateKinAccounts(storageAccounts: List<KeyPair>) {
-        val accountsMap: MutableMap<String?, KinAccountImpl> =
-            HashMap()
-        for (kinAccountImpl in kinAccounts) {
+        val accountsMap: MutableMap<String?, KinAccountImpl> = HashMap()
+        kinAccounts.forEach { kinAccountImpl ->
             accountsMap[kinAccountImpl.publicAddress] = kinAccountImpl
         }
-        val newKinAccountsList: MutableList<KinAccountImpl> =
-            ArrayList()
+        kinAccounts.clear()
         for (account in storageAccounts) {
             val inMemoryKinAccount = accountsMap[account.accountId]
             if (inMemoryKinAccount != null) {
-                newKinAccountsList.add(inMemoryKinAccount)
+                kinAccounts.add(inMemoryKinAccount)
             } else {
-                newKinAccountsList.add(createNewKinAccount(account))
+                kinAccounts.add(createNewKinAccount(account))
             }
         }
-        kinAccounts = newKinAccountsList
     }
 
     private fun validateAppId(appId: String) {
@@ -247,9 +257,7 @@ internal class KinClientInternal {
 
     fun getAccountByPublicAddress(accountId: String): KinAccount? {
         loadAccounts()
-        return kinAccounts.indices
-            .asSequence()
-            .map { kinAccounts[it] }
+        return kinAccounts.asSequence()
             .lastOrNull { accountId == it.publicAddress }
     }
 
@@ -352,7 +360,7 @@ internal class KinClientInternal {
      *
      * @return the minimum fee.
      */
-    @get:Throws(OperationFailedException::class, KinService.SDKUpgradeRequired::class)
+    @get:Throws(OperationFailedException::class, KinService.FatalError.SDKUpgradeRequired::class)
     val minimumFeeSync: Long
         get() {
             return try {
@@ -375,7 +383,7 @@ internal class KinClientInternal {
     }
 
     private fun exceptionCorrectionIfNecessary(e: Exception): Exception {
-        return if (e is KinService.SDKUpgradeRequired) e
+        return if (e is KinService.FatalError.SDKUpgradeRequired) e
         else OperationFailedException(e)
     }
 }

@@ -151,11 +151,6 @@ class OperationTest {
         val issuer =
             fromSecretSeed("SBOBVZUN6WKVMI6KIL2GHBBEETEV6XKQGILITNH6LO6ZA22DBMSDCPAG")
         // GAVAQKT2M7B4V3NN7RNNXPU5CWNDKC27MYHKLF5UNYXH4FNLFVDXKRSV
-        val pathIssuer1 =
-            fromSecretSeed("SALDLG5XU5AEJWUOHAJPSC4HJ2IK3Z6BXXP4GWRHFT7P7ILSCFFQ7TC5")
-        // GBCP5W2VS7AEWV2HFRN7YYC623LTSV7VSTGIHFXDEJU7S5BAGVCSETRR
-        val pathIssuer2 =
-            fromSecretSeed("SA64U7C5C7BS5IHWEPA7YWFN3Z6FE5L6KAMYUIT4AQ7KVTVLD23C6HEZ")
         val sendAsset: Asset = AssetTypeNative
         val sendMax = "0.1"
         val destAsset: Asset = AssetTypeCreditAlphaNum4("USD", issuer)

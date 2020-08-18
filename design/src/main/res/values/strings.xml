@@ -1,0 +1,9 @@
+<resources>
+    <string name="kin_sdk_title_loading">Loading...</string>
+    <string name="kin_sdk_button_ok">OK</string>
+    <string name="kin_sdk_button_cancel">Cancel</string>
+    <string name="subtotal">Subtotal</string>
+    <string name="fee">Fee</string>
+    <string name="total">Total</string>
+    <string name="title_items">Items</string>
+</resources>

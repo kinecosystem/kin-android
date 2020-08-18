@@ -12,6 +12,8 @@ import com.nhaarman.mockitokotlin2.verifyZeroInteractions
 import com.nhaarman.mockitokotlin2.whenever
 import org.junit.Before
 import org.junit.Test
+import org.kin.sdk.base.models.AppIdx
+import org.kin.sdk.base.models.Invoice
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
@@ -19,6 +21,7 @@ import org.kin.sdk.base.models.KinDateFormat
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.LineItem
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinPayments
@@ -41,6 +44,7 @@ import org.kin.sdk.base.tools.latchOperationValueCapture
 import org.kin.sdk.base.tools.test
 import org.kin.sdk.base.tools.updateStatus
 import org.kin.stellarfork.codec.Base64
+import java.lang.IllegalArgumentException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
@@ -66,7 +70,7 @@ class KinAccountContextImplTest {
             "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=",
             KinTransaction.RecordType.Historical(
                 KinDateFormat("2019-12-12T21:32:43Z").timestamp,
-                com.sun.org.apache.xml.internal.security.utils.Base64.decode("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA="),
+                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
                 pagingToken
             )
         )
@@ -153,11 +157,11 @@ class KinAccountContextImplTest {
         }.whenever(mockStorage).getStoredAccount(eq(registeredAccount.id))
 
         doAnswer {
-            Promise.error<KinAccount>(KinService.SDKUpgradeRequired)
+            Promise.error<KinAccount>(KinService.FatalError.SDKUpgradeRequired)
         }.whenever(mockService).createAccount(eq(registeredAccount.id))
 
         doAnswer {
-            Promise.error<KinAccount>(KinService.SDKUpgradeRequired)
+            Promise.error<KinAccount>(KinService.FatalError.SDKUpgradeRequired)
         }.whenever(mockService).getAccount(eq(registeredAccount.id))
 
         sut.getAccount().test {
@@ -220,7 +224,9 @@ class KinAccountContextImplTest {
         val accountId = registeredAccount.id
         val unregisteredAccount = registeredAccount.updateStatus(KinAccount.Status.Unregistered)
         val registeredAccountNoPrivKey =
-            KinAccount(registeredAccount.key.asPublicKey(), status = registeredAccount.status, balance = KinBalance(KinAmount(1000)))
+            KinAccount(registeredAccount.key.asPublicKey(), status = registeredAccount.status, balance = KinBalance(
+                KinAmount(1000)
+            ))
         doAnswer {
             Promise.of(registeredAccountNoPrivKey)
         }.whenever(mockService).createAccount(eq(accountId))
@@ -567,6 +573,109 @@ class KinAccountContextImplTest {
     }
 
     @Test
+    fun payInvoice_success() {
+        val destination = TestUtils.newKinAccount()
+        val transactionToBeSent =
+            KinTransaction(
+                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+                networkEnvironment = networkEnvironment
+            )
+        val responseTransaction = KinTransaction(
+            transactionToBeSent.envelopeXdrBytes,
+            KinTransaction.RecordType.Acknowledged(
+                System.currentTimeMillis(),
+                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+            ),
+            networkEnvironment
+        )
+
+        doAnswer {
+            Promise.of(Optional.of(registeredAccount))
+        }.whenever(mockStorage).getStoredAccount(eq(registeredAccount.id))
+
+        val expectedMemo =
+            KinMemo(Base64().decode("QQAAtPJbea1Ask4zS+JHdc2BVznFYve1NAZshGi1PwI=")!!)
+        val destinationKinAppIdx = AppIdx.TEST_APP_IDX
+        val invoice = Invoice.Builder()
+            .addLineItem(
+                LineItem.Builder("thing1", KinAmount(123))
+                    .build()
+            )
+            .build()
+
+        doAnswer {
+            Promise.of(transactionToBeSent)
+        }.whenever(mockService).buildAndSignTransaction(
+            eq(registeredAccount),
+            eq(listOf(KinPaymentItem(KinAmount(123), destination.id, Optional.of(invoice)))),
+            eq(expectedMemo),
+            eq(fee)
+        )
+
+        doAnswer {
+            Promise.of(responseTransaction)
+        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+
+        doAnswer {
+            Promise.of(listOf(responseTransaction))
+        }.whenever(mockStorage).insertNewTransactionInStorage(
+            eq(registeredAccount.id),
+            eq(responseTransaction)
+        )
+
+        doAnswer {
+            true
+        }.whenever(mockStorage).updateAccount(eq(registeredAccount))
+
+        val amountSpent = transactionToBeSent.paymentOperations.first().amount
+        val updatedAccountWithNewBalance = registeredAccount.merge(
+            KinAccount(
+                registeredAccount.key,
+                balance = KinBalance(amountSpent)
+            )
+        )
+
+        doAnswer {
+            Promise.of(Optional.of(updatedAccountWithNewBalance))
+        }.whenever(mockStorage).updateAccountBalance(
+            eq(registeredAccount.id),
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
+        )
+
+        doAnswer {
+            Promise.of(KinTransactions(listOf(responseTransaction), null, null))
+        }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
+
+        sut.payInvoice(invoice, destination.id, destinationKinAppIdx).test(10) {
+            assertNull(error)
+            assertEquals(responseTransaction.asKinPayments().first(), value)
+
+            verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
+            verify(mockService).buildAndSignTransaction(
+                eq(registeredAccount),
+                eq(listOf(KinPaymentItem(KinAmount(123), destination.id, Optional.of(invoice)))),
+                eq(expectedMemo),
+                eq(fee)
+            )
+            verify(mockService).canWhitelistTransactions()
+            verify(mockStorage).getMinFee()
+            verify(mockService).submitTransaction(eq(transactionToBeSent))
+            verify(mockStorage).advanceSequence(eq(registeredAccount.id))
+            verify(mockStorage).insertNewTransactionInStorage(
+                eq(registeredAccount.id),
+                eq(responseTransaction)
+            )
+            verify(mockStorage).updateAccountBalance(
+                eq(registeredAccount.id),
+                eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
+            )
+            verify(mockStorage).getStoredTransactions(eq(registeredAccount.id))
+            verifyNoMoreInteractions(mockService)
+            verifyNoMoreInteractions(mockStorage)
+        }
+    }
+
+    @Test
     fun sendMultipleKinPayments_success() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
@@ -726,7 +835,7 @@ class KinAccountContextImplTest {
 
         doAnswer {
             if (++i == 0 || i == 2) {
-                Promise.error(KinService.BadSequenceNumberInRequest)
+                Promise.error(KinService.FatalError.BadSequenceNumberInRequest)
             } else {
                 Promise.of(responseTransaction)
             }
@@ -774,9 +883,9 @@ class KinAccountContextImplTest {
             assertEquals(responseTransaction.asKinPayments().first(), value)
         }
 
-        verify(mockStorage, times(8)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockStorage, times(10)).getStoredAccount(eq(registeredAccount.id))
         verify(mockService, times(2)).getAccount(eq(registeredAccount.id))
-        verify(mockService, times(3)).buildAndSignTransaction(
+        verify(mockService, times(5)).buildAndSignTransaction(
             eq(registeredAccount),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
@@ -798,8 +907,232 @@ class KinAccountContextImplTest {
             eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
-        verify(mockService, times(3)).canWhitelistTransactions()
-        verify(mockStorage, times(3)).getMinFee()
+        verify(mockService, times(5)).canWhitelistTransactions()
+        verify(mockStorage, times(5)).getMinFee()
+        verifyNoMoreInteractions(mockService)
+        verifyNoMoreInteractions(mockStorage)
+    }
+
+    @Test
+    fun sendKinPayment_with_bad_sequence_number_max_tries() {
+        val destination = TestUtils.newKinAccount()
+        val transactionToBeSent =
+            KinTransaction(
+                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+                networkEnvironment = networkEnvironment
+            )
+        val responseTransaction = KinTransaction(
+            transactionToBeSent.envelopeXdrBytes,
+            KinTransaction.RecordType.Acknowledged(
+                System.currentTimeMillis(),
+                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+            ),
+            networkEnvironment
+        )
+
+        doAnswer {
+            Promise.of(Optional.of(registeredAccount))
+        }.whenever(mockStorage).getStoredAccount(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.of(registeredAccount)
+        }.whenever(mockService).getAccount(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.of(transactionToBeSent)
+        }.whenever(mockService).buildAndSignTransaction(
+            eq(registeredAccount),
+            eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
+            eq(KinMemo.NONE),
+            eq(fee)
+        )
+
+        doAnswer {
+            Promise.of(registeredAccount)
+        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount))
+
+        doAnswer {
+            Promise.of(listOf(responseTransaction))
+        }.whenever(mockStorage).insertNewTransactionInStorage(
+            eq(registeredAccount.id),
+            eq(responseTransaction)
+        )
+
+        var i = -1
+
+        doAnswer {
+            Promise.error<KinTransaction>(KinService.FatalError.BadSequenceNumberInRequest)
+        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+
+        val amountSpent = KinAmount(123)
+        val updatedAccountWithNewBalance = registeredAccount.merge(
+            KinAccount(
+                registeredAccount.key,
+                balance = KinBalance(amountSpent)
+            )
+        )
+
+        doAnswer {
+            Promise.of(Optional.of(updatedAccountWithNewBalance))
+        }.whenever(mockStorage).updateAccountBalance(
+            eq(registeredAccount.id),
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
+        )
+
+        doAnswer {
+            Promise.of(
+                KinTransactions(
+                    listOf(
+                        responseTransaction,
+                        responseTransaction,
+                        responseTransaction
+                    ), null, null
+                )
+            )
+        }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
+
+        sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
+            assertEquals(KinService.FatalError.BadSequenceNumberInRequest, error)
+        }
+
+        verify(mockStorage, times(4)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockService, times(1)).getAccount(eq(registeredAccount.id))
+        verify(mockService, times(2)).buildAndSignTransaction(
+            eq(registeredAccount),
+            eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
+            eq(KinMemo.NONE),
+            eq(fee)
+        )
+        verify(
+            mockService,
+            times(2)
+        ).submitTransaction(eq(transactionToBeSent)) // 2 due to 2 retries
+        verify(mockStorage, times(0))
+            .advanceSequence(eq(registeredAccount.id))
+        verify(mockStorage, times(1)).updateAccountInStorage(eq(registeredAccount))
+        verify(mockStorage, times(0)).insertNewTransactionInStorage(
+            eq(registeredAccount.id),
+            eq(responseTransaction)
+        )
+        verify(mockStorage, times(0)).updateAccountBalance(
+            eq(registeredAccount.id),
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
+        )
+        verify(mockStorage, times(0)).getStoredTransactions(eq(registeredAccount.id))
+        verify(mockService, times(2)).canWhitelistTransactions()
+        verify(mockStorage, times(2)).getMinFee()
+        verifyNoMoreInteractions(mockService)
+        verifyNoMoreInteractions(mockStorage)
+    }
+
+    @Test
+    fun sendKinPayment_with_unknown_error() {
+        val destination = TestUtils.newKinAccount()
+        val transactionToBeSent =
+            KinTransaction(
+                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+                networkEnvironment = networkEnvironment
+            )
+        val responseTransaction = KinTransaction(
+            transactionToBeSent.envelopeXdrBytes,
+            KinTransaction.RecordType.Acknowledged(
+                System.currentTimeMillis(),
+                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+            ),
+            networkEnvironment
+        )
+
+        doAnswer {
+            Promise.of(Optional.of(registeredAccount))
+        }.whenever(mockStorage).getStoredAccount(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.of(registeredAccount)
+        }.whenever(mockService).getAccount(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.of(transactionToBeSent)
+        }.whenever(mockService).buildAndSignTransaction(
+            eq(registeredAccount),
+            eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
+            eq(KinMemo.NONE),
+            eq(fee)
+        )
+
+        doAnswer {
+            Promise.of(registeredAccount)
+        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount))
+
+        doAnswer {
+            Promise.of(listOf(responseTransaction))
+        }.whenever(mockStorage).insertNewTransactionInStorage(
+            eq(registeredAccount.id),
+            eq(responseTransaction)
+        )
+
+        var i = -1
+
+        doAnswer {
+            Promise.error<KinTransaction>(IllegalArgumentException("explosion!"))
+        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+
+        val amountSpent = KinAmount(123)
+        val updatedAccountWithNewBalance = registeredAccount.merge(
+            KinAccount(
+                registeredAccount.key,
+                balance = KinBalance(amountSpent)
+            )
+        )
+
+        doAnswer {
+            Promise.of(Optional.of(updatedAccountWithNewBalance))
+        }.whenever(mockStorage).updateAccountBalance(
+            eq(registeredAccount.id),
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
+        )
+
+        doAnswer {
+            Promise.of(
+                KinTransactions(
+                    listOf(
+                        responseTransaction,
+                        responseTransaction,
+                        responseTransaction
+                    ), null, null
+                )
+            )
+        }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
+
+        sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
+            assertTrue { error is IllegalArgumentException }
+        }
+
+        verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockService, times(0)).getAccount(eq(registeredAccount.id))
+        verify(mockService, times(1)).buildAndSignTransaction(
+            eq(registeredAccount),
+            eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
+            eq(KinMemo.NONE),
+            eq(fee)
+        )
+        verify(
+            mockService,
+            times(1)
+        ).submitTransaction(eq(transactionToBeSent)) // 2 due to 2 retries
+        verify(mockStorage, times(0))
+            .advanceSequence(eq(registeredAccount.id))
+        verify(mockStorage, times(0)).updateAccountInStorage(eq(registeredAccount))
+        verify(mockStorage, times(0)).insertNewTransactionInStorage(
+            eq(registeredAccount.id),
+            eq(responseTransaction)
+        )
+        verify(mockStorage, times(0)).updateAccountBalance(
+            eq(registeredAccount.id),
+            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
+        )
+        verify(mockStorage, times(0)).getStoredTransactions(eq(registeredAccount.id))
+        verify(mockService, times(1)).canWhitelistTransactions()
+        verify(mockStorage, times(1)).getMinFee()
         verifyNoMoreInteractions(mockService)
         verifyNoMoreInteractions(mockStorage)
     }
@@ -857,7 +1190,7 @@ class KinAccountContextImplTest {
 
         doAnswer {
             if (++i == 0 || i == 2) {
-                Promise.error(KinService.InsufficientFeeInRequest)
+                Promise.error(KinService.FatalError.InsufficientFeeInRequest)
             } else {
                 Promise.of(responseTransaction)
             }
@@ -905,8 +1238,8 @@ class KinAccountContextImplTest {
             assertEquals(responseTransaction.asKinPayments().first(), value)
         }
 
-        verify(mockStorage, times(8)).getStoredAccount(eq(registeredAccount.id))
-        verify(mockService, times(3)).buildAndSignTransaction(
+        verify(mockStorage, times(10)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockService, times(5)).buildAndSignTransaction(
             eq(registeredAccount),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
@@ -929,8 +1262,8 @@ class KinAccountContextImplTest {
             eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
-        verify(mockService, times(3)).canWhitelistTransactions()
-        verify(mockStorage, times(3)).getMinFee()
+        verify(mockService, times(5)).canWhitelistTransactions()
+        verify(mockStorage, times(5)).getMinFee()
         verifyNoMoreInteractions(mockService)
         verifyNoMoreInteractions(mockStorage)
     }
@@ -1334,7 +1667,6 @@ class KinAccountContextImplTest {
 
     @Test
     fun observePayments_actively_success() {
-        val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
             KinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
@@ -1387,7 +1719,6 @@ class KinAccountContextImplTest {
 
     @Test
     fun observePayments_newActiveOnly_success() {
-        val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
             KinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,

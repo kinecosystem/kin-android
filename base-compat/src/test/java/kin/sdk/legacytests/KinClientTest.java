@@ -919,10 +919,10 @@ public class KinClientTest {
         kinClient.getMinimumFeeSync();
     }
 
-    @Test(expected = KinService.SDKUpgradeRequired.class)
+    @Test(expected = KinService.FatalError.SDKUpgradeRequired.class)
     public void getMinimumFeeSync_upgrade_error() throws Exception {
         when(mockStorage.getMinFee())
-                .thenReturn(Promise.Companion.error(KinService.SDKUpgradeRequired.INSTANCE));
+                .thenReturn(Promise.Companion.error(KinService.FatalError.SDKUpgradeRequired.INSTANCE));
 
         kinClient.getMinimumFeeSync();
     }

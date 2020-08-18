@@ -8,7 +8,7 @@ import com.nhaarman.mockitokotlin2.whenever
 import org.junit.Before
 import org.junit.Test
 import org.kin.sdk.base.network.api.KinAccountCreationApi
-import org.kin.sdk.base.network.api.rest.KinFriendBotApi
+import org.kin.sdk.base.network.api.horizon.KinFriendBotApi
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
 import org.kin.sdk.base.tools.TestUtils
 import org.kin.sdk.base.tools.test
@@ -160,7 +160,7 @@ class KinTestServiceImplTest {
 
         sut.fundAccount(account.id).test {
             assertNull(value)
-            assertTrue { error!! is KinService.SDKUpgradeRequired }
+            assertTrue { error!! is KinService.FatalError.SDKUpgradeRequired }
         }
     }
 }

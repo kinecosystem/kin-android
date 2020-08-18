@@ -1,106 +1,139 @@
 package org.kin.sdk.demo.viewmodel.modern
 
 import org.kin.sdk.base.KinAccountContext
+import org.kin.sdk.base.KinAccountContextImpl
+import org.kin.sdk.base.ObservationMode
+import org.kin.sdk.base.models.Invoice
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.KinPayment
+import org.kin.sdk.base.models.getAgoraMemo
 import org.kin.sdk.base.tools.ListObserver
 import org.kin.sdk.base.tools.Observer
-import org.kin.sdk.demo.viewmodel.Navigator
+import org.kin.sdk.demo.viewmodel.DemoNavigator
+import org.kin.sdk.demo.viewmodel.FullInvoiceViewModel
+import org.kin.sdk.demo.viewmodel.InvoicesViewModel
 import org.kin.sdk.demo.viewmodel.SendTransactionViewModel
 import org.kin.sdk.demo.viewmodel.TransactionLoadTestingViewModel
 import org.kin.sdk.demo.viewmodel.WalletViewModel
-import org.kin.sdk.demo.viewmodel.tools.BaseViewModel
+import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 import java.math.BigDecimal
 
 class ModernWalletViewModel(
-    private val navigator: Navigator,
+    private val navigator: DemoNavigator,
     args: WalletViewModel.NavigationArgs,
     private val kinAccountContext: KinAccountContext
 ) : WalletViewModel, BaseViewModel<WalletViewModel.NavigationArgs, WalletViewModel.State>(args) {
 
-    private inner class SendTransactionActionViewModel :
+    private data class SendTransactionActionViewModel(
+        val navigator: DemoNavigator,
+        val args: WalletViewModel.NavigationArgs
+    ) :
         WalletViewModel.SendTransactionActionViewModel {
-        override fun onItemTapped() {
-            navigator.navigateTo(
-                SendTransactionViewModel.NavigationArgs(
-                    args.walletIndex,
-                    args.publicAddress
-                )
+        override fun onItemTapped() = navigator.navigateTo(
+            SendTransactionViewModel.NavigationArgs(
+                args.walletIndex,
+                args.publicAddress
             )
-        }
+        )
     }
 
-    private inner class LatencyTestTransactionActionViewModel :
+    private data class LatencyTestTransactionActionViewModel(
+        val navigator: DemoNavigator,
+        val args: WalletViewModel.NavigationArgs
+    ) :
         WalletViewModel.LatencyTestTransactionActionViewModel {
-        override fun onItemTapped() {
-            navigator.navigateTo(
-                TransactionLoadTestingViewModel.NavigationArgs(
-                    args.walletIndex,
-                    args.publicAddress
-                )
+        override fun onItemTapped() = navigator.navigateTo(
+            TransactionLoadTestingViewModel.NavigationArgs(
+                args.walletIndex,
+                args.publicAddress
             )
-        }
+        )
     }
 
-    private inner class CopyAddressActionViewModel : WalletViewModel.CopyAddressActionViewModel {
+    private data class CopyAddressActionViewModel(val kinAccountContext: KinAccountContext) :
+        WalletViewModel.CopyAddressActionViewModel {
         override val publicAddress: String
             get() = kinAccountContext.accountId.encodeAsString()
     }
 
-    private inner class ShowScanCodeActionViewModel : WalletViewModel.ShowScanCodeActionViewModel {
-        override val publicAddress: String
-            get() = kinAccountContext.accountId.encodeAsString()
-    }
-
-    private inner class OnboardActionViewModel : WalletViewModel.OnboardActionViewModel {
+    private inner class FundActionViewModel : WalletViewModel.FundActionViewModel {
         override fun onItemTapped(completed: (ex: Throwable?) -> Unit) {
-            TODO("not implemented")
+            (kinAccountContext as KinAccountContextImpl).service
+                .testService
+                .fundAccount(kinAccountContext.accountId)
+                .then({ completed(null) }, completed)
         }
     }
 
-    private inner class DeleteWalletActionViewModel : WalletViewModel.DeleteWalletActionViewModel {
-        override fun onItemTapped(completed: (ex: Throwable?) -> Unit) {
+    private data class DeleteWalletActionViewModel(val kinAccountContext: KinAccountContext) :
+        WalletViewModel.DeleteWalletActionViewModel {
+        override fun onItemTapped(completed: (ex: Throwable?) -> Unit) =
             kinAccountContext.clearStorage().then({ completed(null) }, completed)
-        }
+    }
+
+    private data class InvoicesActionActionViewModel(
+        val navigator: DemoNavigator,
+        val payerAccountId: String
+    ) : WalletViewModel.InvoicesActionItemViewModel {
+        override fun onItemTapped() =
+            navigator.navigateTo(InvoicesViewModel.NavigationArgs(payerAccountId))
     }
 
     override fun getDefaultState(): WalletViewModel.State = WalletViewModel.State(
-        kinAccountContext.accountId.encodeAsString(),
-        null,
+        WalletViewModel.WalletHeaderViewModel(
+            kinAccountContext.accountId.encodeAsString(),
+        null
+        ),
         WalletViewModel.WalletStatus.Unknown,
         listOf(
-            CopyAddressActionViewModel(),
-            SendTransactionActionViewModel(),
-            LatencyTestTransactionActionViewModel(),
-//            ExportActionViewModel(),
-//            ShowScanCodeActionViewModel(),
-//            OnboardActionViewModel(),
-            DeleteWalletActionViewModel()
+            CopyAddressActionViewModel(kinAccountContext),
+            SendTransactionActionViewModel(navigator, args),
+            InvoicesActionActionViewModel(navigator, kinAccountContext.accountId.encodeAsString()),
+            LatencyTestTransactionActionViewModel(navigator, args),
+            FundActionViewModel(),
+            DeleteWalletActionViewModel(kinAccountContext)
         ),
         emptyList()
     )
 
-    private inner class PaymentHistoryItemViewModel(
+    private data class PaymentHistoryItemViewModel(
         override val amount: BigDecimal,
         override val memo: String,
         override val sourceWallet: String,
-        override val date: Long
-    ) : WalletViewModel.PaymentHistoryItemViewModel
+        override val date: Long,
+        val payment: KinPayment,
+        val navigator: DemoNavigator
+    ) : WalletViewModel.PaymentHistoryItemViewModel {
+        override fun onItemTapped() {
+            payment.invoice?.let {
+                navigator.navigateTo(
+                    FullInvoiceViewModel.NavigationArgs(
+                        it.id.invoiceHash.encodedValue,
+                        null,
+                        payment.amount.value,
+                        true
+                    )
+                )
+            }
+        }
+    }
 
     private val listeners = mutableListOf<Observer<*>>()
 
     init {
-        listeners.add(observeBalance())
-        listeners.add(observePayments())
+        kinAccountContext.getAccount().then {
+            listeners.add(observeBalance())
+            listeners.add(observePayments())
+        }
     }
 
     private fun observeBalance(): Observer<KinBalance> {
-        return kinAccountContext.observeBalance()
+        return kinAccountContext.observeBalance(ObservationMode.Active)
             .add { balance ->
                 updateState { previousState ->
                     previousState.copy(
-                        balance = balance.amount.value,
+                        walletHeaderViewModel = previousState.walletHeaderViewModel.copy(balance = balance.amount.value),
                         walletStatus = if (balance.amount != KinAmount.ZERO) WalletViewModel.WalletStatus.Active else WalletViewModel.WalletStatus.Inactive
                     )
                 }
@@ -109,26 +142,32 @@ class ModernWalletViewModel(
 
     private fun observePayments(): ListObserver<KinPayment> {
         return kinAccountContext.observePayments()
-            .add {
+            .add { payments ->
                 updateState { previousState ->
-                    previousState.copy(paymentHistoryItems = it.map {
+                    previousState.copy(paymentHistoryItems = payments.map {
                         val destination = it.destinationAccountId.encodeAsString()
                         val source = it.sourceAccountId.encodeAsString()
                         val incoming = destination == kinAccountContext.accountId.encodeAsString()
-
-                        val amount = if (incoming) {
-                            it.amount.value
+                        val amount = if (incoming) it.amount.value else it.amount.value.negate()
+                        val address = if (incoming) source else destination
+                        val memo = if (it.invoice != null) {
+                            if (it.invoice!!.lineItems.size > 1) {
+                                "${it.invoice!!.lineItems.first().title} +${it.invoice!!.lineItems.size - 1}"
+                            } else {
+                                it.invoice!!.lineItems.first().title
+                            }
                         } else {
-                            it.amount.value.negate()
+                            it.memo.getAgoraMemo()?.let { toString() } ?: String(it.memo.rawValue)
                         }
 
-                        val address = if (incoming) {
-                            source
-                        } else {
-                            destination
-                        }
-
-                        PaymentHistoryItemViewModel(amount, String(it.memo.rawValue), address, 0L)
+                        PaymentHistoryItemViewModel(
+                            amount,
+                            memo,
+                            address,
+                            0L,
+                            it,
+                            navigator
+                        )
                     })
                 }
             }

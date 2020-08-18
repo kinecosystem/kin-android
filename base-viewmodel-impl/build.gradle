@@ -1,0 +1,83 @@
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
+enableJacoco(project, 'debug')
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation deps.kotlin_stdlib
+    implementation project(":base")
+    api project(":base-viewmodel")
+
+    testImplementation deps.kotlin_junit
+    testImplementation deps.kotlinMockito
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+task testDebugUnitTest(type: Test)
+
+task testReleaseUnitTest(type: Test)
+
+version = libraryVersion
+group = groupId
+
+afterEvaluate {
+    publishing {
+        publications {
+            normal(MavenPublication) {
+                from components.java
+
+                artifact sourcesJar
+                artifact javadocJar
+            }
+        }
+
+        repositories {
+            maven {
+                url "s3://maven.kin/releases"
+                credentials(AwsCredentials) {
+                    accessKey project.hasProperty('awsAccessKeyId') ? awsAccessKeyId : System.getenv('AWS_ACCESS_KEY_ID')
+                    secretKey project.hasProperty('awsSecretAccessKey') ? awsSecretAccessKey : System.getenv('AWS_SECRET_ACCESS_KEY')
+                }
+            }
+        }
+    }
+
+    bintray {
+        user = project.hasProperty('bintrayUser') ? bintrayUser : System.getenv('BINTRAY_USER')
+        key = project.hasProperty('bintrayKey') ? bintrayKey : System.getenv('BINTRAY_API_KEY')
+        publications = ['normal']
+        override = true
+
+        pkg {
+            repo = "kin-android"
+            userOrg = "kinecosystem"
+            name = "viewmodel-impl"
+            desc = "Kin Android SDK View Model Impl"
+            websiteUrl = "https://github.com/kinecosystem/kin-android"
+            vcsUrl = "https://github.com/kinecosystem/kin-android.git"
+            licenses = ["MIT", "Apache-2.0"]
+            publish = true
+            publicDownloadNumbers = true
+        }
+    }
+}

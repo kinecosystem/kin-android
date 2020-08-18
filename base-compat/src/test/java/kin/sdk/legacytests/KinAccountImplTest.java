@@ -174,14 +174,14 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(eq(expectedRandomKinAccount), any(), any(), any()))
                 .thenReturn(Promise.Companion.error(new KinService.FatalError.UnexpectedServiceError()));
-        when(mockAccountContext.sendKinPayment(any(), any(), any()))
+        when(mockAccountContext.sendKinPayment(any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(kinPayment));
 
         Transaction transaction = kinAccount.buildTransactionSync(expectedAccountId, expectedAmount, 100);
         TransactionId transactionId = kinAccount.sendTransactionSync(transaction);
 
         verify(mockKinService).buildAndSignTransaction(eq(expectedRandomKinAccount), any(), any(), any());
-        verify(mockAccountContext).sendKinPayment(any(), any(), any());
+        verify(mockAccountContext).sendKinPayment(any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -201,7 +201,7 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
-        when(mockAccountContext.sendKinPayment(any(), any(), any()))
+        when(mockAccountContext.sendKinPayment(any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.error(new KinService.FatalError.UnexpectedServiceError()));
 
 
@@ -209,7 +209,7 @@ public class KinAccountImplTest {
         TransactionId transactionId = kinAccount.sendTransactionSync(transaction);
 
         verify(mockKinService).buildAndSignTransaction(any(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayment(any(), any(), any());
+        verify(mockAccountContext).sendKinPayment(any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -442,14 +442,14 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.error(new IndexOutOfBoundsException()));
-        when(mockAccountContext.sendKinPayment(any(), any(), any()))
+        when(mockAccountContext.sendKinPayment(any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(kinPayment));
 
         Transaction transaction = kinAccount.buildTransactionSync(expectedAccountId, expectedAmount, 100);
         TransactionId transactionId = kinAccount.sendWhitelistTransactionSync("AAAAAOW4vFw4Y2Te8vHfGvFd9JxpTW/2L6jnmEejDv3pRilbAAAAZABZ2/gAAAADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAADJhY8ODfklc4sHXp+xFywL6OxdHaWwljtepeFe9KOUOAAAAAAAAAAAAIAsgAAAAAAAAAAHpRilbAAAAQN1YkzWbQdhatwAHZW4dlfVo61cbHfFFY5I6UOcnrwgMZ5bN+iaCMi6V8tEjxnKjP9BjLGJnbvg7d9iYCcQiWg4=");
 
         verify(mockKinService).buildAndSignTransaction(any(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayment(any(), any(), any());
+        verify(mockAccountContext).sendKinPayment(any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -469,14 +469,14 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
-        when(mockAccountContext.sendKinPayment(any(), any(), any()))
+        when(mockAccountContext.sendKinPayment(any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.error(new KinService.FatalError.UnexpectedServiceError()));
 
         Transaction transaction = kinAccount.buildTransactionSync(expectedAccountId, expectedAmount, 100);
         TransactionId transactionId = kinAccount.sendWhitelistTransactionSync("AAAAAOW4vFw4Y2Te8vHfGvFd9JxpTW/2L6jnmEejDv3pRilbAAAAZABZ2/gAAAADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAADJhY8ODfklc4sHXp+xFywL6OxdHaWwljtepeFe9KOUOAAAAAAAAAAAAIAsgAAAAAAAAAAHpRilbAAAAQN1YkzWbQdhatwAHZW4dlfVo61cbHfFFY5I6UOcnrwgMZ5bN+iaCMi6V8tEjxnKjP9BjLGJnbvg7d9iYCcQiWg4=");
 
         verify(mockKinService).buildAndSignTransaction(any(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayment(any(), any(), any());
+        verify(mockAccountContext).sendKinPayment(any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);

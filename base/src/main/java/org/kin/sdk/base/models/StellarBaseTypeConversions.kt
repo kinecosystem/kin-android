@@ -45,7 +45,7 @@ fun KinAccount.toSigningKeyPair(): KeyPair =
 
 fun String.toUTF8Bytes(): ByteArray = toByteArray(Charsets.UTF_8)
 
-fun ByteArray.toUTF8String(): String = String(this)
+fun ByteArray.toUTF8String(): String = String(this, Charsets.UTF_8)
 
 fun AccountResponse.kinBalance(): KinBalance {
     val currentBalanceAmount = balances.filter { it.asset is AssetTypeNative }
@@ -85,7 +85,7 @@ fun TransactionResponse.asKinTransaction(networkEnvironment: NetworkEnvironment)
 
 fun KinTransaction.asKinPayments(): List<KinPayment> {
     var offset = 0
-    return paymentOperations.map { payment ->
+    return paymentOperations.mapIndexed { index, payment ->
         KinPayment(
             KinPayment.Id(transactionHash, offset++),
             KinPayment.Status.Success,
@@ -94,7 +94,8 @@ fun KinTransaction.asKinPayments(): List<KinPayment> {
             payment.amount,
             fee,
             memo,
-            recordType.timestamp
+            recordType.timestamp,
+            invoiceList?.invoices?.get(index)
         )
     }
 }
@@ -131,7 +132,7 @@ fun KinAccount.toAccount(): Account =
     } ?: throw Exception("Cannot convert to Stellar Account, signing key invalid!")
 
 
-fun Transaction.toKinTransaction(networkEnvironment: NetworkEnvironment) = KinTransaction(toEnvelopeXdrBytes(), networkEnvironment = networkEnvironment)
+fun Transaction.toKinTransaction(networkEnvironment: NetworkEnvironment, invoiceList: InvoiceList? = null) = KinTransaction(toEnvelopeXdrBytes(), networkEnvironment = networkEnvironment, invoiceList = invoiceList)
 
 fun NetworkEnvironment.getNetwork() = Network(networkPassphrase)
 
@@ -141,18 +142,10 @@ class KinDateFormat(dateString: String) {
 
         @JvmStatic
         fun timestampToString(timestamp: Long): String {
-            return FORMAT.format(Date(timestamp))
-        }
-
-        val FORMAT by lazy {
-            try {
-                SimpleDateFormat(KIN_DATE_FORMAT)
-            } catch (e: Exception) {
-                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-            }
+            return SimpleDateFormat(KIN_DATE_FORMAT).format(Date(timestamp))
         }
     }
 
-    val timestamp =FORMAT.parse(dateString).time
+    val timestamp = SimpleDateFormat(KIN_DATE_FORMAT).parse(dateString).time
 }
 

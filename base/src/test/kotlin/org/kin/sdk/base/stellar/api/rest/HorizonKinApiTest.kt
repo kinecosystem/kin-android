@@ -14,7 +14,7 @@ import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.network.api.KinAccountApi
 import org.kin.sdk.base.network.api.KinTransactionApi
-import org.kin.sdk.base.network.api.rest.HorizonKinApi
+import org.kin.sdk.base.network.api.horizon.HorizonKinApi
 import org.kin.sdk.base.stellar.models.ApiConfig
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment

@@ -5,6 +5,7 @@ import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
 
+@Suppress("UNUSED_VARIABLE")
 class PaddingTest : TestCase() {
     @Test
     @Throws(IOException::class)

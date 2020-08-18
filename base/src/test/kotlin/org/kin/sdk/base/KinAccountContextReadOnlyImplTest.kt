@@ -26,6 +26,7 @@ import org.kin.sdk.base.tools.TestUtils
 import org.kin.sdk.base.tools.latchOperationValueCapture
 import org.kin.sdk.base.tools.test
 import org.kin.sdk.base.tools.updateStatus
+import org.kin.stellarfork.codec.Base64
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -47,7 +48,7 @@ class KinAccountContextReadOnlyImplTest {
             "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=",
             KinTransaction.RecordType.Historical(
                 KinDateFormat("2019-12-12T21:32:43Z").timestamp,
-                com.sun.org.apache.xml.internal.security.utils.Base64.decode("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA="),
+                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
                 pagingToken
             )
         )

@@ -1,6 +1,6 @@
 package org.kin.sdk.base.tools
 
-import com.sun.org.apache.xml.internal.security.utils.Base64
+import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.asPrivateKey
@@ -8,6 +8,7 @@ import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.stellarfork.KeyPair
+import org.kin.stellarfork.codec.Base64
 import java.util.Collections
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -126,9 +127,9 @@ class TestUtils {
         fun kinTransactionFromXdr(
             base64StringXdr: String,
             recordType: KinTransaction.RecordType,
-            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNet
-        ) =
-            KinTransaction(Base64.decode(base64StringXdr), recordType, networkEnvironment)
+            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNet,
+            invoiceList: InvoiceList? = null
+        ) = KinTransaction(Base64.decodeBase64(base64StringXdr)!!, recordType, networkEnvironment, invoiceList)
     }
 }
 

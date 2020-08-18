@@ -6,10 +6,13 @@ import android.text.TextUtils
 import android.view.Gravity
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.LinearLayout
-import org.kin.sdk.demo.view.tools.MeasureSpecTools
-import org.kin.sdk.demo.view.tools.addTo
-import org.kin.sdk.demo.view.tools.dip
-import org.kin.sdk.demo.view.tools.selectableItemBackgroundResource
+import org.kin.sdk.design.view.tools.MeasureSpecTools
+import org.kin.sdk.design.view.tools.addTo
+import org.kin.sdk.design.view.tools.dip
+import org.kin.sdk.design.view.tools.selectableItemBackgroundResource
+import org.kin.sdk.design.view.widget.internal.CodeStyleTextView
+import org.kin.sdk.design.view.widget.KinAmountView
+import org.kin.sdk.design.view.widget.internal.SecondaryTextView
 import java.math.BigDecimal
 
 class HistoryListItemView(context: Context) : LinearLayout(context) {
@@ -21,7 +24,7 @@ class HistoryListItemView(context: Context) : LinearLayout(context) {
     private val leftWrapper = with(LinearLayout(context)) {
         orientation = VERTICAL
         addTo(this@HistoryListItemView, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply {
-            setMargins(12.dip, 8.dip, 12.dip, 8.dip)
+            setMargins(16.dip, 8.dip, 16.dip, 8.dip)
         })
     }
 
@@ -52,17 +55,13 @@ class HistoryListItemView(context: Context) : LinearLayout(context) {
     }
 
     private val amountView = with(
-        PrimaryTextView(
-            context
-        )
+        KinAmountView(context)
     ) {
         textSize = 17f
-        typeface = Typeface.create("sans-serif", Typeface.BOLD)
-        setSingleLine()
-        maxLines = 1
+        innerTextView.typeface = Typeface.create("sans-serif", Typeface.BOLD)
 
         addTo(this@HistoryListItemView, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply {
-            setMargins(0.dip, 0.dip, 8.dip, 0.dip)
+            setMargins(0.dip, 0.dip, 16.dip, 0.dip)
             gravity = Gravity.CENTER_VERTICAL
         })
     }
@@ -82,12 +81,14 @@ class HistoryListItemView(context: Context) : LinearLayout(context) {
     var amount: BigDecimal = BigDecimal.ONE
         set(value) {
             val prefix = if (value.signum() > 0) {
-                "+"
+                "+ "
             } else {
                 ""
             }
 
-            amountView.setText("$prefix$value")
+            amountView.prefix = prefix
+            amountView.isRounded = true
+            amountView.amount = value
             field = value
         }
 
