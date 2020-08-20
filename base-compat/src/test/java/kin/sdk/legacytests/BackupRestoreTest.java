@@ -269,7 +269,7 @@ public class BackupRestoreTest {
         assertEquals(4, kinClient1.getAccountCount());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void initKinClient_NullId_Exception() {
         kinClient1 = createNewKinClient(null);
     }

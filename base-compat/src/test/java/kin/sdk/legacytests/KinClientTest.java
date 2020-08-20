@@ -488,9 +488,8 @@ public class KinClientTest {
     }
 
     @Test
-    public void kinClientBuilder_missingEnvironment_IllegalArgumentException() {
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("environment");
+    public void kinClientBuilder_missingEnvironment_NullPointerException() {
+        expectedEx.expect(NullPointerException.class);
 
         Context ctx = mock(Context.class);
 
@@ -507,9 +506,8 @@ public class KinClientTest {
     }
 
     @Test
-    public void kinClientBuilder_missingStoreKey_IllegalArgumentException() {
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("storeKey");
+    public void kinClientBuilder_missingStoreKey_NullPointerException() {
+        expectedEx.expect(NullPointerException.class);
 
         Context ctx = mock(Context.class);
 
@@ -524,9 +522,8 @@ public class KinClientTest {
     }
 
     @Test
-    public void kinClientBuilder_missingContext_IllegalArgumentException() {
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("context");
+    public void kinClientBuilder_missingContext_NullPointerException() {
+        expectedEx.expect(NullPointerException.class);
 
         new KinClient(null,
                 fakeEnvironment,
@@ -870,9 +867,9 @@ public class KinClientTest {
     }
 
     @Test
-    public void environment_MissingNetworkUrl_IllegalArgumentException() throws Exception {
-        expectedEx.expect(IllegalArgumentException.class);
-        expectedEx.expectMessage("networkUrl");
+    public void environment_MissingNetworkUrl_NullPointerException() throws Exception {
+        expectedEx.expect(NullPointerException.class);
+
 
         new Environment(null, Environment.TEST.getNetworkPassphrase());
     }
