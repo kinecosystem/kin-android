@@ -271,7 +271,7 @@ class KinBinaryMemoTest {
             }
         }
 
-        verifyTypeId(KinBinaryMemo.TransferType.Unknown)
+        verifyTypeId(KinBinaryMemo.TransferType.None)
         verifyTypeId(KinBinaryMemo.TransferType.Earn)
         verifyTypeId(KinBinaryMemo.TransferType.Spend)
         verifyTypeId(KinBinaryMemo.TransferType.P2P)

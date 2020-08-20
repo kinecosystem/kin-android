@@ -35,7 +35,12 @@ data class KinBinaryMemo internal constructor(
         /**
          * An unclassified transfer of Kin.
          */
-        object Unknown : TransferType(0)
+        object Unknown : TransferType(-1)
+
+        /**
+         * When none of the other types are appropriate for the use case.
+         */
+        object None : TransferType(0)
 
         /**
          * Use when transferring Kin to a user for some performed action.
@@ -58,6 +63,7 @@ data class KinBinaryMemo internal constructor(
         companion object {
             fun fromValue(value: Int): TransferType =
                 when (value) {
+                    0 -> None
                     1 -> Earn
                     2 -> Spend
                     3 -> P2P
