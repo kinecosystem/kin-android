@@ -32,7 +32,7 @@ Below you'll find a general overview on how to use the base module, but also con
 Everything starts with a `KinEnvironment` instance that describes which blockchain, services, and storage will be used.
 
 ### Agora Kin Environment
-The Agora Kin Environment is now the preferred method of communicating with the Kin Blockchain. Agora is both a gateway to submit payments and a history collector that can be used to resolve your full payment history.  
+The Agora Kin Environment is now the preferred method of communicating with the Kin Blockchain. Agora is both a gateway to submit payments and a history collector that can be used to resolve your full payment history.
 When submitting payments, a developer should properly configure an [Agora webhook](https://docs.kin.org/how-it-works#webhooks), which acts as a delegate to approve and optionally co-sign a transaction to mediate transaction fees.
 Agora can also store additional meta-data about your transaction concerning what your payments were for. This bundle of information is called an `Invoice`, offchain data which is referenced by the payment's associated `Memo`. You can read more about both below in the [Sending Payments section](#sending-payments).
 
@@ -43,7 +43,7 @@ There are two bundles of information an App provides through this interface:
 
 For more information regarding webhooks and webhook integration please read more about [how it works](https://docs.kin.org/how-it-works#webhooks).
 ```kotlin
-val environment: KinEnvironment = 
+val environment: KinEnvironment =
     KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
         .setAppInfoProvider(object : AppInfoProvider {
                     override val appInfo: AppInfo =
@@ -53,7 +53,7 @@ val environment: KinEnvironment =
                             "Kin Demo App",
                             R.drawable.app_icon
                         )
-    
+
                     override fun getPassthroughAppUserCredentials(): AppUserCreds {
                         return AppUserCreds("demo_app_uid", "demo_app_user_passkey")
                     }
@@ -66,7 +66,7 @@ val environment: KinEnvironment =
 Horizon access from the SDK has been deprecated. While it's still included in the SDK and can be used, it may become unavailable in a future blockchain migration.
 ```kotlin
 // DEPCRECATED - SEE KinEnvironment.Agora
-val environment: KinEnvironment = 
+val environment: KinEnvironment =
     KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
         .setStorage(KinFileStorage.Builder("path/to/storage/location"))
         .build()
@@ -230,7 +230,7 @@ context.observeBalance()
 Whether you're looking for the full payment history or just to be notified of new payments, you can observe any changes to payments for a given account with:
 ```kotlin
 context.observePayments()
-    .add { payments: List<KinPayment> -> 
+    .add { payments: List<KinPayment> ->
         // Will emit the full payment history by default
         // @see ObserverMode for more details
     }
@@ -261,7 +261,7 @@ dependencies {
     implementation "org.kin.sdk.android:base-shaded:${versions.kin}"
 }
 ```
-This variant is recommended when encountering dependency collisions (e.g. duplicate classes, incompatible versions, etc).  
+This variant is recommended when encountering dependency collisions (e.g. duplicate classes, incompatible versions, etc).
 If you are still encountering difficulties with dependency collisions with this variant, we recommend forking the library and adding additional libraries you want to shade to the list included under the shadowJar task configured in [../base/build.gradle](build.gradle).
 
 
@@ -271,7 +271,7 @@ Instead of Promise .then tail calls in Java...
 context.getAccount(new Callback<KinAccount>() {
         @Override
         public void onCompleted(@Nullable KinAccount value, @Nullable Throwable error) {
-                
+
         }
     });
 ```
