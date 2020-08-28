@@ -27,6 +27,7 @@ dependencies {
 repositories {
     // ...
     jcenter()
+    maven { url "https://jitpack.io/" } // Jitpack is used for OkSSE fork only
 }
 ```
 Alternatively...there is a shaded artifact for those that are having difficuly resolving common dependencies (e.g. grpc, guava, other google transitive deps)
