@@ -46,6 +46,7 @@ afterEvaluate {
             normal(MavenPublication) {
                 artifact sourcesJar
                 artifact javadocJar
+                artifact jar
 
                 pom {
                     packaging 'jar'
