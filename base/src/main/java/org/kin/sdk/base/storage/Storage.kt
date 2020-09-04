@@ -26,6 +26,8 @@ interface Storage {
 
     fun getTransactions(key: KinAccount.Id): KinTransactions?
 
+    fun getOrCreateCID(): String
+
 
     // TODO: Replace all sync functions with Promises
 

@@ -43,3 +43,5 @@ ignore:
   - "**/Tls12SocketFactory.*"
   - "**/OkHttpChannelBuilderForcedTls12.*"
   - "**/AppUserAuthInterceptor.*"
+  - "**/UserAgentInterceptor.*"
+  - "**/SDKConfig.*"

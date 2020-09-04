@@ -220,8 +220,7 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
     fun payInvoice(
         invoice: Invoice,
         destinationAccount: KinAccount.Id,
-        processingAppIdx: AppIdx = appInfoProvider?.appInfo?.appIndex
-            ?: throw RuntimeException("Need to specify an AppIdx"),
+        processingAppIdx: AppIdx = appInfoProvider?.appInfo?.appIndex ?: throw RuntimeException("Need to specify an AppIdx"),
         type: KinBinaryMemo.TransferType = KinBinaryMemo.TransferType.Spend
     ): Promise<KinPayment>
 

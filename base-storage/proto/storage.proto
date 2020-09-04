@@ -73,4 +73,5 @@ message Invoices {
 
 message KinConfig {
     int64 min_fee = 1;
+    string cid = 2;
 }

@@ -15,6 +15,7 @@ import org.kin.sdk.base.network.api.agora.AgoraKinAccountsApi
 import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApi
 import org.kin.sdk.base.network.api.agora.AppUserAuthInterceptor
 import org.kin.sdk.base.network.api.agora.OkHttpChannelBuilderForcedTls12
+import org.kin.sdk.base.network.api.agora.UserAgentInterceptor
 import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinAccountCreationApi
 import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinTransactionWhitelistingApi
 import org.kin.sdk.base.network.api.horizon.HorizonKinApi
@@ -202,6 +203,10 @@ sealed class KinEnvironment {
                     )
                     val appInfoProvider = appInfoProvider
                         ?: throw KinEnvironmentBuilderException("Must provide an ApplicationDelegate!")
+                    val storageBuilder = storageBuilder
+                    if (!this@Builder::storage.isInitialized && storageBuilder != null) {
+                        storage = storageBuilder.setNetworkEnvironment(networkEnvironment).build()
+                    }
                     val managedChannel =
                         managedChannel ?: networkEnvironment.agoraApiConfig()
                             .asManagedChannel()
@@ -220,11 +225,6 @@ sealed class KinEnvironment {
                         accountsApi,
                         transactionsApi
                     )
-
-                    val storageBuilder = storageBuilder
-                    if (!this@Builder::storage.isInitialized && storageBuilder != null) {
-                        storage = storageBuilder.setNetworkEnvironment(networkEnvironment).build()
-                    }
 
                     return Agora(
                         managedChannel,
@@ -259,7 +259,8 @@ sealed class KinEnvironment {
                     OkHttpChannelBuilderForcedTls12.forAddress(networkEndpoint, tlsPort)
                         .intercept(
                             *listOf(
-                                AppUserAuthInterceptor(appInfoProvider!!)
+                                AppUserAuthInterceptor(appInfoProvider!!),
+                                UserAgentInterceptor(storage)
                             ).toTypedArray()
                         )
                         .build()

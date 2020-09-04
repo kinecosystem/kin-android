@@ -520,6 +520,13 @@ class KinFileStorageTest {
         assertEquals(invoiceList, kinTransactions!!.items.first().invoiceList)
     }
 
+    @Test
+    fun testGetOrCreateCID() {
+        val cid1 = sut.getOrCreateCID()
+        val cid2 = sut.getOrCreateCID()
+        assertEquals(cid1, cid2)
+    }
+
     private fun sampleHistoricalTransaction(): KinTransaction {
         // https://kinexplorer.com/tx/08b6da9f6d88ffe8a5d49d147c730a13f7a86cf43b4d5154e4782e865064ece8
         val sampleTransactionXdr =

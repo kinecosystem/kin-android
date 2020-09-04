@@ -26,6 +26,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.UUID
 import org.kin.gen.storage.v1.Storage.KinAccount as StorageKinAccount
 import org.kin.gen.storage.v1.Storage.KinBalance as StorageKinBalance
 import org.kin.gen.storage.v1.Storage.KinConfig as StorageKinConfig
@@ -167,6 +168,49 @@ class KinFileStorage @JvmOverloads internal constructor(
         val transactions = getTransactionsFromFile(transactionsDir, transactionsFile)
 
         return transactions
+    }
+
+    private fun setKinConfig(kinConfig: StorageKinConfig): Boolean {
+        return writeToFile(
+            directoryForConfig(),
+            fileNameForConfig,
+            kinConfig.toByteArray()
+        )
+    }
+
+    private fun getKinConfig(): Optional<StorageKinConfig> {
+        val bytes = readFile(
+            directoryForConfig(),
+            fileNameForConfig
+        )
+
+        return if (bytes.isEmpty()) {
+            Optional.empty()
+        } else {
+            Optional.ofNullable(
+                try {
+                    StorageKinConfig.parseFrom(bytes)
+                } catch (e: InvalidProtocolBufferException) {
+                    e.printStackTrace()
+                    null
+                }
+            )
+        }
+    }
+
+    override fun getOrCreateCID(): String {
+        val exisingkinConfig = getKinConfig()
+        return if (exisingkinConfig.isPresent) {
+            exisingkinConfig.get()!!.cid
+        } else {
+            val newCid = UUID.randomUUID().toString()
+            val newKinConfig = StorageKinConfig.newBuilder()
+                .setCid(newCid)
+                .build()
+
+            setKinConfig(newKinConfig)
+            newCid
+        }
     }
 
     override fun getStoredTransactions(accountId: KinAccount.Id): Promise<KinTransactions?> {
@@ -347,16 +391,18 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun setMinFee(minFee: QuarkAmount): Promise<Optional<QuarkAmount>> {
         return Promise.create<Optional<QuarkAmount>> { resolve, _ ->
+            val updatedKinConfig = getKinConfig()
+                .map {
+                    it.toBuilder()
+                }
+                .orElse {
+                    StorageKinConfig.newBuilder()
+                }
+                .setMinFee(minFee.value.toLong())
+                .build()
+
             resolve(
-                if (writeToFile(
-                        directoryForConfig(),
-                        fileNameForConfig,
-                        StorageKinConfig.newBuilder()
-                            .setMinFee(minFee.value.toLong())
-                            .build()
-                            .toByteArray()
-                    )
-                ) Optional.of(minFee)
+                if (setKinConfig(updatedKinConfig)) Optional.of(minFee)
                 else Optional.empty<QuarkAmount>()
             )
         }.workOn(executors.sequentialIO)
@@ -364,25 +410,7 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun getMinFee(): Promise<Optional<QuarkAmount>> {
         return Promise.create<Optional<QuarkAmount>> { resolve, _ ->
-            val bytes = readFile(
-                directoryForConfig(),
-                fileNameForConfig
-            )
-
-            if (bytes.isEmpty()) {
-                resolve(Optional.empty())
-            } else {
-                resolve(
-                    Optional.ofNullable(
-                        try {
-                            QuarkAmount(StorageKinConfig.parseFrom(bytes).minFee)
-                        } catch (e: InvalidProtocolBufferException) {
-                            e.printStackTrace()
-                            null
-                        }
-                    )
-                )
-            }
+            resolve(getKinConfig().map { QuarkAmount(it.minFee) })
         }.workOn(executors.sequentialIO)
     }
 
