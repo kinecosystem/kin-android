@@ -29,6 +29,7 @@ import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionResponse.
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.repository.AppInfoRepository
 import org.kin.sdk.base.repository.InvoiceRepository
+import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.base.tools.toByteArray
@@ -89,7 +90,8 @@ class PaymentFlowViewModelImplTest {
             PaymentFlowViewModel.NavigationArgs("", "", 0),
             appInfoRepository,
             invoiceRepository,
-            kinAccountContext
+            kinAccountContext,
+            KinLoggerFactoryImpl(true)
         )
     }
 
@@ -140,7 +142,8 @@ class PaymentFlowViewModelImplTest {
             PaymentFlowViewModel.NavigationArgs("", "", 0),
             appInfoRepository,
             invoiceRepository,
-            kinAccountContext
+            kinAccountContext,
+            KinLoggerFactoryImpl(true)
         )
 
         val countDownLatch = CountDownLatch(2)

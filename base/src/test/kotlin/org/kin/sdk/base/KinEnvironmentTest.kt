@@ -24,6 +24,7 @@ import org.kin.sdk.base.storage.KinFileStorage
 import org.kin.sdk.base.storage.Storage
 import org.kin.sdk.base.tools.Callback
 import org.kin.sdk.base.tools.ExecutorServices
+import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.base.tools.TestUtils
@@ -63,22 +64,22 @@ class KinEnvironmentTest {
     @Suppress("UNUSED_VARIABLE")
     @Test
     fun testHorizonConstruction() {
-
+        val logger = KinLoggerFactoryImpl(true)
         val sutTest = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
             .setStorage(mockStorage).build()
 
         val sutTest2 = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
             .setOkHttpClient(OkHttpClient())
-            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl())
-            .setLogger(LoggerFactory.getILoggerFactory())
+            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger= logger))
+            .setLogger(logger)
             .setKinService(mockService)
             .setStorage(mockStorage)
             .build()
 
         val sutTest3 = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
             .setOkHttpClient(OkHttpClient())
-            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl())
-            .setLogger(LoggerFactory.getILoggerFactory())
+            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger = logger))
+            .setLogger(logger)
             .setKinService(mockService)
             .setKinAccountCreationApi(mockAccountCreationApi)
             .setKinTransactionWhitelistingApi(mockWhitelistingApi)
@@ -97,14 +98,15 @@ class KinEnvironmentTest {
     @Suppress("UNUSED_VARIABLE")
     @Test
     fun testAgoraConstruction() {
+        val logger = KinLoggerFactoryImpl(true)
         val sutTest = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
         val sutTest2 = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
-            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl())
-            .setLogger(LoggerFactory.getILoggerFactory())
+            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger = logger))
+            .setLogger(logger)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setKinService(mockService)
             .setStorage(mockStorage)
@@ -112,8 +114,8 @@ class KinEnvironmentTest {
 
         val sutTest3 = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
-            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl())
-            .setLogger(LoggerFactory.getILoggerFactory())
+            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger = logger))
+            .setLogger(logger)
             .setKinService(mockService)
             .setExecutorServices(ExecutorServices())
             .setManagedChannel(

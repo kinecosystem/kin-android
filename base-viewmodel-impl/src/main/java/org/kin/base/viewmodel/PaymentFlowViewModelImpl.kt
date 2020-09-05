@@ -11,6 +11,8 @@ import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionResponse.
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.repository.AppInfoRepository
 import org.kin.sdk.base.repository.InvoiceRepository
+import org.kin.sdk.base.tools.KinLogger
+import org.kin.sdk.base.tools.KinLoggerFactory
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 import java.math.BigInteger
@@ -21,12 +23,20 @@ class PaymentFlowViewModelImpl(
     args: PaymentFlowViewModel.NavigationArgs,
     private val appInfoRepository: AppInfoRepository,
     private val invoiceRepository: InvoiceRepository,
-    private val kinAccountContext: KinAccountContext
+    private val kinAccountContext: KinAccountContext,
+    private val logger: KinLoggerFactory
 ) : PaymentFlowViewModel,
     BaseViewModel<PaymentFlowViewModel.NavigationArgs, PaymentFlowViewModel.State>(args) {
 
     private val processingAppIdx = AppIdx(args.processingAppIdx)
     private val executor = Executors.newSingleThreadExecutor()
+    private val log: KinLogger by lazy {
+        logger.getLogger(javaClass.simpleName)
+    }
+
+    init {
+        log.info("Navigated to: ${javaClass.simpleName}")
+    }
 
     private fun setup() {
         appInfoRepository.appInfoByAppIndex(AppIdx(args.processingAppIdx)).then { appInfo ->
@@ -68,12 +78,14 @@ class PaymentFlowViewModelImpl(
         PaymentFlowViewModel.State(null, Progression.Init)
 
     override fun onStateUpdated(state: PaymentFlowViewModel.State) {
+        log.info("${::onStateUpdated.name}:$state")
         if (state.progression == Progression.Init) {
             setup()
         }
     }
 
     override fun onCancelTapped(onCompleted: () -> Unit) {
+        log.info(::onCancelTapped.name)
         updateState {
             it.copy(
                 progression = Progression.PaymentError(
@@ -86,6 +98,7 @@ class PaymentFlowViewModelImpl(
     }
 
     override fun onConfirmTapped() {
+        log.info(::onConfirmTapped.name)
         updateState {
             it.copy(progression = Progression.PaymentProcessing)
         }

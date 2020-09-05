@@ -31,7 +31,6 @@ import org.kin.sdk.design.view.tools.resolveDrawable
 import org.kin.sdk.design.view.tools.tint
 import org.kin.sdk.design.view.widget.KinAmountView
 import org.kin.sdk.design.view.widget.StandardButton
-import org.kin.sdk.design.view.widget.internal.PrimaryTextView
 import org.kin.sdk.design.view.widget.internal.RoundedBottomSheetDialogFragment
 import org.kin.sdk.design.view.widget.internal.SecondaryTextView
 import org.kin.sdk.spend.navigation.SpendNavigatorImpl
@@ -60,8 +59,7 @@ class PaymentFlowActivity :
             )
     }
 
-    override val navigator: SpendNavigatorImpl =
-        SpendNavigatorImpl(this)
+    override val navigator: SpendNavigatorImpl = SpendNavigatorImpl(this)
 
     private lateinit var paymentFlowFragment: PaymentFlowFragment
 
@@ -124,7 +122,7 @@ class PaymentFlowFragment(private val spendNavigator: SpendNavigator) :
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         with(createView(inflater.context)) {
             rootLayout = this

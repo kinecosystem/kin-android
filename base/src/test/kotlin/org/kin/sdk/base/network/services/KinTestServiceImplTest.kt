@@ -9,6 +9,7 @@ import org.junit.Before
 import org.junit.Test
 import org.kin.sdk.base.network.api.KinAccountCreationApi
 import org.kin.sdk.base.network.api.horizon.KinFriendBotApi
+import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
 import org.kin.sdk.base.tools.TestUtils
 import org.kin.sdk.base.tools.test
@@ -45,7 +46,7 @@ class KinTestServiceImplTest {
         }
 
         sut = KinTestServiceImpl(
-            NetworkOperationsHandlerImpl(),
+            NetworkOperationsHandlerImpl(logger = KinLoggerFactoryImpl(true)),
             mockFriendBotApi
         )
     }
@@ -76,7 +77,7 @@ class KinTestServiceImplTest {
         }
 
         sut = KinTestServiceImpl(
-            NetworkOperationsHandlerImpl(),
+            NetworkOperationsHandlerImpl(logger = KinLoggerFactoryImpl(true)),
             mockFriendBotApi
         )
 

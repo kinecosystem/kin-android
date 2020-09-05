@@ -56,7 +56,7 @@ sealed class Key {
         }
 
         override fun toString(): String {
-            return "Key.PrivateKey(value=${encode()})"
+            return "Key.PrivateKey(value=XXXXXXXX<Private>XXXXXXXX)"
         }
 
         fun encode(): String = String(KeyPair.fromSecretSeed(value).secretSeed)

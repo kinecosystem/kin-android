@@ -15,12 +15,12 @@ class SpendResolverImpl constructor(
     private val invoiceRepository: InvoiceRepository = kinEnvironment.invoiceRepository,
     private val appInfoRepository: AppInfoRepository = kinEnvironment.appInfoRepository,
     private val kinAccountContextRepository: KinAccountContextRepository
-    = InMemoryKinAccountContextRepositoryImpl(kinEnvironment)
+    = InMemoryKinAccountContextRepositoryImpl(kinEnvironment),
 ) : SpendResolver {
 
     override fun resolve(
         navigationArgs: PaymentFlowViewModel.NavigationArgs,
-        spendNavigator: SpendNavigator
+        spendNavigator: SpendNavigator,
     ): PaymentFlowViewModel {
         val kinAccountContext =
             kinAccountContextRepository
@@ -34,7 +34,8 @@ class SpendResolverImpl constructor(
             navigationArgs,
             appInfoRepository,
             invoiceRepository,
-            kinAccountContext
+            kinAccountContext,
+            kinEnvironment.logger
         )
     }
 }

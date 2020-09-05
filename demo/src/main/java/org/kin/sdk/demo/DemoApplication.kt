@@ -70,6 +70,7 @@ class DemoApplication : MultiDexApplication(), ResolverProvider, AppInfoProvider
                     return AppUserCreds("demo_app_uid", "demo_app_user_passkey")
                 }
             })
+            .setEnableLogging()
             .setStorage(KinFileStorage.Builder("${applicationContext.filesDir}/kin"))
             .build()
             .apply {
@@ -80,6 +81,7 @@ class DemoApplication : MultiDexApplication(), ResolverProvider, AppInfoProvider
     private val mainNetKinEnvironment: KinEnvironment.Agora by lazy {
         KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarMainNet)
             .setAppInfoProvider(this)
+            .setEnableLogging()
             .setStorage(KinFileStorage.Builder("${applicationContext.filesDir}/kin"))
             .build()
     }

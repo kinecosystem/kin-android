@@ -44,6 +44,7 @@ import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.network.services.KinServiceImpl
 import org.kin.sdk.base.stellar.models.ApiConfig
 import org.kin.sdk.base.stellar.models.KinTransaction
+import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
 import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.TestUtils
@@ -112,14 +113,17 @@ class KinServiceImplTest {
             on { isWhitelistingAvailable } doReturn false
         }
 
+        val logger = KinLoggerFactoryImpl(true)
+
         sut = KinServiceImpl(
             ApiConfig.TestNetHorizon.networkEnv,
-            NetworkOperationsHandlerImpl(),
+            NetworkOperationsHandlerImpl(logger = logger),
             mockAccountApi,
             mockTransactionApi,
             mockStreamingApi,
             mockAccountCreationApi,
-            mockTransactionWhitelistingApi
+            mockTransactionWhitelistingApi,
+            logger
         )
     }
 

@@ -1,4 +1,3 @@
-
 package org.kin.sdk.base.network.services
 
 import okhttp3.OkHttpClient
@@ -48,6 +47,7 @@ import org.kin.sdk.base.network.services.KinService.FatalError.WebhookRejectedTr
 import org.kin.sdk.base.network.services.KinService.Order
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.tools.KinLoggerFactory
 import org.kin.sdk.base.tools.NetworkOperationsHandler
 import org.kin.sdk.base.tools.Observer
 import org.kin.sdk.base.tools.Promise
@@ -146,7 +146,8 @@ interface KinService {
          * to upgrade to a newer version of the software that should contain a more
          * recent version of this SDK.
          */
-        object SDKUpgradeRequired : FatalError(Exception("Please upgrade to a newer version of the SDK"))
+        object SDKUpgradeRequired :
+            FatalError(Exception("Please upgrade to a newer version of the SDK"))
     }
 
     /**
@@ -201,11 +202,26 @@ class KinServiceImpl(
     private val transactionApi: KinTransactionApi,
     private val streamingApi: KinStreamingApi,
     private val accountCreationApi: KinAccountCreationApi,
-    private val transactionWhitelistingApi: KinTransactionWhitelistingApi
+    private val transactionWhitelistingApi: KinTransactionWhitelistingApi,
+    private val logger: KinLoggerFactory
 ) : KinService {
+
+    private val log = logger.getLogger(javaClass.simpleName)
+
+    private fun <T> T.requestPrint(): T {
+        log.debug("[Request]:${this}")
+        return this
+    }
+
+    private fun <T> T.responsePrint(): T {
+        log.debug("[Response]:${this}")
+        return this
+    }
+
     override fun createAccount(accountId: KinAccount.Id): Promise<KinAccount> {
         return networkOperationsHandler.queueWork { respond ->
-            accountCreationApi.createAccount(CreateAccountRequest(accountId)) { response ->
+            accountCreationApi.createAccount(CreateAccountRequest(accountId).requestPrint()) { response ->
+                response.responsePrint()
                 val error: Exception? = when (response.result) {
                     CreateAccountResponse.Result.Ok -> {
                         if (response.account != null) {
@@ -238,7 +254,8 @@ class KinServiceImpl(
 
     override fun getAccount(accountId: KinAccount.Id): Promise<KinAccount> {
         return networkOperationsHandler.queueWork { respond ->
-            accountApi.getAccount(GetAccountRequest(accountId)) { response ->
+            accountApi.getAccount(GetAccountRequest(accountId).requestPrint()) { response ->
+                response.responsePrint()
                 val error: Exception? = when (response.result) {
                     GetAccountResponse.Result.Ok -> {
                         if (response.account != null) {
@@ -259,7 +276,8 @@ class KinServiceImpl(
 
     override fun getLatestTransactions(kinAccountId: KinAccount.Id): Promise<List<KinTransaction>> {
         return networkOperationsHandler.queueWork { respond ->
-            transactionApi.getTransactionHistory(GetTransactionHistoryRequest(kinAccountId)) { response ->
+            transactionApi.getTransactionHistory(GetTransactionHistoryRequest(kinAccountId).requestPrint()) { response ->
+                response.responsePrint()
                 val error: Exception? = when (response.result) {
                     GetTransactionHistoryResponse.Result.Ok -> {
                         if (response.transactions != null) {
@@ -294,9 +312,9 @@ class KinServiceImpl(
                         Order.Ascending -> GetTransactionHistoryRequest.Order.Ascending
                         Order.Descending -> GetTransactionHistoryRequest.Order.Descending
                     }
-                )
-
+                ).requestPrint()
             ) { response ->
+                response.responsePrint()
                 val error: Exception? = when (response.result) {
                     GetTransactionHistoryResponse.Result.Ok -> {
                         if (response.transactions != null) {
@@ -318,8 +336,9 @@ class KinServiceImpl(
     override fun getTransaction(transactionHash: TransactionHash): Promise<KinTransaction> {
         return networkOperationsHandler.queueWork { respond ->
             transactionApi.getTransaction(
-                KinTransactionApi.GetTransactionRequest(transactionHash)
+                KinTransactionApi.GetTransactionRequest(transactionHash).requestPrint()
             ) { response ->
+                response.responsePrint()
                 val error: Exception? = when (response.result) {
                     GetTransactionResponse.Result.Ok -> {
                         if (response.transaction != null) {
@@ -347,6 +366,7 @@ class KinServiceImpl(
     override fun getMinFee(): Promise<QuarkAmount> {
         return networkOperationsHandler.queueWork { respond ->
             transactionApi.getTransactionMinFee { response ->
+                response.responsePrint()
                 val error: Exception? = when (response.result) {
                     is GetMinFeeForTransactionResponse.Result.Ok -> {
                         if (response.minFee != null) {
@@ -418,8 +438,9 @@ class KinServiceImpl(
                         SubmitTransactionRequest(
                             transactionToSend.envelopeXdrBytes,
                             transaction.invoiceList
-                        )
+                        ).requestPrint()
                     ) { response ->
+                        response.responsePrint()
                         val error: Exception? = when (response.result) {
                             SubmitTransactionResponse.Result.Ok -> response.transaction?.let {
                                 respond(it); null
@@ -451,10 +472,16 @@ class KinServiceImpl(
 
     override fun streamAccount(kinAccountId: KinAccount.Id): Observer<KinAccount> {
         return streamingApi.streamAccount(kinAccountId)
+            .add {
+                log.debug("streamAccount::Update $it")
+            }
     }
 
     override fun streamNewTransactions(kinAccountId: KinAccount.Id): Observer<KinTransaction> {
         return streamingApi.streamNewTransactions(kinAccountId)
+            .add {
+                log.debug("streamNewTransactions::Update $it")
+            }
     }
 
     override val testService: KinTestService by lazy {

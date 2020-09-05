@@ -1,7 +1,5 @@
 package org.kin.sdk.base.tools
 
-import org.slf4j.ILoggerFactory
-import org.slf4j.LoggerFactory
 import java.util.Random
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -173,7 +171,7 @@ interface NetworkOperationsHandler {
 class NetworkOperationsHandlerImpl(
     private val ioScheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
     private val ioExecutor: ExecutorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors()),
-    private val logger: ILoggerFactory = LoggerFactory.getILoggerFactory(),
+    private val logger: KinLoggerFactory,
     private val shouldRetryError: (Throwable) -> Boolean = { false }
 ) : NetworkOperationsHandler {
     private val operations = hashMapOf<String, NetworkOperation<*>>()
@@ -193,8 +191,7 @@ class NetworkOperationsHandlerImpl(
     }
 
     private fun <ResponseType> NetworkOperation<ResponseType>.expire() {
-        val error =
-            NetworkOperationsHandlerException.OperationTimeoutException()
+        val error = NetworkOperationsHandlerException.OperationTimeoutException()
         state = NetworkOperation.State.ERRORED(error)
         onCompleted.onError?.invoke(error)
         cleanup()

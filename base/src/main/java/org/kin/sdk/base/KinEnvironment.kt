@@ -14,6 +14,7 @@ import org.kin.sdk.base.network.api.KinTransactionWhitelistingApi
 import org.kin.sdk.base.network.api.agora.AgoraKinAccountsApi
 import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApi
 import org.kin.sdk.base.network.api.agora.AppUserAuthInterceptor
+import org.kin.sdk.base.network.api.agora.LoggingInterceptor
 import org.kin.sdk.base.network.api.agora.OkHttpChannelBuilderForcedTls12
 import org.kin.sdk.base.network.api.agora.UserAgentInterceptor
 import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinAccountCreationApi
@@ -32,16 +33,16 @@ import org.kin.sdk.base.storage.KinFileStorage
 import org.kin.sdk.base.storage.Storage
 import org.kin.sdk.base.tools.Callback
 import org.kin.sdk.base.tools.ExecutorServices
+import org.kin.sdk.base.tools.KinLoggerFactory
+import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.NetworkOperationsHandler
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.base.tools.callback
-import org.slf4j.ILoggerFactory
-import org.slf4j.LoggerFactory
 
 sealed class KinEnvironment {
     abstract val networkEnvironment: NetworkEnvironment
-    abstract val logger: ILoggerFactory
+    abstract val logger: KinLoggerFactory
     abstract val service: KinService
     internal abstract val storage: Storage
     internal abstract val executors: ExecutorServices
@@ -51,18 +52,19 @@ sealed class KinEnvironment {
     class Horizon private constructor(
         internal val okHttpClient: OkHttpClient,
         override val networkEnvironment: NetworkEnvironment,
-        override val logger: ILoggerFactory,
+        override val logger: KinLoggerFactory,
         override val storage: Storage,
         override val executors: ExecutorServices,
         override val networkHandler: NetworkOperationsHandler,
-        override val service: KinService
+        override val service: KinService,
     ) : KinEnvironment() {
         class Builder(private val networkEnvironment: NetworkEnvironment) {
             private var accountCreationApi: KinAccountCreationApi? = null
             private var transactionWhitelistingApi: KinTransactionWhitelistingApi? = null
+            private var enableLogging: Boolean = false
             private var okHttpClient: OkHttpClient? = null
             private var executors: ExecutorServices? = null
-            private var logger: ILoggerFactory? = null
+            private var logger: KinLoggerFactory? = null
             private var networkHandler: NetworkOperationsHandler? = null
             private var service: KinService? = null
 
@@ -77,7 +79,7 @@ sealed class KinEnvironment {
 
                 fun build(): KinEnvironment {
                     val okHttpClient = okHttpClient ?: OkHttpClient.Builder().build()
-                    val logger = logger ?: LoggerFactory.getILoggerFactory()
+                    val logger = logger ?: KinLoggerFactoryImpl(enableLogging)
                     val executors = executors ?: ExecutorServices()
                     val networkHandler = networkHandler ?: NetworkOperationsHandlerImpl(
                         executors.sequentialScheduled,
@@ -99,7 +101,8 @@ sealed class KinEnvironment {
                             networkEnvironment.horizonApiConfig(),
                             FriendBotApi(okHttpClient)
                         ),
-                        transactionWhitelistingApi ?: DefaultHorizonKinTransactionWhitelistingApi()
+                        transactionWhitelistingApi ?: DefaultHorizonKinTransactionWhitelistingApi(),
+                        logger
                     )
 
                     val storageBuilder = storageBuilder
@@ -132,7 +135,7 @@ sealed class KinEnvironment {
                     this.networkHandler = networkHandler
                 }
 
-            fun setLogger(logger: ILoggerFactory): Builder = apply {
+            fun setLogger(logger: KinLoggerFactory): Builder = apply {
                 this.logger = logger
             }
 
@@ -150,6 +153,8 @@ sealed class KinEnvironment {
                     this.transactionWhitelistingApi = transactionWhitelistingApi
                 }
 
+            fun setEnableLogging(): Builder = apply { this.enableLogging = true }
+
             fun setStorage(storage: Storage): CompletedBuilder {
                 this.storage = storage
                 return CompletedBuilder()
@@ -166,19 +171,20 @@ sealed class KinEnvironment {
     class Agora private constructor(
         private val managedChannel: ManagedChannel,
         override val networkEnvironment: NetworkEnvironment,
-        override val logger: ILoggerFactory,
+        override val logger: KinLoggerFactory,
         override val storage: Storage,
         override val executors: ExecutorServices,
         override val networkHandler: NetworkOperationsHandler,
         override val service: KinService,
         val appInfoRepository: AppInfoRepository = InMemoryAppInfoRepositoryImpl(),
         val invoiceRepository: InvoiceRepository = InMemoryInvoiceRepositoryImpl(),
-        val appInfoProvider: AppInfoProvider
+        val appInfoProvider: AppInfoProvider,
     ) : KinEnvironment() {
         class Builder(private val networkEnvironment: NetworkEnvironment) {
             private var managedChannel: ManagedChannel? = null
             private var executors: ExecutorServices? = null
-            private var logger: ILoggerFactory? = null
+            private var enableLogging: Boolean = false
+            private var logger: KinLoggerFactory? = null
             private var networkHandler: NetworkOperationsHandler? = null
             private var appInfoProvider: AppInfoProvider? = null
             private var service: KinService? = null
@@ -193,7 +199,7 @@ sealed class KinEnvironment {
                 }
 
                 fun build(): Agora {
-                    val logger = logger ?: LoggerFactory.getILoggerFactory()
+                    val logger = logger ?: KinLoggerFactoryImpl(enableLogging)
                     val executors = executors ?: ExecutorServices()
                     val networkHandler = networkHandler ?: NetworkOperationsHandlerImpl(
                         executors.sequentialScheduled,
@@ -209,7 +215,7 @@ sealed class KinEnvironment {
                     }
                     val managedChannel =
                         managedChannel ?: networkEnvironment.agoraApiConfig()
-                            .asManagedChannel()
+                            .asManagedChannel(logger)
                     val accountsApi = AgoraKinAccountsApi(managedChannel, networkEnvironment)
                     val transactionsApi =
                         AgoraKinTransactionsApi(
@@ -223,7 +229,8 @@ sealed class KinEnvironment {
                         transactionsApi,
                         accountsApi,
                         accountsApi,
-                        transactionsApi
+                        transactionsApi,
+                        logger
                     )
 
                     return Agora(
@@ -255,12 +262,13 @@ sealed class KinEnvironment {
                     NetworkEnvironment.KinStellarMainNet -> ApiConfig.MainNetAgora
                 }
 
-                private fun ApiConfig.asManagedChannel() =
+                private fun ApiConfig.asManagedChannel(logger: KinLoggerFactory) =
                     OkHttpChannelBuilderForcedTls12.forAddress(networkEndpoint, tlsPort)
                         .intercept(
                             *listOf(
                                 AppUserAuthInterceptor(appInfoProvider!!),
-                                UserAgentInterceptor(storage)
+                                UserAgentInterceptor(storage),
+                                LoggingInterceptor(logger)
                             ).toTypedArray()
                         )
                         .build()
@@ -279,7 +287,7 @@ sealed class KinEnvironment {
                     this.networkHandler = networkHandler
                 }
 
-            fun setLogger(logger: ILoggerFactory): Builder = apply {
+            fun setLogger(logger: KinLoggerFactory): Builder = apply {
                 this.logger = logger
             }
 
@@ -290,6 +298,8 @@ sealed class KinEnvironment {
             fun setKinService(kinService: KinService): Builder = apply {
                 this.service = kinService
             }
+
+            fun setEnableLogging(): Builder = apply { this.enableLogging = true }
 
             fun setStorage(storage: Storage): CompletedBuilder = with(this) {
                 this.storage = storage
@@ -337,6 +347,10 @@ sealed class KinEnvironment {
                 reject(t)
             }
         }
+    }
+
+    fun setEnableLogging(enableLogging: Boolean) {
+        logger.isLoggingEnabled = enableLogging
     }
 
     class KinEnvironmentBuilderException(s: String) : IllegalStateException(s)

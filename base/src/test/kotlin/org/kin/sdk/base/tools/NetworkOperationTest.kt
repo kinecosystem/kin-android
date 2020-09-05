@@ -22,7 +22,7 @@ class NetworkOperationTest {
     @Before
     fun setUp() {
         sut =
-            NetworkOperationsHandlerImpl(shouldRetryError = { true })
+            NetworkOperationsHandlerImpl(shouldRetryError = { true }, logger = KinLoggerFactoryImpl(true))
     }
 
     @Test

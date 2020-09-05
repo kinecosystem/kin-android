@@ -15,7 +15,6 @@ import kin.sdk.internal.sync
 import kin.utils.Request
 import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.KinEnvironment
-import org.kin.sdk.base.KinEnvironment.Horizon
 import org.kin.sdk.base.models.AppId
 import org.kin.sdk.base.models.AppIdx
 import org.kin.sdk.base.models.AppInfo
@@ -27,9 +26,9 @@ import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.storage.KinFileStorage
 import org.kin.sdk.base.storage.Storage
+import org.kin.sdk.base.tools.KinLogger
 import org.kin.sdk.base.tools.Promise
 import org.kin.stellarfork.KeyPair
-import org.slf4j.Logger
 import java.util.HashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -89,7 +88,7 @@ internal class KinClientInternal {
     private val kinEnvironment: KinEnvironment
 
     private var kinAccounts: CopyOnWriteArrayList<KinAccountImpl>
-    private val log: Logger
+    private val log: KinLogger
 
     /**
      * Build KinClient object.
@@ -212,7 +211,6 @@ internal class KinClientInternal {
     private fun validateAppId(appId: String) {
         if (appId == "") {
             log.info(
-                "KinClient",
                 "WARNING: KinClient instance was created without a proper application ID. Is this what you intended to do?"
             )
         } else require(appId.matches(Regex("[a-zA-Z0-9]{3,4}"))) {
