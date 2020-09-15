@@ -26,7 +26,7 @@ class UserAgentInterceptor(
 ) : ClientInterceptor {
     companion object {
         private val HEADER_KEY_USER_AGENT: Metadata.Key<String> =
-            Metadata.Key.of("user-agent", Metadata.ASCII_STRING_MARSHALLER)
+            Metadata.Key.of("kin-user-agent", Metadata.ASCII_STRING_MARSHALLER)
     }
 
     private val userAgentString: String by lazy {
