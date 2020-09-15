@@ -49,6 +49,14 @@ internal class KinAccountImpl(
         return if (isDeleted) null else accountContext.accountId.encodeAsString()
     }
 
+    override fun getStringEncodedPrivateKey(): String? {
+        return try {
+            account.secretSeed
+        } catch (t: Throwable) {
+            null
+        }?.let { String(it) }
+    }
+
     @Throws(OperationFailedException::class)
     override fun buildTransactionSync(
         publicAddress: String,

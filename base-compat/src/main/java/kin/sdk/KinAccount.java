@@ -24,6 +24,15 @@ public interface KinAccount {
     String getPublicAddress();
 
     /**
+     * *** DO NOT DISPLAY OR SHARE THIS ***
+     * *** THIS PROVIDES FULL ACCESS TO THE FUNDS OF THIS ACCOUNT ***
+     * *** USEFUL TO EXPORT THE KEY TO USE IN ANOTHER SYSTEM. e.g. for use in the ../base module***
+     * @return the private key of the account, or null if deleted
+     */
+    @Nullable
+    String getStringEncodedPrivateKey();
+
+    /**
      * Build a Transaction object of the given amount in kin, to the specified public address.
      * <p> See {@link KinAccount#buildTransactionSync(String, BigDecimal, int)} for possibles errors</p>
      *

@@ -125,6 +125,11 @@ public class KinAccountImplTest {
     }
 
     @Test
+    public void getEncodedPrivateKey() {
+        assertEquals(new String(expectedRandomAccount.getSecretSeed()), kinAccount.getStringEncodedPrivateKey());
+    }
+
+    @Test
     public void sendTransactionSync() throws Exception {
         KinTransaction kinTransaction = TestUtils.kinTransactionFromXDR("AAAAAOW4vFw4Y2Te8vHfGvFd9JxpTW/2L6jnmEejDv3pRilbAAAAZABZ2/gAAAADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAADJhY8ODfklc4sHXp+xFywL6OxdHaWwljtepeFe9KOUOAAAAAAAAAAAAIAsgAAAAAAAAAAHpRilbAAAAQN1YkzWbQdhatwAHZW4dlfVo61cbHfFFY5I6UOcnrwgMZ5bN+iaCMi6V8tEjxnKjP9BjLGJnbvg7d9iYCcQiWg4=");
         KinPayment kinPayment = StellarBaseTypeConversionsKt.asKinPayments(kinTransaction).get(0);
