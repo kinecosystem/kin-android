@@ -2,7 +2,7 @@
 
 # PaymentFlowFragment
 
-`class PaymentFlowFragment : RoundedBottomSheetDialogFragment`
+`class PaymentFlowFragment`
 
 ### Constructors
 
@@ -14,13 +14,13 @@
 
 | Name | Summary |
 |---|---|
-| [cancelButton](cancel-button.md) | `lateinit var cancelButton: StandardButton` |
-| [confirmationTitleView](confirmation-title-view.md) | `lateinit var confirmationTitleView: SecondaryTextView` |
-| [confirmButton](confirm-button.md) | `lateinit var confirmButton: StandardButton` |
-| [errorActionButton](error-action-button.md) | `lateinit var errorActionButton: StandardButton` |
-| [errorReasonTextView](error-reason-text-view.md) | `lateinit var errorReasonTextView: SecondaryTextView` |
+| [cancelButton](cancel-button.md) | `lateinit var cancelButton: <ERROR CLASS>` |
+| [confirmationTitleView](confirmation-title-view.md) | `lateinit var confirmationTitleView: <ERROR CLASS>` |
+| [confirmButton](confirm-button.md) | `lateinit var confirmButton: <ERROR CLASS>` |
+| [errorActionButton](error-action-button.md) | `lateinit var errorActionButton: <ERROR CLASS>` |
+| [errorReasonTextView](error-reason-text-view.md) | `lateinit var errorReasonTextView: <ERROR CLASS>` |
 | [headerLayout](header-layout.md) | `lateinit var headerLayout: LinearLayout` |
-| [kinAmountView](kin-amount-view.md) | `lateinit var kinAmountView: KinAmountView` |
+| [kinAmountView](kin-amount-view.md) | `lateinit var kinAmountView: <ERROR CLASS>` |
 | [paymentConfirmationProcessingAppImageView](payment-confirmation-processing-app-image-view.md) | `lateinit var paymentConfirmationProcessingAppImageView: AppCompatImageView` |
 | [paymentConfirmationView](payment-confirmation-view.md) | `lateinit var paymentConfirmationView: LinearLayout` |
 | [paymentErrorView](payment-error-view.md) | `lateinit var paymentErrorView: LinearLayout` |

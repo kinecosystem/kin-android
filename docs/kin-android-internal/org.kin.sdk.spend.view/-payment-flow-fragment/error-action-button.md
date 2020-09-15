@@ -2,4 +2,4 @@
 
 # errorActionButton
 
-`lateinit var errorActionButton: StandardButton`
+`lateinit var errorActionButton: <ERROR CLASS>`

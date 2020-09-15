@@ -2,4 +2,4 @@
 
 # onStateUpdated
 
-`protected fun onStateUpdated(state: State): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)
+`fun onStateUpdated(state: State): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)

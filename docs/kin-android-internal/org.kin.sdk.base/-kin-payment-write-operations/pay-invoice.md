@@ -2,5 +2,4 @@
 
 # payInvoice
 
-`abstract fun payInvoice(invoice: `[`Invoice`](../../org.kin.sdk.base.models/-invoice/index.md)`, destinationAccount: Id, processingAppIdx: `[`AppIdx`](../../org.kin.sdk.base.models/-app-idx/index.md)` = appInfoProvider?.appInfo?.appIndex
-            ?: throw RuntimeException("Need to specify an AppIdx"), type: TransferType = KinBinaryMemo.TransferType.Spend): `[`Promise`](../../org.kin.sdk.base.tools/-promise/index.md)`<`[`KinPayment`](../../org.kin.sdk.base.models/-kin-payment/index.md)`>`
+`abstract fun payInvoice(invoice: `[`Invoice`](../../org.kin.sdk.base.models/-invoice/index.md)`, destinationAccount: Id, processingAppIdx: `[`AppIdx`](../../org.kin.sdk.base.models/-app-idx/index.md)` = appInfoProvider?.appInfo?.appIndex ?: throw RuntimeException("Need to specify an AppIdx"), type: TransferType = KinBinaryMemo.TransferType.Spend): `[`Promise`](../../org.kin.sdk.base.tools/-promise/index.md)`<`[`KinPayment`](../../org.kin.sdk.base.models/-kin-payment/index.md)`>`

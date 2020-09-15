@@ -2,4 +2,4 @@
 
 # logger
 
-`abstract val logger: ILoggerFactory`
+`abstract val logger: `[`KinLoggerFactory`](../../org.kin.sdk.base.tools/-kin-logger-factory/index.md)

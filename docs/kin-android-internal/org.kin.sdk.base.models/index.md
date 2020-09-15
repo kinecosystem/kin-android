@@ -25,6 +25,7 @@
 | [LineItem](-line-item/index.md) | An individual item in an [Invoice](-invoice/index.md)`data class LineItem` |
 | [MemoSuffix](-memo-suffix/index.md) | `data class MemoSuffix` |
 | [QuarkAmount](-quark-amount/index.md) | `data class QuarkAmount` |
+| [SDKConfig](-s-d-k-config/index.md) | `object SDKConfig` |
 | [SHA224Hash](-s-h-a224-hash/index.md) | The SHA-224 hash of an Invoice or InvoiceList.`data class SHA224Hash` |
 | [SKU](-s-k-u/index.md) | `data class SKU` |
 | [TransactionHash](-transaction-hash/index.md) | `data class TransactionHash` |

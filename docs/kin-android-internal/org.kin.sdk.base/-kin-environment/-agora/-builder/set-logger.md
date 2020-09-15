@@ -2,4 +2,4 @@
 
 # setLogger
 
-`fun setLogger(logger: ILoggerFactory): Builder`
+`fun setLogger(logger: `[`KinLoggerFactory`](../../../../org.kin.sdk.base.tools/-kin-logger-factory/index.md)`): Builder`

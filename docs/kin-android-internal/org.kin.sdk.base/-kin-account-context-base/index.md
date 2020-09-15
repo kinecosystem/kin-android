@@ -16,6 +16,7 @@
 |---|---|
 | [accountId](account-id.md) | `abstract val accountId: Id` |
 | [executors](executors.md) | `abstract val executors: `[`ExecutorServices`](../../org.kin.sdk.base.tools/-executor-services/index.md) |
+| [logger](logger.md) | `abstract val logger: `[`KinLoggerFactory`](../../org.kin.sdk.base.tools/-kin-logger-factory/index.md) |
 | [service](service.md) | `abstract val service: `[`KinService`](../../org.kin.sdk.base.network.services/-kin-service/index.md) |
 | [storage](storage.md) | `abstract val storage: `[`Storage`](../../org.kin.sdk.base.storage/-storage/index.md) |
 

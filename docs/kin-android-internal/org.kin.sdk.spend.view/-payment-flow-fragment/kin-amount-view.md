@@ -2,4 +2,4 @@
 
 # kinAmountView
 
-`lateinit var kinAmountView: KinAmountView`
+`lateinit var kinAmountView: <ERROR CLASS>`

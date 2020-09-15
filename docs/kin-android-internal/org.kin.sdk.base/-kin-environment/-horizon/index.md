@@ -15,6 +15,6 @@
 
 | Name | Summary |
 |---|---|
-| [logger](logger.md) | `val logger: ILoggerFactory` |
+| [logger](logger.md) | `val logger: `[`KinLoggerFactory`](../../../org.kin.sdk.base.tools/-kin-logger-factory/index.md) |
 | [networkEnvironment](network-environment.md) | `val networkEnvironment: `[`NetworkEnvironment`](../../../org.kin.sdk.base.stellar.models/-network-environment/index.md) |
 | [service](service.md) | `val service: `[`KinService`](../../../org.kin.sdk.base.network.services/-kin-service/index.md) |

@@ -11,6 +11,10 @@
 | [Disposable](-disposable/index.md) | `interface Disposable<T>` |
 | [DisposeBag](-dispose-bag/index.md) | `class DisposeBag` |
 | [ExecutorServices](-executor-services/index.md) | `data class ExecutorServices` |
+| [KinLogger](-kin-logger/index.md) | `interface KinLogger` |
+| [KinLoggerFactory](-kin-logger-factory/index.md) | `interface KinLoggerFactory` |
+| [KinLoggerFactoryImpl](-kin-logger-factory-impl/index.md) | `class KinLoggerFactoryImpl : `[`KinLoggerFactory`](-kin-logger-factory/index.md)`, Delegate` |
+| [KinLoggerImpl](-kin-logger-impl/index.md) | `class KinLoggerImpl : `[`KinLogger`](-kin-logger/index.md) |
 | [ListObserver](-list-observer/index.md) | `interface ListObserver<T> : `[`Observer`](-observer/index.md)`<`[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<T>>, `[`ListOperations`](-list-operations/index.md)`<T>` |
 | [ListOperations](-list-operations/index.md) | `interface ListOperations<T>` |
 | [ListSubject](-list-subject/index.md) | `class ListSubject<T> : `[`ValueSubject`](-value-subject/index.md)`<`[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<T>>, `[`ListObserver`](-list-observer/index.md)`<T>` |

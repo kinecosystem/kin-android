@@ -14,4 +14,4 @@
 
 | Name | Summary |
 |---|---|
-| [SpendNavigatorImpl](../../org.kin.sdk.spend.navigation/-spend-navigator-impl/index.md) | `class SpendNavigatorImpl : ActivityNavigatorBase, `[`SpendNavigator`](./index.md) |
+| [SpendNavigatorImpl](../../org.kin.sdk.spend.navigation/-spend-navigator-impl/index.md) | `class SpendNavigatorImpl : `[`SpendNavigator`](./index.md) |

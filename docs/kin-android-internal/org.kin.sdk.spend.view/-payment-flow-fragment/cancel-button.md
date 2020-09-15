@@ -2,4 +2,4 @@
 
 # cancelButton
 
-`lateinit var cancelButton: StandardButton`
+`lateinit var cancelButton: <ERROR CLASS>`

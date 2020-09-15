@@ -2,4 +2,4 @@
 
 # errorReasonTextView
 
-`lateinit var errorReasonTextView: SecondaryTextView`
+`lateinit var errorReasonTextView: <ERROR CLASS>`

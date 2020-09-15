@@ -25,6 +25,7 @@ Can be used to:
 | [accountId](account-id.md) | denoting the [KinAccount](../../org.kin.sdk.base.models/-kin-account/index.md) to get information from`val accountId: Id` |
 | [appInfoProvider](app-info-provider.md) | `val appInfoProvider: `[`AppInfoProvider`](../../org.kin.sdk.base.network.services/-app-info-provider/index.md)`?` |
 | [executors](executors.md) | defines a set of executors to be used`val executors: `[`ExecutorServices`](../../org.kin.sdk.base.tools/-executor-services/index.md) |
+| [logger](logger.md) | `val logger: `[`KinLoggerFactory`](../../org.kin.sdk.base.tools/-kin-logger-factory/index.md) |
 | [service](service.md) | a service used to retrieve all account and payment data`val service: `[`KinService`](../../org.kin.sdk.base.network.services/-kin-service/index.md) |
 | [storage](storage.md) | stores all account and payment data. @see [KinFileStorage](#) for provided implementation.`val storage: `[`Storage`](../../org.kin.sdk.base.storage/-storage/index.md) |
 

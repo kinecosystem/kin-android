@@ -21,7 +21,7 @@
 
 | Name | Summary |
 |---|---|
-| [logger](logger.md) | `abstract val logger: ILoggerFactory` |
+| [logger](logger.md) | `abstract val logger: `[`KinLoggerFactory`](../../org.kin.sdk.base.tools/-kin-logger-factory/index.md) |
 | [networkEnvironment](network-environment.md) | `abstract val networkEnvironment: `[`NetworkEnvironment`](../../org.kin.sdk.base.stellar.models/-network-environment/index.md) |
 | [service](service.md) | `abstract val service: `[`KinService`](../../org.kin.sdk.base.network.services/-kin-service/index.md) |
 
@@ -31,3 +31,4 @@
 |---|---|
 | [allAccountIds](all-account-ids.md) | `fun allAccountIds(): `[`Promise`](../../org.kin.sdk.base.tools/-promise/index.md)`<`[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<Id>>` |
 | [importPrivateKey](import-private-key.md) | `fun importPrivateKey(privateKey: PrivateKey): `[`Promise`](../../org.kin.sdk.base.tools/-promise/index.md)`<`[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)`>`<br>`fun importPrivateKey(privateKey: PrivateKey, callback: `[`Callback`](../../org.kin.sdk.base.tools/-callback/index.md)`<`[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)`>): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html) |
+| [setEnableLogging](set-enable-logging.md) | `fun setEnableLogging(enableLogging: `[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html)`): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html) |

@@ -2,4 +2,4 @@
 
 # navigator
 
-`protected val navigator: `[`SpendNavigatorImpl`](../../org.kin.sdk.spend.navigation/-spend-navigator-impl/index.md)
+`val navigator: `[`SpendNavigatorImpl`](../../org.kin.sdk.spend.navigation/-spend-navigator-impl/index.md)
