@@ -4,8 +4,8 @@ import org.slf4j.ILoggerFactory
 import org.slf4j.Logger
 
 interface KinLogger {
-    fun debug(msg: String)
-    fun info(msg: String)
+    fun log(msg: () ->String)
+    fun log(msg: String)
     fun warning(msg: String)
     fun error(msg: String, throwable: Throwable? = null)
 }
@@ -25,11 +25,11 @@ class KinLoggerImpl(
         val isLoggingEnabled: Boolean
     }
 
-    override fun debug(msg: String) {
-        logCheck()?.debug(msg)
+    override fun log(msg: () -> String) {
+        logCheck()?.info(msg())
     }
 
-    override fun info(msg: String) {
+    override fun log(msg: String) {
         logCheck()?.info(msg)
     }
 

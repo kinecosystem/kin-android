@@ -209,12 +209,12 @@ class KinServiceImpl(
     private val log = logger.getLogger(javaClass.simpleName)
 
     private fun <T> T.requestPrint(): T {
-        log.debug("[Request]:${this}")
+        log.log{"[Request]:${this}"}
         return this
     }
 
     private fun <T> T.responsePrint(): T {
-        log.debug("[Response]:${this}")
+        log.log{"[Response]:${this}"}
         return this
     }
 
@@ -473,14 +473,14 @@ class KinServiceImpl(
     override fun streamAccount(kinAccountId: KinAccount.Id): Observer<KinAccount> {
         return streamingApi.streamAccount(kinAccountId)
             .add {
-                log.debug("streamAccount::Update $it")
+                log.log{"streamAccount::Update $it"}
             }
     }
 
     override fun streamNewTransactions(kinAccountId: KinAccount.Id): Observer<KinTransaction> {
         return streamingApi.streamNewTransactions(kinAccountId)
             .add {
-                log.debug("streamNewTransactions::Update $it")
+                log.log{"streamNewTransactions::Update $it"}
             }
     }
 

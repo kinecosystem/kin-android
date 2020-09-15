@@ -198,7 +198,7 @@ class NetworkOperationsHandlerImpl(
     }
 
     private fun NetworkOperation<*>.schedule() {
-        log.debug("schedule[id=$id]")
+        log.log("schedule[id=$id]")
         val delayMillis = try {
             backoffStrategy.nextDelay()
         } catch (e: Throwable) {
@@ -207,7 +207,7 @@ class NetworkOperationsHandlerImpl(
             } ?: fatalError(e)
             return
         }
-        log.debug("delayMillis[id=$id]: + $delayMillis")
+        log.log("delayMillis[id=$id]: + $delayMillis")
 
         state = NetworkOperation.State.SCHEDULED(
             System.currentTimeMillis() + delayMillis,
@@ -220,7 +220,7 @@ class NetworkOperationsHandlerImpl(
     }
 
     private fun <ResponseType> NetworkOperation<ResponseType>.runOperation() = apply {
-        log.debug("runOperation[id=$id]")
+        log.log("runOperation[id=$id]")
         state = NetworkOperation.State.RUNNING
 
         try {
@@ -234,14 +234,14 @@ class NetworkOperationsHandlerImpl(
     }
 
     private fun NetworkOperation<*>.complete() = apply {
-        log.debug("complete[id=$id]")
+        log.log("complete[id=$id]")
         state = NetworkOperation.State.COMPLETED
         cleanup()
 
     }
 
     private fun NetworkOperation<*>.handleError(error: Throwable) = apply {
-        log.debug("handleError[id=$id]: $error")
+        log.log("handleError[id=$id]: $error")
         if (shouldRetryError(error)) {
             state = NetworkOperation.State.ERRORED(error)
             schedule()
@@ -249,7 +249,7 @@ class NetworkOperationsHandlerImpl(
     }
 
     private fun NetworkOperation<*>.fatalError(e: Throwable) = apply {
-        log.debug("fatalError[id=$id]: $e")
+        log.log("fatalError[id=$id]: $e")
         state = NetworkOperation.State.ERRORED(e)
         onCompleted.onError?.invoke(e)
         cleanup()

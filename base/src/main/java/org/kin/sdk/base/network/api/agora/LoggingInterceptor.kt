@@ -23,18 +23,18 @@ class LoggingInterceptor(private val logger: KinLoggerFactory) : ClientIntercept
         return object :
             SimpleForwardingClientCall<ReqT, RespT>(next?.newCall(method, callOptions)) {
             override fun sendMessage(message: ReqT) {
-                log.debug("${method?.fullMethodName} --- request content: ${
+                log.log{"${method?.fullMethodName} --- request content: ${
                     TextFormat.printToString(message as? Message)
-                }")
+                }"}
                 super.sendMessage(message)
             }
 
             override fun start(responseListener: Listener<RespT>?, headers: Metadata?) {
                 val listener: Listener<RespT> = object : Listener<RespT>() {
                     override fun onMessage(message: RespT) {
-                        log.debug("${method?.fullMethodName} --- response content:${
+                        log.log{"${method?.fullMethodName} --- response content:${
                             TextFormat.printToString(message as? Message)
-                        }")
+                        }"}
                         responseListener?.onMessage(message)
                         super.onMessage(message)
                     }

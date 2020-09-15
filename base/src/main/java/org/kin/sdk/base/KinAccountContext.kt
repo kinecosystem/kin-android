@@ -337,7 +337,7 @@ class KinAccountContextReadOnlyImpl private constructor(
     }
 
     override fun getAccount(forceUpdate: Boolean): Promise<KinAccount> {
-        log.info("getAccount")
+        log.log("getAccount")
         return storage.getStoredAccount(accountId)
             .flatMap {
                 it.map { storedAccount ->
@@ -427,7 +427,7 @@ class KinAccountContextImpl private constructor(
     private val outgoingTransactions = PromiseQueue<List<KinPayment>>()
 
     override fun getAccount(forceUpdate: Boolean): Promise<KinAccount> {
-        log.info("getAccount")
+        log.log("getAccount")
         return storage.getStoredAccount(accountId)
             .flatMap {
                 it.map { storedAccount ->
@@ -467,7 +467,7 @@ class KinAccountContextImpl private constructor(
         processingAppIdx: AppIdx,
         type: KinBinaryMemo.TransferType
     ): Promise<KinPayment> {
-        log.info(::payInvoice.name)
+        log.log(::payInvoice.name)
         return sendKinPayment(
             invoice.total,
             destinationAccount,
@@ -486,7 +486,7 @@ class KinAccountContextImpl private constructor(
         memo: KinMemo,
         invoice: Optional<Invoice>
     ): Promise<KinPayment> {
-        log.info("sendKinPayment")
+        log.log("sendKinPayment")
         return sendKinPayments(listOf(KinPaymentItem(amount, destinationAccount, invoice)), memo)
             .map { it.first() }
     }
@@ -494,7 +494,7 @@ class KinAccountContextImpl private constructor(
     override fun sendKinTransaction(
         transaction: KinTransaction
     ): Promise<List<KinPayment>> {
-        log.info(::sendKinTransaction.name)
+        log.log(::sendKinTransaction.name)
         return outgoingTransactions.queue(
             computeExpectedNewBalance(transaction)
                 .flatMap { expectedNewBalance ->
@@ -521,7 +521,7 @@ class KinAccountContextImpl private constructor(
         payments: List<KinPaymentItem>,
         memo: KinMemo
     ): Promise<List<KinPayment>> {
-        log.info("sendKinPayments")
+        log.log("sendKinPayments")
         val MAX_ATTEMPTS = 2
         fun attempt(number: Int) =
             getAccount()
@@ -573,7 +573,7 @@ class KinAccountContextImpl private constructor(
     // Idiomatic Variants of Primary Functions
 
     override fun clearStorage(clearCompleteCallback: Callback<Boolean>) {
-        log.info("clearStorage")
+        log.log("clearStorage")
         clearStorage().callback(clearCompleteCallback)
     }
 
@@ -709,13 +709,13 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
     }
 
     override fun getPaymentsForTransactionHash(transactionHash: TransactionHash): Promise<List<KinPayment>> {
-        log.info("getPaymentsForTransactionHash")
+        log.log("getPaymentsForTransactionHash")
         return service.getTransaction(transactionHash)
             .map { it.asKinPayments() }
     }
 
     override fun observeBalance(mode: ObservationMode): Observer<KinBalance> {
-        log.info("observeBalance")
+        log.log("observeBalance")
         return with(balanceSubject) {
             setupActiveStreamingUpdatesIfNecessary(mode)
             requestInvalidation()
@@ -723,7 +723,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
     }
 
     override fun clearStorage(): Promise<Boolean> {
-        log.info("clearStorage")
+        log.log("clearStorage")
         return storage.deleteAllStorage(accountId)
     }
 

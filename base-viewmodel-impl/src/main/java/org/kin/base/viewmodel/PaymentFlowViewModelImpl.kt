@@ -35,7 +35,7 @@ class PaymentFlowViewModelImpl(
     }
 
     init {
-        log.info("Navigated to: ${javaClass.simpleName}")
+        log.log("Navigated to: ${javaClass.simpleName}")
     }
 
     private fun setup() {
@@ -78,14 +78,14 @@ class PaymentFlowViewModelImpl(
         PaymentFlowViewModel.State(null, Progression.Init)
 
     override fun onStateUpdated(state: PaymentFlowViewModel.State) {
-        log.info("${::onStateUpdated.name}:$state")
+        log.log("${::onStateUpdated.name}:$state")
         if (state.progression == Progression.Init) {
             setup()
         }
     }
 
     override fun onCancelTapped(onCompleted: () -> Unit) {
-        log.info(::onCancelTapped.name)
+        log.log(::onCancelTapped.name)
         updateState {
             it.copy(
                 progression = Progression.PaymentError(
@@ -98,7 +98,7 @@ class PaymentFlowViewModelImpl(
     }
 
     override fun onConfirmTapped() {
-        log.info(::onConfirmTapped.name)
+        log.log(::onConfirmTapped.name)
         updateState {
             it.copy(progression = Progression.PaymentProcessing)
         }

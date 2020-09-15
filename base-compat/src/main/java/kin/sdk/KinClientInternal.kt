@@ -210,7 +210,7 @@ internal class KinClientInternal {
 
     private fun validateAppId(appId: String) {
         if (appId == "") {
-            log.info(
+            log.log(
                 "WARNING: KinClient instance was created without a proper application ID. Is this what you intended to do?"
             )
         } else require(appId.matches(Regex("[a-zA-Z0-9]{3,4}"))) {
