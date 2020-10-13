@@ -183,7 +183,7 @@ sealed class KinEnvironment {
         class Builder(private val networkEnvironment: NetworkEnvironment) {
             private var managedChannel: ManagedChannel? = null
             private var executors: ExecutorServices? = null
-            private var enableLogging: Boolean = false
+            private var enableLogging: Boolean = networkEnvironment == NetworkEnvironment.KinStellarTestNet
             private var logger: KinLoggerFactory? = null
             private var networkHandler: NetworkOperationsHandler? = null
             private var appInfoProvider: AppInfoProvider? = null

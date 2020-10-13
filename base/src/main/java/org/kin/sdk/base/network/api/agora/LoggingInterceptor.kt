@@ -9,6 +9,7 @@ import io.grpc.ClientInterceptor
 import io.grpc.ForwardingClientCall.SimpleForwardingClientCall
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
+import io.grpc.Status
 import org.kin.sdk.base.tools.KinLoggerFactory
 
 class LoggingInterceptor(private val logger: KinLoggerFactory) : ClientInterceptor {
@@ -37,6 +38,21 @@ class LoggingInterceptor(private val logger: KinLoggerFactory) : ClientIntercept
                         }"}
                         responseListener?.onMessage(message)
                         super.onMessage(message)
+                    }
+
+                    override fun onClose(status: Status?, trailers: Metadata?) {
+                        responseListener?.onClose(status, trailers)
+                        super.onClose(status, trailers)
+                    }
+
+                    override fun onHeaders(headers: Metadata?) {
+                        responseListener?.onHeaders(headers)
+                        super.onHeaders(headers)
+                    }
+
+                    override fun onReady() {
+                        responseListener?.onReady()
+                        super.onReady()
                     }
                 }
                 super.start(listener, headers)
