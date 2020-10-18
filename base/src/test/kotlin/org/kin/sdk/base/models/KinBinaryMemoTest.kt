@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 class KinBinaryMemoTest {
 
     @Test
-    fun testAgoraEncoding_specicFK() {
+    fun testAgoraEncoding_specificFK() {
         val agoraMemo = KinBinaryMemo.Builder(10, 1, 2)
             .setTransferType(KinBinaryMemo.TransferType.P2P)
             .setForeignKey(byteArrayOf(0xAE.toByte(), 0xFD.toByte()))
