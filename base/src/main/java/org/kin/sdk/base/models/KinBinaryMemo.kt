@@ -83,7 +83,7 @@ data class KinBinaryMemo internal constructor(
         private var typeId: TransferType? = null
         private var foreignKeyBytes: ByteArray? = null
 
-        fun setTranferType(typeId: TransferType): Builder =
+        fun setTransferType(typeId: TransferType): Builder =
             also { this.typeId = typeId }
 
         fun setForeignKey(foreignKeyBytes: ByteArray): Builder =
