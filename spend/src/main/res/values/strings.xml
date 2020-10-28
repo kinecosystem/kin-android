@@ -1,5 +1,5 @@
 <resources>
-    <string name="kin_sdk_description_payment_flow_confirm_kin">Spend %1d Kin in %2s? Your new balance will be %3d Kin.</string>
+    <string name="kin_sdk_description_payment_flow_confirm_kin">Spend %1$d Kin in %2$s? Your new balance will be %3$d Kin.</string>
     <string name="kin_sdk_description_payment_flow_processing">Confirming your transaction</string>
     <string name="kin_sdk_description_confirmed">Confirmed</string>
     <string name="kin_sdk_title_close">Close</string>
