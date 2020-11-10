@@ -153,7 +153,7 @@ buildscript {
         deps.grpc_validate = "io.envoyproxy.protoc-gen-validate:pgv-java-stub:${versions.grpc_validate}"
         deps.grpc_testing = "io.grpc:grpc-testing:${versions.grpcProtobuf}"
 
-        deps.agora_api = "com.github.kinecosystem:agora-api-internal:${versions.agora_api}" //"org.kin.agora.gen:agora-api:${versions.agora_api}"
+        deps.agora_api = "org.kin.agora.gen:agora-api:${versions.agora_api}" //"com.github.kinecosystem:agora-api-internal:${versions.agora_api}" //
 
         pomConfig = {
             licenses {
@@ -210,7 +210,7 @@ dokka {
     }
 }
 
-def jitpackAuthToken = findProperty("jitpackAuthToken") ?: System.getenv("authToken")
+//def jitpackAuthToken = findProperty("jitpackAuthToken") ?: System.getenv("authToken")
 
 allprojects {
     ext {
@@ -231,11 +231,11 @@ allprojects {
         maven {
             url  "https://dl.bintray.com/kinecosystem/agora-api"
         }
-        maven {
-            url "https://jitpack.io"
-            credentials { username jitpackAuthToken }
-        }
-//        maven { url "https://jitpack.io" }
+//        maven {
+//            url "https://jitpack.io"
+//            credentials { username jitpackAuthToken }
+//        }
+        maven { url "https://jitpack.io" }
     }
 
     tasks.withType(Test) {
