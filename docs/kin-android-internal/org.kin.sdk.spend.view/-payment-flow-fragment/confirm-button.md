@@ -2,4 +2,4 @@
 
 # confirmButton
 
-`lateinit var confirmButton: <ERROR CLASS>`
+`lateinit var confirmButton: StandardButton`

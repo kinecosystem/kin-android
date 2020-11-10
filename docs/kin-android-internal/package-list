@@ -6,8 +6,8 @@ $dokka.location:org.kin.sdk.base.models$asKinPayments(kotlin.collections.List((o
 $dokka.location:org.kin.sdk.base.models$asKinTransaction(org.kin.stellarfork.responses.TransactionResponse, org.kin.sdk.base.stellar.models.NetworkEnvironment)org.kin.sdk.base.models/org.kin.stellarfork.responses.-transaction-response/as-kin-transaction.md
 $dokka.location:org.kin.sdk.base.models$asPrivateKey(org.kin.stellarfork.KeyPair)org.kin.sdk.base.models/org.kin.stellarfork.-key-pair/as-private-key.md
 $dokka.location:org.kin.sdk.base.models$asPublicKey(org.kin.stellarfork.KeyPair)org.kin.sdk.base.models/org.kin.stellarfork.-key-pair/as-public-key.md
-$dokka.location:org.kin.sdk.base.models$envelopeXdrBytes(org.kin.stellarfork.responses.SubmitTransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-submit-transaction-response/envelope-xdr-bytes.md
-$dokka.location:org.kin.sdk.base.models$envelopeXdrBytes(org.kin.stellarfork.responses.TransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-transaction-response/envelope-xdr-bytes.md
+$dokka.location:org.kin.sdk.base.models$bytesValue(org.kin.stellarfork.responses.SubmitTransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-submit-transaction-response/bytes-value.md
+$dokka.location:org.kin.sdk.base.models$bytesValue(org.kin.stellarfork.responses.TransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-transaction-response/bytes-value.md
 $dokka.location:org.kin.sdk.base.models$kinAccount(org.kin.stellarfork.responses.AccountResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-account-response/kin-account.md
 $dokka.location:org.kin.sdk.base.models$kinBalance(org.kin.stellarfork.responses.AccountResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-account-response/kin-balance.md
 $dokka.location:org.kin.sdk.base.models$resultXdrBytes(org.kin.stellarfork.responses.SubmitTransactionResponse)org.kin.sdk.base.models/org.kin.stellarfork.responses.-submit-transaction-response/result-xdr-bytes.md
@@ -16,16 +16,25 @@ $dokka.location:org.kin.sdk.base.models$toEnvelopeXdrBytes(org.kin.stellarfork.T
 $dokka.location:org.kin.sdk.base.models$toKinTransaction(org.kin.stellarfork.Transaction, org.kin.sdk.base.stellar.models.NetworkEnvironment, org.kin.sdk.base.models.InvoiceList)org.kin.sdk.base.models/org.kin.stellarfork.-transaction/to-kin-transaction.md
 $dokka.location:org.kin.sdk.base.models$toUTF8Bytes(kotlin.String)org.kin.sdk.base.models/kotlin.-string/to-u-t-f8-bytes.md
 $dokka.location:org.kin.sdk.base.models$toUTF8String(kotlin.ByteArray)org.kin.sdk.base.models/kotlin.-byte-array/to-u-t-f8-string.md
+$dokka.location:org.kin.sdk.base.models.solana$filterUnique(kotlin.collections.List((org.kin.sdk.base.models.solana.AccountMeta)))org.kin.sdk.base.models.solana/kotlin.collections.-list/filter-unique.md
+$dokka.location:org.kin.sdk.base.models.solana$read(java.io.ByteArrayInputStream, kotlin.Int)org.kin.sdk.base.models.solana/java.io.-byte-array-input-stream/read.md
+$dokka.location:org.kin.sdk.base.models.solana$readRemainingBytes(java.io.ByteArrayInputStream)org.kin.sdk.base.models.solana/java.io.-byte-array-input-stream/read-remaining-bytes.md
+$dokka.location:org.kin.sdk.base.models.solana$toModel(kotlin.ByteArray, kotlin.Function1((kotlin.ByteArray, org.kin.sdk.base.models.solana.toModel.T)))org.kin.sdk.base.models.solana/kotlin.-byte-array/to-model.md
 $dokka.location:org.kin.sdk.base.network.api.agora$sha224Hash(org.kin.agora.gen.common.v3.Model.Invoice)org.kin.sdk.base.network.api.agora/org.kin.agora.gen.common.v3.-model.-invoice/sha224-hash.md
 $dokka.location:org.kin.sdk.base.network.api.agora$sha224Hash(org.kin.agora.gen.common.v3.Model.InvoiceList)org.kin.sdk.base.network.api.agora/org.kin.agora.gen.common.v3.-model.-invoice-list/sha224-hash.md
 $dokka.location:org.kin.sdk.base.network.api.agora$toProto(kotlin.collections.List((org.kin.sdk.base.models.Invoice)))org.kin.sdk.base.network.api.agora/kotlin.collections.-list/to-proto.md
 $dokka.location:org.kin.sdk.base.network.api.agora$toProto(kotlin.collections.List((org.kin.sdk.base.models.LineItem)))org.kin.sdk.base.network.api.agora/kotlin.collections.-list/to-proto.md
 $dokka.location:org.kin.sdk.base.tools$byteArrayToInt(kotlin.ByteArray)org.kin.sdk.base.tools/kotlin.-byte-array/byte-array-to-int.md
+$dokka.location:org.kin.sdk.base.tools$byteArrayToLong(kotlin.ByteArray)org.kin.sdk.base.tools/kotlin.-byte-array/byte-array-to-long.md
 $dokka.location:org.kin.sdk.base.tools$intToByteArray(kotlin.Int)org.kin.sdk.base.tools/kotlin.-int/int-to-byte-array.md
+$dokka.location:org.kin.sdk.base.tools$longToByteArray(kotlin.Long)org.kin.sdk.base.tools/kotlin.-long/long-to-byte-array.md
+$dokka.location:org.kin.sdk.base.tools$printHexString(kotlin.ByteArray, kotlin.String)org.kin.sdk.base.tools/kotlin.-byte-array/print-hex-string.md
+$dokka.location:org.kin.sdk.base.tools$quickSort(kotlin.collections.MutableList((org.kin.sdk.base.tools.quickSort.T)))org.kin.sdk.base.tools/kotlin.collections.-mutable-list/quick-sort.md
 $dokka.location:org.kin.sdk.base.tools$sha224(kotlin.ByteArray)org.kin.sdk.base.tools/kotlin.-byte-array/sha224.md
 $dokka.location:org.kin.sdk.base.tools$shl(kotlin.Byte, kotlin.Int)org.kin.sdk.base.tools/kotlin.-byte/shl.md
 $dokka.location:org.kin.sdk.base.tools$subByteArray(kotlin.ByteArray, kotlin.Int, kotlin.Int)org.kin.sdk.base.tools/kotlin.-byte-array/sub-byte-array.md
 $dokka.location:org.kin.sdk.base.tools$toByteArray(java.util.UUID)org.kin.sdk.base.tools/java.util.-u-u-i-d/to-byte-array.md
+$dokka.location:org.kin.sdk.base.tools$toHexString(kotlin.ByteArray)org.kin.sdk.base.tools/kotlin.-byte-array/to-hex-string.md
 $dokka.location:org.kin.sdk.base.tools$ushr(kotlin.Byte, kotlin.Int)org.kin.sdk.base.tools/kotlin.-byte/ushr.md
 kin.backupandrestore
 kin.backupandrestore.backup.presenter
@@ -46,6 +55,7 @@ org.kin.base.viewmodel
 org.kin.base.viewmodel.tools
 org.kin.sdk.base
 org.kin.sdk.base.models
+org.kin.sdk.base.models.solana
 org.kin.sdk.base.network.api
 org.kin.sdk.base.network.api.agora
 org.kin.sdk.base.network.api.horizon

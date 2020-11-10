@@ -29,3 +29,4 @@ An account manager for a [KinAccount].
 | [getStoreKey](get-store-key.md) | `open fun getStoreKey(): `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`!` |
 | [hasAccount](has-account.md) | `open fun hasAccount(): `[`Boolean`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html) |
 | [importAccount](import-account.md) | Import an account from a JSON-formatted string.`open fun importAccount(exportedJson: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`, passphrase: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html)`): `[`KinAccount`](../-kin-account/index.md) |
+| [testMigration](test-migration.md) | Used to enable migration to Solana`open static fun testMigration(): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html) |

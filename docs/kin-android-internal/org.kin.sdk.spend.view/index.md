@@ -6,5 +6,5 @@
 
 | Name | Summary |
 |---|---|
-| [PaymentFlowActivity](-payment-flow-activity/index.md) | `class PaymentFlowActivity` |
-| [PaymentFlowFragment](-payment-flow-fragment/index.md) | `class PaymentFlowFragment` |
+| [PaymentFlowActivity](-payment-flow-activity/index.md) | `class PaymentFlowActivity : InvisibleBaseActivity<`[`PaymentFlowViewModel`](../org.kin.base.viewmodel/-payment-flow-view-model/index.md)`, NavigationArgs, State, `[`MetaResolver`](../org.kin.sdk.base.viewmodel.di/-meta-resolver/index.md)`, `[`SpendNavigatorImpl`](../org.kin.sdk.spend.navigation/-spend-navigator-impl/index.md)`>` |
+| [PaymentFlowFragment](-payment-flow-fragment/index.md) | `class PaymentFlowFragment : RoundedBottomSheetDialogFragment` |

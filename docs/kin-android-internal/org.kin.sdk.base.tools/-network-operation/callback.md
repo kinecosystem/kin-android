@@ -2,5 +2,5 @@
 
 # callback
 
-`val callback: (`[`PromisedCallback`](../-promised-callback/index.md)`<ResponseType>) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)
+`val callback: (`[`PromisedCallback`](../-promised-callback/index.md)`<ResponseType>, error: `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`?) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)
 * the work performed by the operation

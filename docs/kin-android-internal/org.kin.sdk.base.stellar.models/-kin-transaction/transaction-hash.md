@@ -2,4 +2,4 @@
 
 # transactionHash
 
-`val transactionHash: `[`TransactionHash`](../../org.kin.sdk.base.models/-transaction-hash/index.md)
+`abstract val transactionHash: `[`TransactionHash`](../../org.kin.sdk.base.models/-transaction-hash/index.md)

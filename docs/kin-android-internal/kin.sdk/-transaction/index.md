@@ -14,5 +14,5 @@
 | [id](id.md) | The transaction hash`val id: `[`TransactionId`](../-transaction-id/index.md) |
 | [memo](memo.md) | `val memo: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html) |
 | [source](source.md) | `val source: KeyPair` |
-| [stellarTransaction](stellar-transaction.md) | `val stellarTransaction: Transaction` |
-| [whitelistableTransaction](whitelistable-transaction.md) | `val whitelistableTransaction: `[`WhitelistableTransaction`](../-whitelistable-transaction/index.md) |
+| [stellarTransaction](stellar-transaction.md) | `val stellarTransaction: Transaction?` |
+| [whitelistableTransaction](whitelistable-transaction.md) | `val whitelistableTransaction: `[`WhitelistableTransaction`](../-whitelistable-transaction/index.md)`?` |

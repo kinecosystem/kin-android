@@ -4,12 +4,6 @@
 
 `class KinLoggerImpl : `[`KinLogger`](../-kin-logger/index.md)
 
-### Types
-
-| Name | Summary |
-|---|---|
-| [Delegate](-delegate/index.md) | `interface Delegate` |
-
 ### Constructors
 
 | Name | Summary |

@@ -2,6 +2,4 @@
 
 # &lt;init&gt;
 
-`KinAccount(key: `[`Key`](../-key/index.md)`, id: Id = Id(
-        key.asPublicKey().value
-    ), balance: `[`KinBalance`](../-kin-balance/index.md)` = KinBalance(), status: Status = Status.Unregistered)`
+`KinAccount(key: `[`Key`](../-key/index.md)`, id: Id = Id(key.asPublicKey().value), tokenAccounts: `[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<PublicKey> = emptyList(), balance: `[`KinBalance`](../-kin-balance/index.md)` = KinBalance(), status: Status = Status.Unregistered)`

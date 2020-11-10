@@ -2,4 +2,4 @@
 
 # fee
 
-`val fee: `[`QuarkAmount`](../../org.kin.sdk.base.models/-quark-amount/index.md)
+`abstract val fee: `[`QuarkAmount`](../../org.kin.sdk.base.models/-quark-amount/index.md)

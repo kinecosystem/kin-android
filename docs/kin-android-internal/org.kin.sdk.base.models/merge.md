@@ -2,4 +2,4 @@
 
 # merge
 
-`fun `[`KinAccount`](-kin-account/index.md)`.merge(account: `[`KinAccount`](-kin-account/index.md)`): `[`KinAccount`](-kin-account/index.md)
+`fun `[`KinAccount`](-kin-account/index.md)`.merge(newer: `[`KinAccount`](-kin-account/index.md)`): `[`KinAccount`](-kin-account/index.md)

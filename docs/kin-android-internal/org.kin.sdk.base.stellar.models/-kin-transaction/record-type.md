@@ -2,4 +2,4 @@
 
 # recordType
 
-`val recordType: RecordType`
+`abstract val recordType: RecordType`

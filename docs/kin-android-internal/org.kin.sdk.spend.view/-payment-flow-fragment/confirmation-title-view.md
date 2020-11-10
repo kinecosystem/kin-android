@@ -2,4 +2,4 @@
 
 # confirmationTitleView
 
-`lateinit var confirmationTitleView: <ERROR CLASS>`
+`lateinit var confirmationTitleView: SecondaryTextView`

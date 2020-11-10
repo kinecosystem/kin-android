@@ -2,4 +2,4 @@
 
 # navigateToForResult
 
-`fun navigateToForResult(args: NavigationArgs, onResult: (Result) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)`): <ERROR CLASS>`
+`fun navigateToForResult(args: NavigationArgs, onResult: (Result) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)`): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)

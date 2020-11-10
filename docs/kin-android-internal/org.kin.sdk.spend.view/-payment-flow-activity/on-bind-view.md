@@ -2,4 +2,4 @@
 
 # onBindView
 
-`fun onBindView(viewModel: `[`PaymentFlowViewModel`](../../org.kin.base.viewmodel/-payment-flow-view-model/index.md)`): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)
+`protected fun onBindView(viewModel: `[`PaymentFlowViewModel`](../../org.kin.base.viewmodel/-payment-flow-view-model/index.md)`): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)

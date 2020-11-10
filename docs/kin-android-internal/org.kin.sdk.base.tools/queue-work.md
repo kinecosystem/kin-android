@@ -2,4 +2,5 @@
 
 # queueWork
 
+`fun <T> `[`NetworkOperationsHandler`](-network-operations-handler/index.md)`.queueWork(work: (`[`PromisedCallback`](-promised-callback/index.md)`<T>, `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`?) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)`): `[`Promise`](-promise/index.md)`<T>`
 `fun <T> `[`NetworkOperationsHandler`](-network-operations-handler/index.md)`.queueWork(work: (`[`PromisedCallback`](-promised-callback/index.md)`<T>) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)`): `[`Promise`](-promise/index.md)`<T>`

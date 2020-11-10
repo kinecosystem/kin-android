@@ -4,6 +4,12 @@
 
 `interface KinLogger`
 
+### Types
+
+| Name | Summary |
+|---|---|
+| [Delegate](-delegate/index.md) | `interface Delegate` |
+
 ### Functions
 
 | Name | Summary |
@@ -17,3 +23,4 @@
 | Name | Summary |
 |---|---|
 | [KinLoggerImpl](../-kin-logger-impl/index.md) | `class KinLoggerImpl : `[`KinLogger`](./index.md) |
+| [KinTestLoggerImpl](../-kin-test-logger-impl/index.md) | `class KinTestLoggerImpl : `[`KinLogger`](./index.md) |

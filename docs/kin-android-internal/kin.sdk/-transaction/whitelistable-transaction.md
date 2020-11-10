@@ -2,4 +2,4 @@
 
 # whitelistableTransaction
 
-`val whitelistableTransaction: `[`WhitelistableTransaction`](../-whitelistable-transaction/index.md)
+`val whitelistableTransaction: `[`WhitelistableTransaction`](../-whitelistable-transaction/index.md)`?`

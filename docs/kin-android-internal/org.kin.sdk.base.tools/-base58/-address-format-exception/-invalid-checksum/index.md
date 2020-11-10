@@ -1,0 +1,11 @@
+[kin-android](../../../../index.md) / [org.kin.sdk.base.tools](../../../index.md) / [Base58](../../index.md) / [AddressFormatException](../index.md) / [InvalidChecksum](./index.md)
+
+# InvalidChecksum
+
+`class InvalidChecksum : AddressFormatException`
+
+### Constructors
+
+| Name | Summary |
+|---|---|
+| [&lt;init&gt;](-init-.md) | `InvalidChecksum()` |

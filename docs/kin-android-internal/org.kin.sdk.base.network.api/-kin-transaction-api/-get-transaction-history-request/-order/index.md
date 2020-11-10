@@ -16,3 +16,9 @@
 | Name | Summary |
 |---|---|
 | [value](value.md) | `val value: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html) |
+
+### Functions
+
+| Name | Summary |
+|---|---|
+| [toString](to-string.md) | `open fun toString(): `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html) |

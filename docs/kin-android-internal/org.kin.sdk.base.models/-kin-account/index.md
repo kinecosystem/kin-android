@@ -15,9 +15,7 @@
 
 | Name | Summary |
 |---|---|
-| [&lt;init&gt;](-init-.md) | `KinAccount(key: `[`Key`](../-key/index.md)`, id: Id = Id(
-        key.asPublicKey().value
-    ), balance: `[`KinBalance`](../-kin-balance/index.md)` = KinBalance(), status: Status = Status.Unregistered)` |
+| [&lt;init&gt;](-init-.md) | `KinAccount(key: `[`Key`](../-key/index.md)`, id: Id = Id(key.asPublicKey().value), tokenAccounts: `[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<PublicKey> = emptyList(), balance: `[`KinBalance`](../-kin-balance/index.md)` = KinBalance(), status: Status = Status.Unregistered)` |
 
 ### Properties
 
@@ -27,11 +25,12 @@
 | [id](id.md) | `val id: Id` |
 | [key](key.md) | `val key: `[`Key`](../-key/index.md) |
 | [status](status.md) | `val status: Status` |
+| [tokenAccounts](token-accounts.md) | `val tokenAccounts: `[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<PublicKey>` |
 
 ### Extension Functions
 
 | Name | Summary |
 |---|---|
-| [merge](../merge.md) | `fun `[`KinAccount`](./index.md)`.merge(account: `[`KinAccount`](./index.md)`): `[`KinAccount`](./index.md) |
+| [merge](../merge.md) | `fun `[`KinAccount`](./index.md)`.merge(newer: `[`KinAccount`](./index.md)`): `[`KinAccount`](./index.md) |
 | [toAccount](../to-account.md) | `fun `[`KinAccount`](./index.md)`.toAccount(): Account` |
 | [toSigningKeyPair](../to-signing-key-pair.md) | `fun `[`KinAccount`](./index.md)`.toSigningKeyPair(): KeyPair` |

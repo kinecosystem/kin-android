@@ -2,7 +2,10 @@
 
 # createAccount
 
-`abstract fun createAccount(accountId: Id): `[`Promise`](../../org.kin.sdk.base.tools/-promise/index.md)`<`[`KinAccount`](../../org.kin.sdk.base.models/-kin-account/index.md)`>`
+`abstract fun createAccount(accountId: Id, signer: PrivateKey): `[`Promise`](../../org.kin.sdk.base.tools/-promise/index.md)`<`[`KinAccount`](../../org.kin.sdk.base.models/-kin-account/index.md)`>`
 
 Creates a [KinAccount](../../org.kin.sdk.base.models/-kin-account/index.md) and activates it on the network.
 
+### Parameters
+
+`signer` - only ever used to sign a request, never transmitted

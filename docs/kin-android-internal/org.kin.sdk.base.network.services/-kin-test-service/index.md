@@ -17,3 +17,4 @@ WARNING: This *ONLY* works in test environments.
 | Name | Summary |
 |---|---|
 | [KinTestServiceImpl](../-kin-test-service-impl/index.md) | `class KinTestServiceImpl : `[`KinTestService`](./index.md) |
+| [KinTestServiceImplV4](../-kin-test-service-impl-v4/index.md) | `class KinTestServiceImplV4 : `[`KinTestService`](./index.md) |

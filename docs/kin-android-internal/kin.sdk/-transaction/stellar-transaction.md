@@ -2,4 +2,4 @@
 
 # stellarTransaction
 
-`val stellarTransaction: Transaction`
+`val stellarTransaction: Transaction?`

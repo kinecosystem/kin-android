@@ -17,6 +17,12 @@
 |---|---|
 | [networkPassphrase](network-passphrase.md) | `val networkPassphrase: `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html) |
 
+### Functions
+
+| Name | Summary |
+|---|---|
+| [toString](to-string.md) | `open fun toString(): `[`String`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html) |
+
 ### Extension Functions
 
 | Name | Summary |

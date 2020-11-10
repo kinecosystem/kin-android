@@ -6,6 +6,7 @@
 
 | Name | Summary |
 |---|---|
+| [AccountSpec](-account-spec/index.md) | A spec for how to interpret a set of accounts.`sealed class AccountSpec` |
 | [AppId](-app-id/index.md) | `data class AppId` |
 | [AppIdx](-app-idx/index.md) | `data class AppIdx` |
 | [AppInfo](-app-info/index.md) | `data class AppInfo` |
@@ -51,11 +52,12 @@
 | [asKinMemo](as-kin-memo.md) | `fun `[`ClassicKinMemo`](-classic-kin-memo/index.md)`.asKinMemo(): `[`KinMemo`](-kin-memo/index.md) |
 | [asKinPayments](as-kin-payments.md) | `fun `[`KinTransaction`](../org.kin.sdk.base.stellar.models/-kin-transaction/index.md)`.asKinPayments(): `[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<`[`KinPayment`](-kin-payment/index.md)`>` |
 | [asPublicKey](as-public-key.md) | `fun `[`Key`](-key/index.md)`.asPublicKey(): PublicKey` |
+| [createStellarSigningAccount](create-stellar-signing-account.md) | `fun createStellarSigningAccount(privateKey: PrivateKey, sequence: `[`Long`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html)`): Account` |
 | [getAgoraMemo](get-agora-memo.md) | `fun `[`KinMemo`](-kin-memo/index.md)`.getAgoraMemo(): `[`KinBinaryMemo`](-kin-binary-memo/index.md)`?` |
 | [getNetwork](get-network.md) | `fun `[`NetworkEnvironment`](../org.kin.sdk.base.stellar.models/-network-environment/index.md)`.getNetwork(): Network` |
-| [merge](merge.md) | `fun `[`KinAccount`](-kin-account/index.md)`.merge(account: `[`KinAccount`](-kin-account/index.md)`): `[`KinAccount`](-kin-account/index.md) |
+| [merge](merge.md) | `fun `[`KinAccount`](-kin-account/index.md)`.merge(newer: `[`KinAccount`](-kin-account/index.md)`): `[`KinAccount`](-kin-account/index.md) |
 | [toAccount](to-account.md) | `fun `[`KinAccount`](-kin-account/index.md)`.toAccount(): Account` |
 | [toKeyPair](to-key-pair.md) | `fun Id.toKeyPair(): KeyPair` |
 | [toKin](to-kin.md) | `fun `[`QuarkAmount`](-quark-amount/index.md)`.toKin(): `[`KinAmount`](-kin-amount/index.md) |
 | [toQuarks](to-quarks.md) | `fun `[`KinAmount`](-kin-amount/index.md)`.toQuarks(): `[`QuarkAmount`](-quark-amount/index.md) |
-| [toSigningKeyPair](to-signing-key-pair.md) | `fun `[`KinAccount`](-kin-account/index.md)`.toSigningKeyPair(): KeyPair` |
+| [toSigningKeyPair](to-signing-key-pair.md) | `fun `[`KinAccount`](-kin-account/index.md)`.toSigningKeyPair(): KeyPair`<br>`fun PrivateKey.toSigningKeyPair(): KeyPair` |

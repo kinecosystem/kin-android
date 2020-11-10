@@ -1,0 +1,5 @@
+[kin-android](../../index.md) / [org.kin.sdk.base.network.services](../index.md) / [KinServiceImplV4](index.md) / [&lt;init&gt;](./-init-.md)
+
+# &lt;init&gt;
+
+`KinServiceImplV4(networkEnvironment: `[`NetworkEnvironment`](../../org.kin.sdk.base.stellar.models/-network-environment/index.md)`, networkOperationsHandler: `[`NetworkOperationsHandler`](../../org.kin.sdk.base.tools/-network-operations-handler/index.md)`, accountApi: `[`KinAccountApiV4`](../../org.kin.sdk.base.network.api/-kin-account-api-v4/index.md)`, transactionApi: `[`KinTransactionApiV4`](../../org.kin.sdk.base.network.api/-kin-transaction-api-v4/index.md)`, streamingApi: `[`KinStreamingApiV4`](../../org.kin.sdk.base.network.api/-kin-streaming-api-v4/index.md)`, accountCreationApi: `[`KinAccountCreationApiV4`](../../org.kin.sdk.base.network.api/-kin-account-creation-api-v4/index.md)`, logger: `[`KinLoggerFactory`](../../org.kin.sdk.base.tools/-kin-logger-factory/index.md)`)`

@@ -21,3 +21,4 @@
 | Name | Summary |
 |---|---|
 | [KinLoggerFactoryImpl](../-kin-logger-factory-impl/index.md) | `class KinLoggerFactoryImpl : `[`KinLoggerFactory`](./index.md)`, Delegate` |
+| [KinTestLoggerFactoryImpl](../-kin-test-logger-factory-impl/index.md) | `class KinTestLoggerFactoryImpl : `[`KinLoggerFactory`](./index.md)`, Delegate` |

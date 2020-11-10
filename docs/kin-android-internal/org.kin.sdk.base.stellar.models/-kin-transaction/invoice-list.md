@@ -2,4 +2,4 @@
 
 # invoiceList
 
-`val invoiceList: `[`InvoiceList`](../../org.kin.sdk.base.models/-invoice-list/index.md)`?`
+`abstract val invoiceList: `[`InvoiceList`](../../org.kin.sdk.base.models/-invoice-list/index.md)`?`

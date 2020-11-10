@@ -2,4 +2,4 @@
 
 # &lt;init&gt;
 
-`UnexpectedServiceError(reason: `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`? = null)`
+`UnexpectedServiceError(reason: `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`)`

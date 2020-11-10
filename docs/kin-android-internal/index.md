@@ -23,6 +23,7 @@
 | [org.kin.base.viewmodel.tools](org.kin.base.viewmodel.tools/index.md) |  |
 | [org.kin.sdk.base](org.kin.sdk.base/index.md) |  |
 | [org.kin.sdk.base.models](org.kin.sdk.base.models/index.md) |  |
+| [org.kin.sdk.base.models.solana](org.kin.sdk.base.models.solana/index.md) |  |
 | [org.kin.sdk.base.network.api](org.kin.sdk.base.network.api/index.md) |  |
 | [org.kin.sdk.base.network.api.agora](org.kin.sdk.base.network.api.agora/index.md) |  |
 | [org.kin.sdk.base.network.api.horizon](org.kin.sdk.base.network.api.horizon/index.md) |  |

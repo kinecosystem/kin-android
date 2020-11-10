@@ -3,3 +3,4 @@
 # toSigningKeyPair
 
 `fun `[`KinAccount`](-kin-account/index.md)`.toSigningKeyPair(): KeyPair`
+`fun PrivateKey.toSigningKeyPair(): KeyPair`

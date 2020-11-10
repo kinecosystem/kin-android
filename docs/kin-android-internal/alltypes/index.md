@@ -18,6 +18,14 @@ Account was deleted using [KinClient.deleteAccount](#), and cannot be used any m
 
 |
 
+##### [org.kin.sdk.base.models.solana.AccountMeta](../org.kin.sdk.base.models.solana/-account-meta/index.md)
+
+AccountMeta represents the account information required
+for building transactions.
+
+
+|
+
 ##### [kin.sdk.exception.AccountNotFoundException](../kin.sdk.exception/-account-not-found-exception/index.md)
 
 Account was not created on the blockchain
@@ -30,7 +38,24 @@ Account was not created on the blockchain
 
 |
 
+##### [org.kin.sdk.base.models.AccountSpec](../org.kin.sdk.base.models/-account-spec/index.md)
+
+A spec for how to interpret a set of accounts.
+
+
+|
+
 ##### [kin.sdk.AccountStatus](../kin.sdk/-account-status/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.api.agora.AgoraKinAccountApiV4](../org.kin.sdk.base.network.api.agora/-agora-kin-account-api-v4/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.api.agora.AgoraKinAccountCreationApiV4](../org.kin.sdk.base.network.api.agora/-agora-kin-account-creation-api-v4/index.md)
 
 
 |
@@ -41,6 +66,11 @@ Account was not created on the blockchain
 |
 
 ##### [org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApi](../org.kin.sdk.base.network.api.agora/-agora-kin-transactions-api/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApiV4](../org.kin.sdk.base.network.api.agora/-agora-kin-transactions-api-v4/index.md)
 
 
 |
@@ -172,6 +202,13 @@ Used as passthrough auth params in the headers of the SubmitTransaction request
 
 |
 
+##### [org.kin.sdk.base.tools.Base58](../org.kin.sdk.base.tools/-base58/index.md)
+
+Base58 is a way to encode Bitcoin addresses (or arbitrary data) as alphanumeric strings.
+
+
+|
+
 ##### [kin.backupandrestore.base.BasePresenter](../kin.backupandrestore.base/-base-presenter/index.md)
 
 
@@ -210,9 +247,24 @@ Used as passthrough auth params in the headers of the SubmitTransaction request
 ##### [kotlin.ByteArray](../org.kin.sdk.base.models/kotlin.-byte-array/index.md)
 
 
+| (extensions in package org.kin.sdk.base.models.solana)
+
+##### [kotlin.ByteArray](../org.kin.sdk.base.models.solana/kotlin.-byte-array/index.md)
+
+
 | (extensions in package org.kin.sdk.base.tools)
 
 ##### [kotlin.ByteArray](../org.kin.sdk.base.tools/kotlin.-byte-array/index.md)
+
+
+| (extensions in package org.kin.sdk.base.models.solana)
+
+##### [java.io.ByteArrayInputStream](../org.kin.sdk.base.models.solana/java.io.-byte-array-input-stream/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.services.Cache](../org.kin.sdk.base.network.services/-cache/index.md)
 
 
 |
@@ -235,6 +287,11 @@ Used as passthrough auth params in the headers of the SubmitTransaction request
 This is used to format a text based [KinMemo](../org.kin.sdk.base.models/-kin-memo/index.md) with the indended format of
     "appIdVersion-appId-memoSuffix"
 e.g. "1-aef2-someAppLandMemoInfo"
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.CompiledInstruction](../org.kin.sdk.base.models.solana/-compiled-instruction/index.md)
 
 
 |
@@ -358,6 +415,21 @@ Provides blockchain network details
 
 |
 
+##### [org.kin.sdk.base.models.solana.FixedByteArray](../org.kin.sdk.base.models.solana/-fixed-byte-array/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.FixedByteArray32](../org.kin.sdk.base.models.solana/-fixed-byte-array32/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.FixedByteArray64](../org.kin.sdk.base.models.solana/-fixed-byte-array64/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.network.api.FriendBotApi](../org.kin.sdk.base.network.api/-friend-bot-api/index.md)
 
 This is valid for testnet only
@@ -374,6 +446,16 @@ base implementation of MD4 family style digest as outlined in
 |
 
 ##### [org.kin.sdk.base.network.api.agora.GrpcApi](../org.kin.sdk.base.network.api.agora/-grpc-api/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.Hash](../org.kin.sdk.base.models.solana/-hash/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.Header](../org.kin.sdk.base.models.solana/-header/index.md)
 
 
 |
@@ -401,6 +483,13 @@ amount was not legal
 |
 
 ##### [org.kin.sdk.base.repository.InMemoryKinAccountContextRepositoryImpl](../org.kin.sdk.base.repository/-in-memory-kin-account-context-repository-impl/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.Instruction](../org.kin.sdk.base.models.solana/-instruction/index.md)
+
+Instruction represents a transaction instruction.
 
 
 |
@@ -494,6 +583,11 @@ Represents an account which holds Kin.
 
 |
 
+##### [org.kin.sdk.base.network.api.KinAccountApiV4](../org.kin.sdk.base.network.api/-kin-account-api-v4/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.KinAccountContext](../org.kin.sdk.base/-kin-account-context/index.md)
 
 
@@ -534,6 +628,11 @@ Can be used to:
 
 An API for the SDK to delegate [KinAccount](../org.kin.sdk.base.models/-kin-account/index.md) registration
 with the Kin Blockchain to developers.
+
+
+|
+
+##### [org.kin.sdk.base.network.api.KinAccountCreationApiV4](../org.kin.sdk.base.network.api/-kin-account-creation-api-v4/index.md)
 
 
 |
@@ -672,7 +771,32 @@ An account manager for a [KinAccount].
 
 |
 
+##### [org.kin.sdk.base.network.services.KinServiceImplV4](../org.kin.sdk.base.network.services/-kin-service-impl-v4/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.services.KinServiceWrapper](../org.kin.sdk.base.network.services/-kin-service-wrapper/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.network.api.KinStreamingApi](../org.kin.sdk.base.network.api/-kin-streaming-api/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.api.KinStreamingApiV4](../org.kin.sdk.base.network.api/-kin-streaming-api-v4/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.tools.KinTestLoggerFactoryImpl](../org.kin.sdk.base.tools/-kin-test-logger-factory-impl/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.tools.KinTestLoggerImpl](../org.kin.sdk.base.tools/-kin-test-logger-impl/index.md)
 
 
 |
@@ -689,12 +813,22 @@ WARNING: This *ONLY* works in test environments.
 
 |
 
+##### [org.kin.sdk.base.network.services.KinTestServiceImplV4](../org.kin.sdk.base.network.services/-kin-test-service-impl-v4/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.stellar.models.KinTransaction](../org.kin.sdk.base.stellar.models/-kin-transaction/index.md)
 
 
 |
 
 ##### [org.kin.sdk.base.network.api.KinTransactionApi](../org.kin.sdk.base.network.api/-kin-transaction-api/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.api.KinTransactionApiV4](../org.kin.sdk.base.network.api/-kin-transaction-api-v4/index.md)
 
 
 |
@@ -722,6 +856,11 @@ An individual item in an [Invoice](../org.kin.sdk.base.models/-invoice/index.md)
 | (extensions in package org.kin.sdk.base.models)
 
 ##### [kotlin.collections.List](../org.kin.sdk.base.models/kotlin.collections.-list/index.md)
+
+
+| (extensions in package org.kin.sdk.base.models.solana)
+
+##### [kotlin.collections.List](../org.kin.sdk.base.models.solana/kotlin.collections.-list/index.md)
 
 
 | (extensions in package org.kin.sdk.base.network.api.agora)
@@ -766,6 +905,11 @@ Represents a listener to events, that can be removed using [.remove](#).
 ##### [org.kin.sdk.base.network.api.agora.LoggingInterceptor](../org.kin.sdk.base.network.api.agora/-logging-interceptor/index.md)
 
 
+| (extensions in package org.kin.sdk.base.tools)
+
+##### [kotlin.Long](../org.kin.sdk.base.tools/kotlin.-long/index.md)
+
+
 |
 
 ##### [org.kin.sdk.base.tools.ManagedServerSentEventStream](../org.kin.sdk.base.tools/-managed-server-sent-event-stream/index.md)
@@ -781,12 +925,37 @@ via the copy() method and then reseting the object back to that state later usin
 
 |
 
+##### [org.kin.sdk.base.models.solana.MemoProgram](../org.kin.sdk.base.models.solana/-memo-program/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.models.MemoSuffix](../org.kin.sdk.base.models/-memo-suffix/index.md)
 
 
 |
 
+##### [org.kin.sdk.base.models.solana.Message](../org.kin.sdk.base.models.solana/-message/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.viewmodel.di.MetaResolver](../org.kin.sdk.base.viewmodel.di/-meta-resolver/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.services.MetaServiceApi](../org.kin.sdk.base.network.services/-meta-service-api/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.services.MetaServiceApiImpl](../org.kin.sdk.base.network.services/-meta-service-api-impl/index.md)
+
+
+| (extensions in package org.kin.sdk.base.tools)
+
+##### [kotlin.collections.MutableList](../org.kin.sdk.base.tools/kotlin.collections.-mutable-list/index.md)
 
 
 |
@@ -1061,7 +1230,27 @@ The SHA-224 hash of an Invoice or InvoiceList.
 
 |
 
+##### [org.kin.sdk.base.models.solana.ShortVec](../org.kin.sdk.base.models.solana/-short-vec/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.Signature](../org.kin.sdk.base.models.solana/-signature/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.models.SKU](../org.kin.sdk.base.models/-s-k-u/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.stellar.models.SolanaKinTransaction](../org.kin.sdk.base.stellar.models/-solana-kin-transaction/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.tools.Sort](../org.kin.sdk.base.tools/-sort/index.md)
 
 
 |
@@ -1091,6 +1280,11 @@ The SHA-224 hash of an Invoice or InvoiceList.
 
 |
 
+##### [org.kin.sdk.base.stellar.models.StellarKinTransaction](../org.kin.sdk.base.stellar.models/-stellar-kin-transaction/index.md)
+
+
+|
+
 ##### [org.kin.sdk.base.storage.Storage](../org.kin.sdk.base.storage/-storage/index.md)
 
 
@@ -1102,6 +1296,11 @@ The SHA-224 hash of an Invoice or InvoiceList.
 | (extensions in package org.kin.sdk.base.models)
 
 ##### [org.kin.stellarfork.responses.SubmitTransactionResponse](../org.kin.sdk.base.models/org.kin.stellarfork.responses.-submit-transaction-response/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.SystemProgram](../org.kin.sdk.base.models.solana/-system-program/index.md)
 
 
 |
@@ -1119,12 +1318,22 @@ created by [delegate](#).
 
 |
 
+##### [org.kin.sdk.base.models.solana.TokenProgram](../org.kin.sdk.base.models.solana/-token-program/index.md)
+
+
+|
+
 ##### [kin.sdk.Transaction](../kin.sdk/-transaction/index.md)
 
 
 | (extensions in package org.kin.sdk.base.models)
 
 ##### [org.kin.stellarfork.Transaction](../org.kin.sdk.base.models/org.kin.stellarfork.-transaction/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.models.solana.Transaction](../org.kin.sdk.base.models.solana/-transaction/index.md)
 
 
 |
@@ -1149,6 +1358,11 @@ Identifier of the transaction, useful for finding information about the transact
 | (extensions in package org.kin.sdk.base.models)
 
 ##### [org.kin.stellarfork.responses.TransactionResponse](../org.kin.sdk.base.models/org.kin.stellarfork.responses.-transaction-response/index.md)
+
+
+|
+
+##### [org.kin.sdk.base.network.api.agora.UpgradeApiV4Interceptor](../org.kin.sdk.base.network.api.agora/-upgrade-api-v4-interceptor/index.md)
 
 
 |

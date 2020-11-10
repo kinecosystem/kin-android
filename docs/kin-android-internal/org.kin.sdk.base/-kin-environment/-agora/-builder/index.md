@@ -24,4 +24,6 @@
 | [setEnableLogging](set-enable-logging.md) | `fun setEnableLogging(): Builder` |
 | [setKinService](set-kin-service.md) | `fun setKinService(kinService: `[`KinService`](../../../../org.kin.sdk.base.network.services/-kin-service/index.md)`): Builder` |
 | [setLogger](set-logger.md) | `fun setLogger(logger: `[`KinLoggerFactory`](../../../../org.kin.sdk.base.tools/-kin-logger-factory/index.md)`): Builder` |
+| [setMinApiVersion](set-min-api-version.md) | This option allows developers to force which api version the KinService should use. v3 - stellar v4 - solana It is *not* required to set this as we default to v3 until migration day to solana.`fun setMinApiVersion(minApiVersion: `[`Int`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html)`): Builder` |
 | [setStorage](set-storage.md) | `fun setStorage(storage: `[`Storage`](../../../../org.kin.sdk.base.storage/-storage/index.md)`): CompletedBuilder`<br>`fun setStorage(fileStorageBuilder: Builder): CompletedBuilder` |
+| [testMigration](test-migration.md) | This option allows developers to force an on-demand migration from the Stellar based Kin Blockchain to Solana on TestNet only.`fun testMigration(): Builder` |

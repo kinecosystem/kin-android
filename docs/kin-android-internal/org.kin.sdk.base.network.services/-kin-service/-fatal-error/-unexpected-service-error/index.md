@@ -8,4 +8,4 @@
 
 | Name | Summary |
 |---|---|
-| [&lt;init&gt;](-init-.md) | `UnexpectedServiceError(reason: `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`? = null)` |
+| [&lt;init&gt;](-init-.md) | `UnexpectedServiceError(reason: `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`)` |

@@ -2,4 +2,4 @@
 
 # createViewModel
 
-`fun createViewModel(bundle: Bundle): `[`PaymentFlowViewModel`](../../org.kin.base.viewmodel/-payment-flow-view-model/index.md)
+`protected fun createViewModel(bundle: Bundle): `[`PaymentFlowViewModel`](../../org.kin.base.viewmodel/-payment-flow-view-model/index.md)

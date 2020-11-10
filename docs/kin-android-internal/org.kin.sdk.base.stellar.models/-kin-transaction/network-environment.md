@@ -2,4 +2,4 @@
 
 # networkEnvironment
 
-`val networkEnvironment: `[`NetworkEnvironment`](../-network-environment/index.md)
+`abstract val networkEnvironment: `[`NetworkEnvironment`](../-network-environment/index.md)

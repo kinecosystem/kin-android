@@ -2,4 +2,4 @@
 
 # memo
 
-`val memo: `[`KinMemo`](../../org.kin.sdk.base.models/-kin-memo/index.md)
+`abstract val memo: `[`KinMemo`](../../org.kin.sdk.base.models/-kin-memo/index.md)

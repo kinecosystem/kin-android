@@ -2,4 +2,4 @@
 
 # signingSource
 
-`val signingSource: Id`
+`abstract val signingSource: Id`

@@ -2,7 +2,7 @@
 
 # PaymentFlowActivity
 
-`class PaymentFlowActivity`
+`class PaymentFlowActivity : InvisibleBaseActivity<`[`PaymentFlowViewModel`](../../org.kin.base.viewmodel/-payment-flow-view-model/index.md)`, NavigationArgs, State, `[`MetaResolver`](../../org.kin.sdk.base.viewmodel.di/-meta-resolver/index.md)`, `[`SpendNavigatorImpl`](../../org.kin.sdk.spend.navigation/-spend-navigator-impl/index.md)`>`
 
 ### Types
 

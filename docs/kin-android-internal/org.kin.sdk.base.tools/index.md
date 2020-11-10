@@ -7,6 +7,7 @@
 | Name | Summary |
 |---|---|
 | [BackoffStrategy](-backoff-strategy/index.md) | `sealed class BackoffStrategy` |
+| [Base58](-base58/index.md) | Base58 is a way to encode Bitcoin addresses (or arbitrary data) as alphanumeric strings.`object Base58` |
 | [Callback](-callback/index.md) | [onCompleted](-callback/on-completed.md) to be called when callback is complete with *either* a non null value or an error but never both.`interface Callback<T> : `[`Function`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-function/index.html)`<T>` |
 | [Disposable](-disposable/index.md) | `interface Disposable<T>` |
 | [DisposeBag](-dispose-bag/index.md) | `class DisposeBag` |
@@ -15,6 +16,8 @@
 | [KinLoggerFactory](-kin-logger-factory/index.md) | `interface KinLoggerFactory` |
 | [KinLoggerFactoryImpl](-kin-logger-factory-impl/index.md) | `class KinLoggerFactoryImpl : `[`KinLoggerFactory`](-kin-logger-factory/index.md)`, Delegate` |
 | [KinLoggerImpl](-kin-logger-impl/index.md) | `class KinLoggerImpl : `[`KinLogger`](-kin-logger/index.md) |
+| [KinTestLoggerFactoryImpl](-kin-test-logger-factory-impl/index.md) | `class KinTestLoggerFactoryImpl : `[`KinLoggerFactory`](-kin-logger-factory/index.md)`, Delegate` |
+| [KinTestLoggerImpl](-kin-test-logger-impl/index.md) | `class KinTestLoggerImpl : `[`KinLogger`](-kin-logger/index.md) |
 | [ListObserver](-list-observer/index.md) | `interface ListObserver<T> : `[`Observer`](-observer/index.md)`<`[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<T>>, `[`ListOperations`](-list-operations/index.md)`<T>` |
 | [ListOperations](-list-operations/index.md) | `interface ListOperations<T>` |
 | [ListSubject](-list-subject/index.md) | `class ListSubject<T> : `[`ValueSubject`](-value-subject/index.md)`<`[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<T>>, `[`ListObserver`](-list-observer/index.md)`<T>` |
@@ -28,6 +31,7 @@
 | [Promise](-promise/index.md) | `interface Promise<out T>` |
 | [PromisedCallback](-promised-callback/index.md) | `class PromisedCallback<T>` |
 | [PromiseQueue](-promise-queue/index.md) | `class PromiseQueue<T>` |
+| [Sort](-sort/index.md) | `class Sort` |
 | [ValueListener](-value-listener/index.md) | May call [onNext](-value-listener/on-next.md) or [onError](-value-listener/on-error.md) in a sequence of value updates. Should not emit onNext updates after an onError event.`interface ValueListener<T>` |
 | [ValueSubject](-value-subject/index.md) | `open class ValueSubject<T> : `[`Observer`](-observer/index.md)`<T>` |
 
@@ -45,7 +49,9 @@
 | [java.util.UUID](java.util.-u-u-i-d/index.md) |  |
 | [kotlin.Byte](kotlin.-byte/index.md) |  |
 | [kotlin.ByteArray](kotlin.-byte-array/index.md) |  |
+| [kotlin.collections.MutableList](kotlin.collections.-mutable-list/index.md) |  |
 | [kotlin.Int](kotlin.-int/index.md) |  |
+| [kotlin.Long](kotlin.-long/index.md) |  |
 
 ### Functions
 
@@ -53,5 +59,8 @@
 |---|---|
 | [callback](callback.md) | `fun <T> `[`Promise`](-promise/index.md)`<T>.callback(callback: `[`Callback`](-callback/index.md)`<T>): `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html) |
 | [listen](listen.md) | `fun <T> `[`Observer`](-observer/index.md)`<T>.listen(listener: `[`ValueListener`](-value-listener/index.md)`<T>): `[`Observer`](-observer/index.md)`<T>`<br>`fun <T> `[`ListObserver`](-list-observer/index.md)`<T>.listen(listener: `[`ValueListener`](-value-listener/index.md)`<`[`List`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-list/index.html)`<T>>): `[`ListObserver`](-list-observer/index.md)`<T>` |
-| [queueWork](queue-work.md) | `fun <T> `[`NetworkOperationsHandler`](-network-operations-handler/index.md)`.queueWork(work: (`[`PromisedCallback`](-promised-callback/index.md)`<T>) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)`): `[`Promise`](-promise/index.md)`<T>` |
+| [onErrorResumeNext](on-error-resume-next.md) | `fun <T> `[`Promise`](-promise/index.md)`<T>.onErrorResumeNext(resumeNext: (`[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`) -> `[`Promise`](-promise/index.md)`<T>): `[`Promise`](-promise/index.md)`<T>`<br>`fun <T, ErrorType : `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`> `[`Promise`](-promise/index.md)`<T>.onErrorResumeNext(error: `[`Class`](https://docs.oracle.com/javase/6/docs/api/java/lang/Class.html)`<ErrorType>, resumeNext: (`[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`) -> `[`Promise`](-promise/index.md)`<T>): `[`Promise`](-promise/index.md)`<T>` |
+| [onErrorResumeNextError](on-error-resume-next-error.md) | `fun <T> `[`Promise`](-promise/index.md)`<T>.onErrorResumeNextError(resumeNext: (`[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`) -> `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`): `[`Promise`](-promise/index.md)`<T>` |
+| [onErrorResumeNextValue](on-error-resume-next-value.md) | `fun <T> `[`Promise`](-promise/index.md)`<T>.onErrorResumeNextValue(resumeNext: (`[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`) -> T): `[`Promise`](-promise/index.md)`<T>` |
+| [queueWork](queue-work.md) | `fun <T> `[`NetworkOperationsHandler`](-network-operations-handler/index.md)`.queueWork(work: (`[`PromisedCallback`](-promised-callback/index.md)`<T>, `[`Throwable`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-throwable/index.html)`?) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)`): `[`Promise`](-promise/index.md)`<T>`<br>`fun <T> `[`NetworkOperationsHandler`](-network-operations-handler/index.md)`.queueWork(work: (`[`PromisedCallback`](-promised-callback/index.md)`<T>) -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)`): `[`Promise`](-promise/index.md)`<T>` |
 | [submitOrRunOn](submit-or-run-on.md) | `fun submitOrRunOn(maybeExecutor: `[`ExecutorService`](https://docs.oracle.com/javase/6/docs/api/java/util/concurrent/ExecutorService.html)`?, work: () -> `[`Unit`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html)`): `[`Any`](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html) |
