@@ -166,7 +166,7 @@ class HorizonKinServiceTest {
         latchOperation(timeoutSeconds = 10) { latch ->
             sutTransactionsApi.submitTransaction(
                 KinTransactionApi.SubmitTransactionRequest(
-                    transaction.envelopeXdrBytes
+                    transaction.bytesValue
                 )
             ) {
                 response = it
@@ -177,8 +177,8 @@ class HorizonKinServiceTest {
         assertEquals(KinTransactionApi.SubmitTransactionResponse.Result.Ok, response?.result)
         assertTrue(
             Arrays.equals(
-                transaction.envelopeXdrBytes,
-                response?.transaction?.envelopeXdrBytes
+                transaction.bytesValue,
+                response?.transaction?.bytesValue
             )
         )
 

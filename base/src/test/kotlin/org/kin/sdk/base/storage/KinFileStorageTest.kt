@@ -1,5 +1,6 @@
 package org.kin.sdk.base.storage
 
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -20,7 +21,9 @@ import org.kin.sdk.base.models.merge
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransactions
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.tools.ExecutorServices
+import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.TestUtils
 import org.kin.sdk.base.tools.test
 import org.kin.stellarfork.KeyPair
@@ -54,6 +57,11 @@ class KinFileStorageTest {
             NetworkEnvironment.KinStellarTestNet,
             ExecutorServices()
         )
+    }
+
+    @After
+    fun cleanup() {
+        sut.deleteAllStorage()
     }
 
     @Test
@@ -391,6 +399,29 @@ class KinFileStorageTest {
     }
 
     @Test
+    fun testUpdateAccountInStorage_newAccounts() {
+        val newAccounts = listOf(TestUtils.newPublicKey(), TestUtils.newPublicKey(), TestUtils.newPublicKey())
+        val newAccount: KinAccount = TestUtils.newKinAccount()
+        val updatedAccountWithNewAccounts: KinAccount =
+            newAccount.merge(
+                KinAccount(
+                    key = newAccount.key,
+                    tokenAccounts = newAccounts
+                )
+            )
+
+        sut.addAccount(newAccount)
+
+        sut.updateAccountInStorage(updatedAccountWithNewAccounts).test {
+            assertTrue(value?.tokenAccounts?.containsAll(newAccounts) ?: false)
+        }
+
+        sut.getStoredAccount(newAccount.id).test {
+            assertTrue(value?.map { it.tokenAccounts.containsAll(newAccounts) }?.orElse(false) ?: false)
+        }
+    }
+
+    @Test
     fun testUpdatetBalanceFromAccount() {
         val newAccount: KinAccount = TestUtils.newKinAccount()
         val updatedAccountWithBalance: KinAccount =
@@ -406,12 +437,46 @@ class KinFileStorageTest {
     }
 
     @Test
-    fun testDeleteAllStorage() {
+    fun testDeleteAllStorageForAccount() {
         val newAccount: KinAccount = TestUtils.newKinAccount()
 
         sut.addAccount(newAccount)
         sut.deleteAllStorage(newAccount.id).test {
             assertTrue(value!!)
+        }
+    }
+
+    @Test
+    fun testDeleteAllStorage() {
+        val newAccount: KinAccount = TestUtils.newKinAccount()
+        val newAccount2: KinAccount = TestUtils.newKinAccount()
+
+        sut.addAccount(newAccount)
+        sut.addAccount(newAccount2)
+
+        sut.deleteAllStorage().test {
+            assertTrue(value!!)
+        }
+    }
+
+    @Test
+    fun testSetMinApiVersion() {
+        sut.getMinApiVersion().test {
+            assertEquals(Optional.empty(), value)
+        }
+
+        sut.setMinApiVersion(3).test {
+            assertEquals(3, value)
+        }
+        sut.getMinApiVersion().test {
+            assertEquals(Optional.of(3), value)
+        }
+
+        sut.setMinApiVersion(4).test {
+            assertEquals(4, value)
+        }
+        sut.getMinApiVersion().test {
+            assertEquals(Optional.of(4), value)
         }
     }
 
@@ -513,11 +578,52 @@ class KinFileStorageTest {
                 latch.countDown()
             }
 
-        latch.await(5, TimeUnit.SECONDS)
+        latch.await(10, TimeUnit.SECONDS)
         println(kinTransactions?.items?.first()?.memo?.getAgoraMemo()?.foreignKey)
         println(InvoiceList.Id(SHA224Hash.just(kinTransactions?.items?.first()?.memo?.getAgoraMemo()?.foreignKeyBytes!!)))
         assertNotNull(kinTransactions)
         assertEquals(invoiceList, kinTransactions!!.items.first().invoiceList)
+    }
+
+    @Test
+    fun testAddingTransactionsWithInvoices_Solana() {
+        val newAccount: KinAccount = TestUtils.newKinAccount()
+        val invoiceList = InvoiceList.Builder().addInvoice(
+            Invoice.Builder()
+                .addLineItem(
+                    LineItem.Builder("thing1", KinAmount(123))
+                        .build()
+                )
+                .build()
+        ).build()
+
+        val transaction = sampleSolanaAcknowledgedTransactionWithInvoice()
+        val transaction2 = sampleAcknowledgedTransactionWithInvoice()
+        println(transaction.memo.getAgoraMemo()?.foreignKey)
+        println(InvoiceList.Id(SHA224Hash.just(transaction.memo.getAgoraMemo()?.foreignKeyBytes!!)))
+
+        var kinTransactions: KinTransactions? = null
+        val latch = CountDownLatch(1)
+        sut.storeTransactions(newAccount.id, listOf(transaction, transaction2))
+            .flatMap { sut.getStoredTransactions(newAccount.id) }
+            .then {
+                kinTransactions = it
+                latch.countDown()
+            }
+
+        latch.await(10, TimeUnit.SECONDS)
+
+        println(kinTransactions?.items?.first()?.memo?.getAgoraMemo()?.foreignKey)
+        println(InvoiceList.Id(SHA224Hash.just(kinTransactions?.items?.first()?.memo?.getAgoraMemo()?.foreignKeyBytes!!)))
+        assertTrue(transaction.bytesValue.contentEquals(kinTransactions?.items?.get(0)?.bytesValue))
+
+        assertNotNull(kinTransactions)
+        assertEquals(invoiceList, kinTransactions!!.items.first().invoiceList)
+
+        println(kinTransactions?.items?.get(1)?.memo?.getAgoraMemo()?.foreignKey)
+        println(InvoiceList.Id(SHA224Hash.just(kinTransactions?.items?.get(1)?.memo?.getAgoraMemo()?.foreignKeyBytes!!)))
+        assertEquals(invoiceList, kinTransactions!!.items.get(1).invoiceList)
+        assertTrue(transaction2.bytesValue.contentEquals(kinTransactions?.items?.get(1)?.bytesValue))
     }
 
     @Test
@@ -543,7 +649,7 @@ class KinFileStorageTest {
             KinTransaction.PagingToken(pagingToken)
         )
 
-        return KinTransaction(transactionXdrBytes, recordType, networkEnvironment)
+        return StellarKinTransaction(transactionXdrBytes, recordType, networkEnvironment)
     }
 
     private fun sampleHistoricalTransaction2(): KinTransaction {
@@ -562,7 +668,7 @@ class KinFileStorageTest {
             KinTransaction.PagingToken(pagingToken)
         )
 
-        return KinTransaction(transactionXdrBytes, recordType, networkEnvironment)
+        return StellarKinTransaction(transactionXdrBytes, recordType, networkEnvironment)
     }
 
     private fun sampleAcknowledgedTransaction(): KinTransaction {
@@ -576,7 +682,7 @@ class KinFileStorageTest {
         val resultXdrBytes = Base64.getDecoder().decode(sampleResultXdr)
         val recordType = KinTransaction.RecordType.Acknowledged(instant.epochSecond, resultXdrBytes)
 
-        return KinTransaction(transactionXdrBytes, recordType, networkEnvironment)
+        return StellarKinTransaction(transactionXdrBytes, recordType, networkEnvironment)
     }
 
     private fun sampleAcknowledgedTransactionWithInvoice(): KinTransaction {
@@ -598,7 +704,29 @@ class KinFileStorageTest {
             .build()
         val invoiceList = InvoiceList.Builder().addInvoice(invoice).build()
 
-        return KinTransaction(transactionXdrBytes, recordType, networkEnvironment, invoiceList)
+        return StellarKinTransaction(transactionXdrBytes, recordType, networkEnvironment, invoiceList)
+    }
+
+    private fun sampleSolanaAcknowledgedTransactionWithInvoice(): KinTransaction {
+        val sampleResultXdr = "AAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA="
+        val instant = Instant.parse("2019-12-13T16:49:59Z")
+
+        val resultXdrBytes = Base64.getDecoder().decode(sampleResultXdr)
+
+        val invoice = Invoice.Builder()
+            .addLineItem(
+                LineItem.Builder("thing1", KinAmount(123))
+                    .build()
+            )
+            .build()
+        val invoiceList = InvoiceList.Builder().addInvoice(invoice).build()
+
+        return TestUtils.kinTransactionFromSolanaTransaction(
+            "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADBhKbplKYVFe1zp0Qbm0sgmfDJ/4PaKI6sdhW5K2hYa3yTxBa4fJz/KclOzYQnutToS8NCcgtE1Zm43VjEEo8LAgACBe8oot1gdFzu7PD9FVa1d7qVwJMMaA9eHCYwdUXnQVthXcX6W5Rx/UxdWFA1UzmGZgUAY7yHYMvnC/isIcIY7/shBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogLwbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpBUpTUPhdyILWFKVWcniKKW3fHqur0KYGeIhJMvTu9qAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIEACxRUUFBdFBKYmVhMUFzazR6UytKSGRjMkJWem5GWXZlMU5BWnNoR2kxUHdJPQMDAQIBCQPgrrsAAAAAAA==",
+            KinTransaction.RecordType.Acknowledged(instant.epochSecond, resultXdrBytes),
+            networkEnvironment,
+            invoiceList = invoiceList
+        )
     }
 
     private fun sampleInFlightTransaction(): KinTransaction {
@@ -610,6 +738,6 @@ class KinFileStorageTest {
         val transactionXdrBytes = Base64.getDecoder().decode(sampleTransactionXdr)
         val recordType = KinTransaction.RecordType.InFlight(instant.epochSecond)
 
-        return KinTransaction(transactionXdrBytes, recordType, networkEnvironment)
+        return StellarKinTransaction(transactionXdrBytes, recordType, networkEnvironment)
     }
 }

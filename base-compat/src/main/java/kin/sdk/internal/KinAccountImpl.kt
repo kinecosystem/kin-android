@@ -17,21 +17,28 @@ import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.ObservationMode
 import org.kin.sdk.base.models.AppId
 import org.kin.sdk.base.models.ClassicKinMemo
+import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinMemo
+import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.MemoSuffix
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinMemo
+import org.kin.sdk.base.models.asKinPayments
+import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.toKinTransaction
 import org.kin.sdk.base.network.services.KinService
+import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.Promise
 import org.kin.stellarfork.KeyPair
 import java.io.IOException
 import java.math.BigDecimal
 import java.util.concurrent.Executors
+
 
 internal class KinAccountImpl(
     private val account: KeyPair,
@@ -46,7 +53,7 @@ internal class KinAccountImpl(
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
 
     override fun getPublicAddress(): String? {
-        return if (isDeleted) null else accountContext.accountId.encodeAsString()
+        return if (isDeleted) null else accountContext.accountId.stellarBase32Encode()
     }
 
     override fun getStringEncodedPrivateKey(): String? {
@@ -241,7 +248,9 @@ internal class KinAccountImpl(
             .flatMap { account ->
                 kinService
                     .buildAndSignTransaction(
-                        account,
+                        account.key as Key.PrivateKey,
+                        account.key.asPublicKey(),
+                        (account.status as org.kin.sdk.base.models.KinAccount.Status.Registered).sequence,
                         listOf(
                             KinPaymentItem(
                                 KinAmount(amount),
@@ -256,14 +265,9 @@ internal class KinAccountImpl(
     }
 
     private fun sendTransactionInternal(transaction: Transaction): Promise<TransactionId> {
-        return Promise.of(transaction)
-            .flatMap {
-                accountContext
-                    .sendKinTransaction(
-                        transaction.stellarTransaction.toKinTransaction(networkEnvironment)
-                    )
-                    .map { it.first().id.transactionHash.toTransactionId() }
-            }
+        return Promise.of(transaction.kinTransaction ?: transaction.stellarTransaction!!.toKinTransaction(networkEnvironment))
+            .flatMap { sendKinPaymentWithTransaction(it) }
+            .map { it.first().id.transactionHash.toTransactionId() }
     }
 
     private fun buildMemo(suffix: String): KinMemo =
@@ -272,16 +276,25 @@ internal class KinAccountImpl(
     private fun sendWhitelistTransactionInternal(whitelist: String): Promise<TransactionId> {
         return Promise
             .defer {
-                Promise.of(
-                    org.kin.stellarfork.Transaction.fromEnvelopeXdr(whitelist, network)
-                        .toKinTransaction(networkEnvironment)
-                        .asTransaction(network)
-                )
+                Promise.of(org.kin.stellarfork.Transaction.fromEnvelopeXdr(whitelist, network)
+                    .toKinTransaction(networkEnvironment))
             }
             .workOn(backgroundExecutor)
-            .flatMap { transaction ->
-                sendTransactionInternal(transaction)
+            .flatMap {
+                sendTransactionInternal(it.asTransaction(networkEnvironment.toNetwork()))
             }
+    }
+
+    private fun sendKinPaymentWithTransaction(
+        kinTransaction: KinTransaction
+    ): Promise<List<KinPayment>> {
+        val payments: List<KinPaymentItem> = kinTransaction.asKinPayments()
+            .map {
+                KinPaymentItem(it.amount, it.destinationAccountId, Optional.ofNullable(it.invoice))
+            }
+        val memo: KinMemo = kinTransaction.memo
+
+        return accountContext.sendKinPayments(payments, memo)
     }
 
     private fun getStatusInternal(): Promise<Int> {

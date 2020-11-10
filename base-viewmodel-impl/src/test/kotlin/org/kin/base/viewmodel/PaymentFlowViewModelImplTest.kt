@@ -1,3 +1,4 @@
+
 package org.kin.base.viewmodel
 
 import com.nhaarman.mockitokotlin2.any
@@ -338,7 +339,7 @@ class PaymentFlowViewModelImplTest {
         )
         assertEquals(
             Result.Failure.Reason.UNKNOWN_FAILURE,
-            sut.convertErrorToReason(KinService.FatalError.UnexpectedServiceError())
+            sut.convertErrorToReason(KinService.FatalError.UnexpectedServiceError(Exception()))
         )
         assertEquals(
             Result.Failure.Reason.UNKNOWN_FAILURE,

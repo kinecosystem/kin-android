@@ -11,11 +11,15 @@ import org.kin.sdk.base.network.api.KinAccountCreationApi
 import org.kin.sdk.base.network.api.KinStreamingApi
 import org.kin.sdk.base.network.api.KinTransactionApi
 import org.kin.sdk.base.network.api.KinTransactionWhitelistingApi
+import org.kin.sdk.base.network.api.agora.AgoraKinAccountApiV4
+import org.kin.sdk.base.network.api.agora.AgoraKinAccountCreationApiV4
 import org.kin.sdk.base.network.api.agora.AgoraKinAccountsApi
 import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApi
+import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApiV4
 import org.kin.sdk.base.network.api.agora.AppUserAuthInterceptor
 import org.kin.sdk.base.network.api.agora.LoggingInterceptor
 import org.kin.sdk.base.network.api.agora.OkHttpChannelBuilderForcedTls12
+import org.kin.sdk.base.network.api.agora.UpgradeApiV4Interceptor
 import org.kin.sdk.base.network.api.agora.UserAgentInterceptor
 import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinAccountCreationApi
 import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinTransactionWhitelistingApi
@@ -23,6 +27,9 @@ import org.kin.sdk.base.network.api.horizon.HorizonKinApi
 import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.network.services.KinServiceImpl
+import org.kin.sdk.base.network.services.KinServiceImplV4
+import org.kin.sdk.base.network.services.KinServiceWrapper
+import org.kin.sdk.base.network.services.MetaServiceApiImpl
 import org.kin.sdk.base.repository.AppInfoRepository
 import org.kin.sdk.base.repository.InMemoryAppInfoRepositoryImpl
 import org.kin.sdk.base.repository.InMemoryInvoiceRepositoryImpl
@@ -188,6 +195,8 @@ sealed class KinEnvironment {
             private var networkHandler: NetworkOperationsHandler? = null
             private var appInfoProvider: AppInfoProvider? = null
             private var service: KinService? = null
+            private var minApiVersion: Int = 3
+            private var testMigration = false
 
             private lateinit var storage: Storage
             private var storageBuilder: KinFileStorage.Builder? = null
@@ -216,21 +225,51 @@ sealed class KinEnvironment {
                     val managedChannel =
                         managedChannel ?: networkEnvironment.agoraApiConfig()
                             .asManagedChannel(logger)
-                    val accountsApi = AgoraKinAccountsApi(managedChannel, networkEnvironment)
-                    val transactionsApi =
-                        AgoraKinTransactionsApi(
-                            managedChannel,
-                            networkEnvironment
+
+                    fun buildV3ApiService(): KinService {
+                        val accountsApi = AgoraKinAccountsApi(managedChannel, networkEnvironment)
+                        val transactionsApi =
+                            AgoraKinTransactionsApi(
+                                managedChannel,
+                                networkEnvironment
+                            )
+                        return service ?: KinServiceImpl(
+                            networkEnvironment,
+                            networkHandler,
+                            accountsApi,
+                            transactionsApi,
+                            accountsApi,
+                            accountsApi,
+                            transactionsApi,
+                            logger
                         )
-                    val service = service ?: KinServiceImpl(
-                        networkEnvironment,
-                        networkHandler,
-                        accountsApi,
-                        transactionsApi,
-                        accountsApi,
-                        accountsApi,
-                        transactionsApi,
-                        logger
+                    }
+
+                    fun buildV4ApiService(): KinService {
+                        val accountsApi = AgoraKinAccountApiV4(managedChannel, networkEnvironment)
+                        val accountCreationApi = AgoraKinAccountCreationApiV4(managedChannel)
+                        val transactionsApi =
+                            AgoraKinTransactionsApiV4(
+                                managedChannel,
+                                networkEnvironment
+                            )
+                        return service ?: KinServiceImplV4(
+                            networkEnvironment,
+                            networkHandler,
+                            accountsApi,
+                            transactionsApi,
+                            accountsApi,
+                            accountCreationApi,
+                            logger
+                        )
+                    }
+
+                    val metaServiceApi = MetaServiceApiImpl(minApiVersion, networkHandler, AgoraKinTransactionsApiV4(managedChannel, networkEnvironment), storage)
+                    metaServiceApi.postInit()
+                    val service = KinServiceWrapper(
+                        buildV3ApiService(),
+                        buildV4ApiService(),
+                        metaServiceApi
                     )
 
                     return Agora(
@@ -268,8 +307,9 @@ sealed class KinEnvironment {
                             *listOf(
                                 AppUserAuthInterceptor(appInfoProvider!!),
                                 UserAgentInterceptor(storage),
-                                LoggingInterceptor(logger)
-                            ).toTypedArray()
+                                LoggingInterceptor(logger),
+                                if (testMigration) UpgradeApiV4Interceptor() else null
+                            ).filterNotNull().toTypedArray()
                         )
                         .build()
             }
@@ -286,6 +326,24 @@ sealed class KinEnvironment {
                 apply {
                     this.networkHandler = networkHandler
                 }
+
+            /**
+             * This option allows developers to force which api version the KinService should use.
+             * v3 - stellar
+             * v4 - solana
+             * It is *not* required to set this as we default to v3 until migration day to solana.
+             */
+            fun setMinApiVersion(minApiVersion: Int): Builder = apply {
+                this.minApiVersion = minApiVersion
+            }
+
+            /**
+             * This option allows developers to force an on-demand migration from the Stellar based
+             * Kin Blockchain to Solana on TestNet only.
+             */
+            fun testMigration(): Builder = apply {
+                this.testMigration = true
+            }
 
             fun setLogger(logger: KinLoggerFactory): Builder = apply {
                 this.logger = logger

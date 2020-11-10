@@ -43,7 +43,7 @@ data class KeyPairNativeJNIImpl @JvmOverloads
  */
 constructor(
     private val mPublicKey: PublicKey,
-    private val mPrivateKey: PrivateKey? = null
+    private val mPrivateKey: PrivateKey? = null,
 ) : IKeyPair {
     /**
      * Returns true if this Keypair is capable of signing
@@ -68,7 +68,7 @@ constructor(
      * Returns the raw 32 byte secret seed.
      */
     override val rawSecretSeed: ByteArray?
-        get() = mPrivateKey!!.seed
+        get() = mPrivateKey?.seed
 
     override val publicKey: ByteArray
         get() = mPublicKey.bytes

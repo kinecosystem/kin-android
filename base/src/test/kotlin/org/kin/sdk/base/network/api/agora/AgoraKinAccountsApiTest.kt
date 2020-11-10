@@ -263,7 +263,7 @@ class AgoraKinAccountsApiTest {
         )
 
         sut.streamNewTransactions(account.id).test {
-            assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(value!!.envelopeXdrBytes) }
+            assertTrue { expectedKinTransaction.bytesValue.contentEquals(value!!.bytesValue) }
             assertTrue { value!!.recordType is KinTransaction.RecordType.Acknowledged }
         }
     }

@@ -17,7 +17,7 @@ sealed class NetworkOperationsHandlerException(message: String) : Throwable(mess
 }
 
 sealed class BackoffStrategy(
-    private val maxAttempts: Int = DEFAULT_MAX_ATTEMPTS
+    val maxAttempts: Int = DEFAULT_MAX_ATTEMPTS
 ) {
     private var currentAttempt = 0
 
@@ -26,6 +26,24 @@ sealed class BackoffStrategy(
         private const val DEFAULT_MAX_ATTEMPT_WAIT_TIME: Long = 15000
         private val randomSource = Random(System.currentTimeMillis())
         private const val InfiniteRetries: Int = -1
+
+        fun combine(vararg strategies: BackoffStrategy): BackoffStrategy {
+            val totalMaxAttempts =
+                strategies.map { it.maxAttempts }.reduce { acc, maxAttempts -> acc + maxAttempts }
+
+            return BackoffStrategy.Custom({ currentAttempt ->
+                var previousAttempts = 0
+                for (it in strategies) {
+                    if ((currentAttempt - previousAttempts) < it.maxAttempts) {
+                        return@Custom it.nextDelay()
+                    } else {
+                        previousAttempts += it.maxAttempts
+                    }
+                }
+                previousAttempts = 0
+                -1
+            }, { strategies.forEach { it.reset() } }, totalMaxAttempts)
+        }
     }
 
     class Never(
@@ -45,8 +63,17 @@ sealed class BackoffStrategy(
         maxAttempts: Int = DEFAULT_MAX_ATTEMPTS
     ) : BackoffStrategy(maxAttempts = maxAttempts)
 
+    class ExponentialIncrease(
+        val initial: Long = 1000,
+        val multiplier: Double = 2.0,
+        val jitter: Double = 0.5,
+        val maximumWaitTime: Long = DEFAULT_MAX_ATTEMPT_WAIT_TIME,
+        maxAttempts: Int = DEFAULT_MAX_ATTEMPTS
+    ) : BackoffStrategy(maxAttempts = maxAttempts)
+
     class Custom(
         val afterClosure: (Int) -> Long,
+        val reset: () -> Unit,
         maxAttempts: Int = DEFAULT_MAX_ATTEMPTS
     ) : BackoffStrategy(maxAttempts = maxAttempts)
 
@@ -63,7 +90,7 @@ sealed class BackoffStrategy(
         }
 
         // The first backoff attempt is attempt=1.
-        if (attempt <= 0) {
+        if (attempt <= 0 && this !is Custom && this !is ExponentialIncrease) {
             return 0
         }
 
@@ -72,6 +99,12 @@ sealed class BackoffStrategy(
             is Fixed -> after
             is Exponential -> {
                 val delay = initial * multiplier.pow((attempt - 1).toDouble())
+                val jitterAmount = delay * jitter * randomSource.nextDouble()
+
+                min(maximumWaitTime, max(0, (delay + jitterAmount).toLong()))
+            }
+            is ExponentialIncrease -> {
+                val delay = initial * multiplier.pow((maxAttempts - attempt).toDouble())
                 val jitterAmount = delay * jitter * randomSource.nextDouble()
 
                 min(maximumWaitTime, max(0, (delay + jitterAmount).toLong()))
@@ -96,7 +129,8 @@ constructor(
     val backoffStrategy: BackoffStrategy = BackoffStrategy.Exponential(
         maximumWaitTime = timeout
     ),
-    val callback: (PromisedCallback<ResponseType>) -> Unit
+    val callback: (PromisedCallback<ResponseType>, error: Throwable?) -> Unit,
+    val shouldRetryError: ((Throwable) -> Boolean)? = null
 ) {
     constructor(
         onSuccess: (ResponseType) -> Unit,
@@ -106,7 +140,7 @@ constructor(
         backoffStrategy: BackoffStrategy = BackoffStrategy.Exponential(
             maximumWaitTime = timeout
         ),
-        callback: (PromisedCallback<ResponseType>) -> Unit
+        callback: (PromisedCallback<ResponseType>, error: Throwable?) -> Unit
     ) : this(PromisedCallback(onSuccess, onError), id, timeout, backoffStrategy, callback)
 
     companion object {
@@ -170,7 +204,9 @@ interface NetworkOperationsHandler {
 
 class NetworkOperationsHandlerImpl(
     private val ioScheduler: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor(),
-    private val ioExecutor: ExecutorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors()),
+    private val ioExecutor: ExecutorService = Executors.newScheduledThreadPool(
+        Runtime.getRuntime().availableProcessors()
+    ),
     private val logger: KinLoggerFactory,
     private val shouldRetryError: (Throwable) -> Boolean = { false }
 ) : NetworkOperationsHandler {
@@ -197,7 +233,7 @@ class NetworkOperationsHandlerImpl(
         cleanup()
     }
 
-    private fun NetworkOperation<*>.schedule() {
+    private fun NetworkOperation<*>.schedule(error: Throwable? = null) {
         log.log("schedule[id=$id]")
         val delayMillis = try {
             backoffStrategy.nextDelay()
@@ -212,14 +248,14 @@ class NetworkOperationsHandlerImpl(
         state = NetworkOperation.State.SCHEDULED(
             System.currentTimeMillis() + delayMillis,
             ioScheduler.schedule(
-                { ioExecutor.submit { runOperation() } },
+                { ioExecutor.submit { runOperation(error) } },
                 delayMillis,
                 TimeUnit.MILLISECONDS
             )
         )
     }
 
-    private fun <ResponseType> NetworkOperation<ResponseType>.runOperation() = apply {
+    private fun <ResponseType> NetworkOperation<ResponseType>.runOperation(error: Throwable? = null) = apply {
         log.log("runOperation[id=$id]")
         state = NetworkOperation.State.RUNNING
 
@@ -227,7 +263,7 @@ class NetworkOperationsHandlerImpl(
             callback(PromisedCallback({
                 complete()
                 onCompleted.onSuccess(it)
-            }, { handleError(it) }))
+            }, { handleError(it) }), error)
         } catch (error: Throwable) {
             handleError(error)
         }
@@ -242,7 +278,7 @@ class NetworkOperationsHandlerImpl(
 
     private fun NetworkOperation<*>.handleError(error: Throwable) = apply {
         log.log("handleError[id=$id]: $error")
-        if (shouldRetryError(error)) {
+        if (this.shouldRetryError?.let { it(error) } == true || shouldRetryError(error)) {
             state = NetworkOperation.State.ERRORED(error)
             schedule()
         } else fatalError(error)

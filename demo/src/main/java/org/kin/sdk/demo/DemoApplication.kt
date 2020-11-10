@@ -2,10 +2,12 @@ package org.kin.sdk.demo
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.multidex.MultiDexApplication
+import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.KinEnvironment
 import org.kin.sdk.base.models.AppInfo
 import org.kin.sdk.base.models.AppUserCreds
 import org.kin.sdk.base.models.Invoice
+import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.LineItem
 import org.kin.sdk.base.models.SKU
@@ -44,6 +46,18 @@ class DemoApplication : MultiDexApplication(), ResolverProvider, AppInfoProvider
     override fun onCreate() {
         super.onCreate()
         applicationContext.setupViewExtensions()
+
+        setupTestAccounts()
+    }
+
+    private fun setupTestAccounts() {
+        KinAccountContext.Builder(testKinEnvironment)
+            .importExistingPrivateKey(Key.PrivateKey(DemoAppConfig.DEMO_APP_SECRET_SEED))
+            .build()
+            .getAccount()
+            .then {
+                println("Setup KinAccount: $it")
+            }
     }
 
     override val compatResolver: DemoResolver by lazy { CompatResolver(applicationContext) }
@@ -70,6 +84,7 @@ class DemoApplication : MultiDexApplication(), ResolverProvider, AppInfoProvider
                     return AppUserCreds("demo_app_uid", "demo_app_user_passkey")
                 }
             })
+            .testMigration()
             .setEnableLogging()
             .setStorage(KinFileStorage.Builder("${applicationContext.filesDir}/kin"))
             .build()
@@ -165,10 +180,20 @@ class DemoApplication : MultiDexApplication(), ResolverProvider, AppInfoProvider
             )
         }.build()
 
-        Promise.all(
+        val invoice4 = Invoice.Builder().apply {
+            addLineItem(
+                LineItem.Builder("Thing", KinAmount(1))
+                    .setDescription("That does stuff")
+                    .setSKU(SKU(UUID.fromString("dac0b678-a936-44ef-abc8-365f4cae2ed1").toByteArray()))
+                    .build()
+            )
+        }.build()
+
+        Promise.allAny(
             invoiceRepository.addInvoice(invoice1),
             invoiceRepository.addInvoice(invoice2),
-            invoiceRepository.addInvoice(invoice3)
+            invoiceRepository.addInvoice(invoice3),
+            invoiceRepository.addInvoice(invoice4)
         ).resolve()
     }
 }

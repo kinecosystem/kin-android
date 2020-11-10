@@ -134,7 +134,7 @@ class ModelToProtoKtTest {
             )
 
         val submitTransactionRequest = KinTransactionApi.SubmitTransactionRequest(
-            kinTransaction.envelopeXdrBytes
+            kinTransaction.bytesValue
         )
 
         val grpcRequest = submitTransactionRequest.toGrpcRequest()

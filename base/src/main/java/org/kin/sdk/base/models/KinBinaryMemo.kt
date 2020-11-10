@@ -72,7 +72,7 @@ data class KinBinaryMemo internal constructor(
         }
     }
 
-    data class Builder(
+    data class Builder @JvmOverloads constructor(
         val appIdx: Int,
         val magicByteIndicator: Int = 0x1,
         val version: Int = 0

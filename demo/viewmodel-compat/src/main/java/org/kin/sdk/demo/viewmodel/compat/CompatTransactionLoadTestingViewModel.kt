@@ -4,11 +4,15 @@ import kin.sdk.KinClient
 import kin.sdk.Transaction
 import kin.sdk.TransactionId
 import kin.utils.ResultCallback
+import org.kin.sdk.base.models.QuarkAmount
+import org.kin.sdk.base.models.toKin
 import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.TransactionLoadTestingViewModel
 import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 import java.math.BigDecimal
+import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.random.Random
 
 class CompatTransactionLoadTestingViewModel(
     @Suppress("UNUSED_PARAMETER") navigator: DemoNavigator,
@@ -38,13 +42,16 @@ class CompatTransactionLoadTestingViewModel(
         }
     }
 
+    private fun randomQuarkAmount(lessThan: Long = 100): QuarkAmount =
+        QuarkAmount(abs(Random(System.currentTimeMillis()).nextLong() % lessThan))
+
     private fun runTransaction(fee: Int, destinationAddress: String, completed: (Float?) -> Unit) {
         val startTime = System.nanoTime()
 
         // build a transaction with the collected information
         val transaction = wallet.buildTransaction(
             destinationAddress,
-            BigDecimal(10),
+            randomQuarkAmount(100).toKin().value,
             fee,
             "Perf test"
         )

@@ -50,6 +50,7 @@ class AgoraKinTransactionsApiTest {
         AdditionalAnswers.delegatesTo<AccountGrpc.AccountImplBase>(
             // By default the client will receive Status.UNIMPLEMENTED for all RPCs.
             object : TransactionGrpc.TransactionImplBase() {
+
                 override fun submitTransaction(
                     request: TransactionService.SubmitTransactionRequest?,
                     responseObserver: StreamObserver<TransactionService.SubmitTransactionResponse>?
@@ -127,7 +128,7 @@ class AgoraKinTransactionsApiTest {
         sut.whitelistTransaction(
             KinTransactionWhitelistingApi.WhitelistTransactionRequest("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")
         ) {
-            assertTrue(expectedKinTransaction.envelopeXdrBytes.contentEquals(Base64.decodeBase64(it.base64EncodedWhitelistedTransactionEnvelopeBytes)!!))
+            assertTrue(expectedKinTransaction.bytesValue.contentEquals(Base64.decodeBase64(it.base64EncodedWhitelistedTransactionEnvelopeBytes)!!))
         }
     }
 
@@ -167,7 +168,7 @@ class AgoraKinTransactionsApiTest {
                 capture(it)
             }
         }.testValue {
-            assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(it.transactions!!.first().envelopeXdrBytes) }
+            assertTrue { expectedKinTransaction.bytesValue.contentEquals(it.transactions!!.first().bytesValue) }
             assertTrue { it.transactions?.first()?.recordType is KinTransaction.RecordType.Historical }
         }
     }
@@ -207,7 +208,7 @@ class AgoraKinTransactionsApiTest {
                 capture(it)
             }
         }.testValue {
-            assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(it.transaction!!.envelopeXdrBytes) }
+            assertTrue { expectedKinTransaction.bytesValue.contentEquals(it.transaction!!.bytesValue) }
             assertTrue { it.transaction?.recordType is KinTransaction.RecordType.Historical }
         }
     }
@@ -238,11 +239,11 @@ class AgoraKinTransactionsApiTest {
         )
 
         latchOperationValueCapture<KinTransactionApi.SubmitTransactionResponse> { capture ->
-            sut.submitTransaction(KinTransactionApi.SubmitTransactionRequest(expectedKinTransaction.envelopeXdrBytes)) {
+            sut.submitTransaction(KinTransactionApi.SubmitTransactionRequest(expectedKinTransaction.bytesValue)) {
                 capture(it)
             }
         }.testValue {
-            assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(it.transaction!!.envelopeXdrBytes) }
+            assertTrue { expectedKinTransaction.bytesValue.contentEquals(it.transaction!!.bytesValue) }
             assertTrue { it.transaction?.recordType is KinTransaction.RecordType.Acknowledged }
         }
     }

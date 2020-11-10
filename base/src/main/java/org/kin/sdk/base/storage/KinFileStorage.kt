@@ -18,6 +18,8 @@ import org.kin.sdk.base.network.api.agora.toProto
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransactions
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.SolanaKinTransaction
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.tools.ExecutorServices
 import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.Promise
@@ -84,7 +86,11 @@ class KinFileStorage @JvmOverloads internal constructor(
         // public key, keep the private key.
         val existingAccount = getAccount(account.id)
         val mergedAccount = if (existingAccount != null && existingAccount.key is Key.PrivateKey) {
-            KinAccount(existingAccount.key, balance = account.balance, status = account.status)
+            existingAccount.copy(
+                tokenAccounts = account.tokenAccounts,
+                balance = account.balance,
+                status = account.status
+            )
         } else {
             account
         }
@@ -109,8 +115,11 @@ class KinFileStorage @JvmOverloads internal constructor(
         val storedStatus = storedAccount.status as? KinAccount.Status.Registered ?: return null
 
         val newStatus = KinAccount.Status.Registered(storedStatus.sequence + 1)
-        val updatedAccount =
-            KinAccount(key = storedAccount.key, balance = storedAccount.balance, status = newStatus)
+        val updatedAccount = storedAccount.copy(
+            key = storedAccount.key,
+            balance = storedAccount.balance,
+            status = newStatus
+        )
 
         updateAccount(updatedAccount)
 
@@ -159,6 +168,10 @@ class KinFileStorage @JvmOverloads internal constructor(
         }
 
         return true
+    }
+
+    override fun removeServiceConfig(): Boolean {
+        return removeFile(directoryForConfig(), fileNameForConfig)
     }
 
     override fun getTransactions(key: KinAccount.Id): KinTransactions? {
@@ -220,10 +233,27 @@ class KinFileStorage @JvmOverloads internal constructor(
                 val transactionsWithInvoices = transactions?.copy(
                     items = transactions.items.map { transaction ->
                         transaction.memo.getAgoraMemo()?.let {
-                            transaction.copy(
-                                invoiceList =
-                                invoiceListMap[InvoiceList.Id(SHA224Hash.just(it.foreignKeyBytes))]
-                            )
+                            when (transaction) {
+                                is SolanaKinTransaction -> {
+                                    transaction.copy(
+                                        invoiceList = invoiceListMap[InvoiceList.Id(
+                                            SHA224Hash.just(
+                                                it.foreignKeyBytes
+                                            )
+                                        )]
+                                    )
+                                }
+                                is StellarKinTransaction -> {
+                                    transaction.copy(
+                                        invoiceList = invoiceListMap[InvoiceList.Id(
+                                            SHA224Hash.just(
+                                                it.foreignKeyBytes
+                                            )
+                                        )]
+                                    )
+                                }
+                                else -> transaction
+                            }
                         } ?: transaction
                     }
                 )
@@ -420,7 +450,43 @@ class KinFileStorage @JvmOverloads internal constructor(
                 removeAllInvoices(accountId)
                         and removeAllTransactions(accountId)
                         and removeAccount(accountId)
+                        and removeServiceConfig()
             )
+        }.workOn(executors.sequentialIO)
+    }
+
+    override fun deleteAllStorage(): Promise<Boolean> {
+        return Promise.create<Boolean> { resolve, _ ->
+            val accountDeletes = getAllAccountIds().map {
+                removeAllInvoices(it) and removeAllTransactions(it) and removeAccount(it)
+            }.reduce { acc, b -> acc and b }
+            resolve(accountDeletes and removeServiceConfig())
+        }.workOn(executors.sequentialIO)
+    }
+
+    override fun setMinApiVersion(apiVersion: Int): Promise<Int> {
+        return Promise.create<Int> { resolve, reject ->
+            val updatedKinConfig = getKinConfig()
+                .map {
+                    it.toBuilder()
+                }
+                .orElse {
+                    StorageKinConfig.newBuilder()
+                }
+                .setMinApiVersion(apiVersion.toLong())
+                .build()
+
+            if (setKinConfig(updatedKinConfig)) {
+                resolve(apiVersion)
+            } else {
+                reject(Exception("Failed to set minApiVersion"))
+            }
+        }.workOn(executors.sequentialIO)
+    }
+
+    override fun getMinApiVersion(): Promise<Optional<Int>> {
+        return Promise.create<Optional<Int>> { resolve, _ ->
+            resolve(getKinConfig().map { it.minApiVersion.toInt() })
         }.workOn(executors.sequentialIO)
     }
 
@@ -598,6 +664,13 @@ class KinFileStorage @JvmOverloads internal constructor(
                     }
                 }
             }
+            .addAllAccounts(
+                tokenAccounts.map {
+                    StoragePublicKey.newBuilder()
+                        .setValue(ByteString.copyFrom(it.value))
+                        .build()
+                }
+            )
             .build()
 
     private fun KinBalance.toStorageKinBalance(): StorageKinBalance =
@@ -609,7 +682,7 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     private fun KinTransaction.toStorageKinTransaction(): StorageKinTransaction =
         StorageKinTransaction.newBuilder()
-            .setEnvelopeXdr(ByteString.copyFrom(this.envelopeXdrBytes))
+            .setEnvelopeXdr(ByteString.copyFrom(this.bytesValue))
             .apply {
                 when (this@toStorageKinTransaction.recordType) {
                     is KinTransaction.RecordType.InFlight -> {
@@ -619,13 +692,13 @@ class KinFileStorage @JvmOverloads internal constructor(
                     is KinTransaction.RecordType.Acknowledged -> {
                         this.setStatus(StorageKinTransaction.Status.ACKNOWLEDGED)
                         this.setTimestamp(this@toStorageKinTransaction.recordType.timestamp)
-                        this.setResultXdr(ByteString.copyFrom(this@toStorageKinTransaction.recordType.resultXdrBytes))
+                        this.setResultXdr(ByteString.copyFrom((this@toStorageKinTransaction.recordType as KinTransaction.RecordType.Acknowledged).resultXdrBytes))
                     }
                     is KinTransaction.RecordType.Historical -> {
                         this.setStatus(StorageKinTransaction.Status.HISTORICAL)
                         this.setTimestamp(this@toStorageKinTransaction.recordType.timestamp)
-                        this.setResultXdr(ByteString.copyFrom(this@toStorageKinTransaction.recordType.resultXdrBytes))
-                        this.setPagingToken(this@toStorageKinTransaction.recordType.pagingToken.value)
+                        this.setResultXdr(ByteString.copyFrom((this@toStorageKinTransaction.recordType as KinTransaction.RecordType.Historical).resultXdrBytes))
+                        this.setPagingToken((this@toStorageKinTransaction.recordType as KinTransaction.RecordType.Historical).pagingToken.value)
                     }
                 }
             }
@@ -682,13 +755,18 @@ class KinFileStorage @JvmOverloads internal constructor(
             StorageKinAccount.Status.UNRECOGNIZED,
             null -> throw InvalidProtocolBufferException("Unrecognized account status.")
         }
-        return KinAccount(key = key, balance = balance, status = status)
+        val accounts = mutableListOf<Key.PublicKey>()
+        if (accountsList.isNotEmpty()) {
+            accounts.addAll(accountsList.map { it.toPublicKey() })
+        }
+
+        return KinAccount(key = key, tokenAccounts = accounts, balance = balance, status = status)
     }
 
-    private fun StoragePublicKey.toPublicKey(): Key =
+    private fun StoragePublicKey.toPublicKey(): Key.PublicKey =
         Key.PublicKey(this.value.toByteArray())
 
-    private fun StoragePrivateKey.toPrivateKey(): Key =
+    private fun StoragePrivateKey.toPrivateKey(): Key.PrivateKey =
         Key.PrivateKey(this.value.toByteArray())
 
     private fun StorageKinBalance.toKinBalance(): KinBalance {
@@ -714,8 +792,26 @@ class KinFileStorage @JvmOverloads internal constructor(
             )
             else -> throw InvalidProtocolBufferException("Unrecognized record type.")
         }
-
-        return KinTransaction(this.envelopeXdr.toByteArray(), recordType, networkEnvironment)
+        var transaction: KinTransaction
+        with(
+            StellarKinTransaction(
+                this.envelopeXdr.toByteArray(),
+                recordType,
+                networkEnvironment
+            )
+        ) {
+            try {
+                transactionEnvelope // Will explode if not a StellarKinTransaction TODO find a better test
+                transaction = this
+            } catch (t: Throwable) {
+                transaction = SolanaKinTransaction(
+                    this@toKinTransaction.envelopeXdr.toByteArray(),
+                    recordType,
+                    networkEnvironment
+                )
+            }
+        }
+        return transaction
     }
 
     @Throws(InvalidProtocolBufferException::class)

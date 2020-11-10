@@ -7,6 +7,7 @@ import org.kin.agora.gen.account.v3.AccountService
 import org.kin.agora.gen.account.v3.AccountService.AccountInfo
 import org.kin.agora.gen.account.v3.AccountService.GetAccountInfoResponse
 import org.kin.agora.gen.common.v3.Model
+import org.kin.agora.gen.common.v3.Model.InvoiceError
 import org.kin.agora.gen.transaction.v3.TransactionService
 import org.kin.agora.gen.transaction.v3.TransactionService.GetHistoryResponse
 import org.kin.agora.gen.transaction.v3.TransactionService.GetTransactionResponse.State
@@ -30,13 +31,14 @@ import org.kin.sdk.base.network.api.KinTransactionApi.GetTransactionResponse
 import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionRequest
 import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionResponse
 import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionResponse.Result.InvoiceErrors
+import org.kin.sdk.base.network.api.agora.GrpcApi.*
 import org.kin.sdk.base.network.api.agora.GrpcApi.Companion.canRetry
 import org.kin.sdk.base.network.api.agora.GrpcApi.Companion.isForcedUpgrade
-import org.kin.sdk.base.network.api.agora.GrpcApi.UnrecognizedResultException
 import org.kin.sdk.base.network.api.toSubmitTransactionResult
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransaction.ResultCode
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.tools.PromisedCallback
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.codec.Base64
@@ -62,7 +64,7 @@ internal fun HistoryItem.toAcknowledgedKinTransaction(networkEnvironment: Networ
             System.currentTimeMillis(),
             it.toByteArray()
         )
-        KinTransaction(
+        StellarKinTransaction(
             envelopeXdr.toByteArray(),
             recordType,
             networkEnvironment,
@@ -77,7 +79,7 @@ internal fun HistoryItem.toHistoricalKinTransaction(networkEnvironment: NetworkE
             it.toByteArray(),
             KinTransaction.PagingToken(Base64.encodeBase64String(cursor.value.toByteArray())!!)
         )
-        KinTransaction(
+        StellarKinTransaction(
             envelopeXdr.toByteArray(),
             recordType,
             networkEnvironment,
@@ -110,14 +112,14 @@ internal fun ((CreateAccountResponse) -> Unit).createAccountResponse() =
                 CreateAccountResult.Ok
             }
             AccountService.CreateAccountResponse.Result.EXISTS -> CreateAccountResult.Exists
-            else -> CreateAccountResult.UndefinedError(UnrecognizedResultException)
+            else -> CreateAccountResult.UndefinedError(UnrecognizedResultException(UnrecognizedProtoResponse))
         }
         this(CreateAccountResponse(result, account))
     }, {
         val result = when {
             it.canRetry() -> CreateAccountResult.TransientFailure(it)
             it.isForcedUpgrade() -> CreateAccountResult.UpgradeRequiredError
-            else -> CreateAccountResult.UndefinedError(UnrecognizedResultException)
+            else -> CreateAccountResult.UndefinedError(UnrecognizedResultException(it))
         }
         this(CreateAccountResponse(result))
     })
@@ -131,14 +133,14 @@ internal fun ((GetAccountResponse) -> Unit).getAccountResponse() =
                 GetAccountResult.Ok
             }
             GetAccountInfoResponse.Result.NOT_FOUND -> GetAccountResult.NotFound
-            else -> GetAccountResult.UndefinedError(UnrecognizedResultException)
+            else -> GetAccountResult.UndefinedError(UnrecognizedResultException(UnrecognizedProtoResponse))
         }
         this(GetAccountResponse(result, account))
     }, {
         val result = when {
             it.canRetry() -> GetAccountResult.TransientFailure(it)
             it.isForcedUpgrade() -> GetAccountResult.UpgradeRequiredError
-            else -> GetAccountResult.UndefinedError(UnrecognizedResultException)
+            else -> GetAccountResult.UndefinedError(UnrecognizedResultException(it))
         }
         this(GetAccountResponse(result))
     })
@@ -157,7 +159,7 @@ internal fun ((GetTransactionHistoryResponse) -> Unit).getTransactionHistoryResp
             }
             GetHistoryResponse.Result.NOT_FOUND -> GetHistoryResult.NotFound
             GetHistoryResponse.Result.UNRECOGNIZED,
-            null -> GetHistoryResult.UndefinedError(UnrecognizedResultException)
+            null -> GetHistoryResult.UndefinedError(UnrecognizedResultException(UnrecognizedProtoResponse))
         }
         this(GetTransactionHistoryResponse(result, transactions))
     }, {
@@ -165,9 +167,7 @@ internal fun ((GetTransactionHistoryResponse) -> Unit).getTransactionHistoryResp
             it.canRetry() -> GetHistoryResult.TransientFailure(it)
             it.isForcedUpgrade() -> GetHistoryResult.UpgradeRequiredError
             (it as? StatusRuntimeException)?.status?.code == Status.Code.NOT_FOUND -> GetHistoryResult.NotFound
-            else -> GetHistoryResult.UndefinedError(
-                UnrecognizedResultException
-            )
+            else -> GetHistoryResult.UndefinedError(UnrecognizedResultException(it))
         }
         this(GetTransactionHistoryResponse(result))
     })
@@ -189,7 +189,7 @@ internal fun ((GetTransactionResponse) -> Unit).getTransactionResponse(networkEn
         val result = when {
             it.canRetry() -> GetTransactionResult.TransientFailure(it)
             it.isForcedUpgrade() -> GetTransactionResult.UpgradeRequiredError
-            else -> GetTransactionResult.UndefinedError(UnrecognizedResultException)
+            else -> GetTransactionResult.UndefinedError(UnrecognizedResultException(it))
         }
         this(GetTransactionResponse(result))
     })
@@ -214,6 +214,9 @@ internal fun ((SubmitTransactionResponse) -> Unit).submitTransactionResponse(
                     transaction = HistoryItem.newBuilder()
                         .setResultXdr(it.resultXdr)
                         .setEnvelopeXdr(ByteString.copyFrom(request.transactionEnvelopeXdr))
+                        .apply {
+                            request.invoiceList?.let { invoiceList = it.toProto()  }
+                        }
                         .build()
                         .toAcknowledgedKinTransaction(networkEnvironment)
                 }
@@ -241,9 +244,7 @@ internal fun ((SubmitTransactionResponse) -> Unit).submitTransactionResponse(
         val result = when {
             it.canRetry() -> SubmitTransactionResult.TransientFailure(it)
             it.isForcedUpgrade() -> SubmitTransactionResult.UpgradeRequiredError
-            else -> SubmitTransactionResult.UndefinedError(
-                UnrecognizedResultException
-            )
+            else -> SubmitTransactionResult.UndefinedError(UnrecognizedResultException(it))
         }
         this(SubmitTransactionResponse(result))
     })

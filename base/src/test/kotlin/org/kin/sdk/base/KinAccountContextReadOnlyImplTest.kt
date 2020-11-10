@@ -4,6 +4,7 @@ import com.nhaarman.mockitokotlin2.doAnswer
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.verifyNoMoreInteractions
 import com.nhaarman.mockitokotlin2.verifyZeroInteractions
@@ -200,9 +201,9 @@ class KinAccountContextReadOnlyImplTest {
         }.apply {
             assertNull(error)
             assertEquals(listOf(KinBalance(KinAmount.ZERO), KinBalance(KinAmount(123))), values)
-            verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).getAccount(eq(registeredAccount.id))
-            verify(mockStorage).updateAccountInStorage(eq(accountFromService))
+            verify(mockStorage, times(2)).updateAccountInStorage(eq(accountFromService))
         }
     }
 }

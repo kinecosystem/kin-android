@@ -82,6 +82,19 @@ var context: KinAccountContext =
         .build()
 ```
 
+### Note on Upcoming Solana Migration
+With the migration to Solana just around the corner, apps that want to continue to function during and post the move to the Solana blockchain are required to upgrade their `kin-android` sdk to 0.4.0 or higher.
+*Any application that does not upgrade will start to receive a `KinService.FatalError.SDKUpgradeRequired` exception on any request made from `KinAccountContext`.*
+
+#### Testing migration within your app
+To enable migration of Kin3 -> Kin4 accounts on testnet, `KinEnvironment.Builder` instances have a
+new option, ``.testMigration()` that will force this sdk into a state where migration will occur on demand.
+
+#### On Migration Day (Dec 8, 2020)
+Apps should expect to see increased transaction times temporarily on the date of migration.
+An on-demand migration will be attempted to trigger a migration, rebuild, and retry transactions that are submitted from an unmigrated account on this day and optimistically will complete successfully but are not guaranteed.
+After all accounts have been migrated to Solana, transaction times should noticeably improve to around ~1s. Additional performance improvements are still possible and will roll out in future sdk releases.
+
 ### *As you may notice on the `KinAccountContext.Builder`, there are a few options for configuring a `KinAccountContext`...*
 
 ## Creating An Account

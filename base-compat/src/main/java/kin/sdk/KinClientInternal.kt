@@ -36,7 +36,6 @@ import java.util.concurrent.CopyOnWriteArrayList
  * An account manager for a [KinAccount].
  */
 internal class KinClientInternal {
-
     private class DummyAppInfoProvider : AppInfoProvider {
         override val appInfo: AppInfo = AppInfo(AppIdx.TEST_APP_IDX, org.kin.sdk.base.models.KinAccount.Id(ByteArray(0)), "", 123)
 
@@ -46,6 +45,8 @@ internal class KinClientInternal {
     }
     companion object {
         private const val STORE_NAME_PREFIX = "KinKeyStore_"
+
+        var testMigration: Boolean = false
 
         private fun initKeyStore(
             context: Context,
@@ -64,6 +65,11 @@ internal class KinClientInternal {
         ): KinEnvironment {
             return KinEnvironment.Agora.Builder(environmentToNetworkEnvironment(environment))
                 .setAppInfoProvider(DummyAppInfoProvider())
+                .apply {
+                    if (testMigration) {
+                        testMigration()
+                    }
+                }
                 .setStorage(storage)
                 .build()
         }

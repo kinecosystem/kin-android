@@ -2,6 +2,7 @@ package org.kin.sdk.base.models
 
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.stellarfork.Account
 import org.kin.stellarfork.AssetTypeNative
 import org.kin.stellarfork.KeyPair
@@ -43,6 +44,9 @@ fun KinAccount.toSigningKeyPair(): KeyPair =
     (key as? Key.PrivateKey)?.let { KeyPair.fromSecretSeed(it.value) }
         ?: throw Exception("Cannot get a signing KeyPair")
 
+fun Key.PrivateKey.toSigningKeyPair(): KeyPair =
+    KeyPair.fromSecretSeed(value) ?: throw Exception("Cannot get a signing KeyPair")
+
 fun String.toUTF8Bytes(): ByteArray = toByteArray(Charsets.UTF_8)
 
 fun ByteArray.toUTF8String(): String = String(this, Charsets.UTF_8)
@@ -62,19 +66,19 @@ fun AccountResponse.kinAccount(): KinAccount {
     )
 }
 
-fun TransactionResponse.envelopeXdrBytes(): ByteArray = Base64().decode(envelopeXdr.toUTF8Bytes())!!
+fun TransactionResponse.bytesValue(): ByteArray = Base64().decode(envelopeXdr.toUTF8Bytes())!!
 
 fun TransactionResponse.resultXdrBytes(): ByteArray = Base64().decode(resultXdr.toUTF8Bytes())!!
 
-fun SubmitTransactionResponse.envelopeXdrBytes(): ByteArray =
+fun SubmitTransactionResponse.bytesValue(): ByteArray =
     Base64().decode(getEnvelopeXdr().toUTF8Bytes())!!
 
 fun SubmitTransactionResponse.resultXdrBytes(): ByteArray =
     Base64().decode(getResultXdr().toUTF8Bytes())!!
 
 fun TransactionResponse.asKinTransaction(networkEnvironment: NetworkEnvironment): KinTransaction =
-    KinTransaction(
-        envelopeXdrBytes(),
+    StellarKinTransaction(
+        bytesValue(),
         KinTransaction.RecordType.Historical(
             KinDateFormat(createdAt).timestamp,
             resultXdrBytes(),
@@ -131,8 +135,17 @@ fun KinAccount.toAccount(): Account =
         }
     } ?: throw Exception("Cannot convert to Stellar Account, signing key invalid!")
 
+fun createStellarSigningAccount(privateKey: Key.PrivateKey, sequence: Long): Account {
+    return  try {
+        val keyPair =  privateKey.toSigningKeyPair()
+        if (keyPair.canSign()) Account(keyPair, sequence)
+        else null
+    } catch (e: Exception) {
+        null
+    } ?: throw Exception("Cannot convert to Stellar Account, signing key invalid!")
+}
 
-fun Transaction.toKinTransaction(networkEnvironment: NetworkEnvironment, invoiceList: InvoiceList? = null) = KinTransaction(toEnvelopeXdrBytes(), networkEnvironment = networkEnvironment, invoiceList = invoiceList)
+fun Transaction.toKinTransaction(networkEnvironment: NetworkEnvironment, invoiceList: InvoiceList? = null): KinTransaction = StellarKinTransaction(toEnvelopeXdrBytes(), networkEnvironment = networkEnvironment, invoiceList = invoiceList)
 
 fun NetworkEnvironment.getNetwork() = Network(networkPassphrase)
 

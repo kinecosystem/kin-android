@@ -4,11 +4,15 @@ import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
+import org.kin.sdk.base.models.QuarkAmount
+import org.kin.sdk.base.models.toKin
 import org.kin.sdk.demo.di.modern.DemoAppConfig
 import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.TransactionLoadTestingViewModel
 import org.kin.sdk.design.viewmodel.tools.BaseViewModel
+import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.random.Random
 
 class ModernTransactionLoadTestingViewModel(
     @Suppress("UNUSED_PARAMETER") navigator: DemoNavigator,
@@ -36,12 +40,15 @@ class ModernTransactionLoadTestingViewModel(
         }
     }
 
+    private fun randomQuarkAmount(lessThan: Long = 100): QuarkAmount =
+        QuarkAmount(abs(Random(System.currentTimeMillis()).nextLong() % lessThan))
+
     private fun runTransaction(destinationAddress: String, completed: (Float?) -> Unit) {
         val startTime = System.nanoTime()
 
         // send the transaction to the blockchain
         kinAccountContext.sendKinPayment(
-            KinAmount(10),
+            randomQuarkAmount(100).toKin(),
             KinAccount.Id(destinationAddress),
             KinBinaryMemo.Builder(DemoAppConfig.DEMO_APP_IDX.value)
                 .setTranferType(KinBinaryMemo.TransferType.P2P)

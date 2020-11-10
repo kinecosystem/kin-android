@@ -1,5 +1,6 @@
 package org.kin.sdk.base
 
+import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
@@ -26,6 +27,7 @@ import org.kin.sdk.base.tools.Callback
 import org.kin.sdk.base.tools.ExecutorServices
 import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
+import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.base.tools.TestUtils
 import org.kin.sdk.base.tools.test
@@ -54,7 +56,9 @@ class KinEnvironmentTest {
 
     @Before
     fun setUp() {
-        mockStorage = mock {}
+        mockStorage = mock {
+            on { getMinApiVersion() } doReturn Promise.of(Optional.empty())
+        }
         mockService = mock {}
         mockAccountCreationApi = mock {}
         mockWhitelistingApi = mock {}
@@ -107,6 +111,7 @@ class KinEnvironmentTest {
         val sutTest2 = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
             .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger = logger))
             .setLogger(logger)
+            .setMinApiVersion(3)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setKinService(mockService)
             .setStorage(mockStorage)

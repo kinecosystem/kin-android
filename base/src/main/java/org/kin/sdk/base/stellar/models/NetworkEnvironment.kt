@@ -9,4 +9,8 @@ sealed class NetworkEnvironment(val networkPassphrase: String) {
     object KinStellarTestNet : NetworkEnvironment(TestNetPassphrase)
 
     object KinStellarMainNet : NetworkEnvironment(MainNetPassphrase)
+
+    override fun toString(): String {
+        return "NetworkEnvironment(networkPassphrase='$networkPassphrase')"
+    }
 }

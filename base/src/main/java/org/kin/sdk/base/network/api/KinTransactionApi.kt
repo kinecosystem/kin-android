@@ -16,6 +16,10 @@ interface KinTransactionApi {
         sealed class Order(val value: Int) {
             object Ascending : Order(0)
             object Descending : Order(1)
+
+            override fun toString(): String {
+                return "Order(value=${if (value == 0) "ASC" else "DESC"})"
+            }
         }
     }
 

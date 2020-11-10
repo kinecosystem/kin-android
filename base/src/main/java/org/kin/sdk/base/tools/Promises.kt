@@ -1,5 +1,6 @@
 package org.kin.sdk.base.tools
 
+import org.kin.sdk.base.network.api.KinTransactionApiV4
 import org.kin.sdk.base.tools.Promise.State
 import java.util.Collections
 import java.util.Timer
@@ -8,7 +9,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.schedule
-import kotlin.concurrent.timer
 
 class PromisedCallback<T>(
     val onSuccess: (value: T) -> Unit,
@@ -36,8 +36,8 @@ interface Promise<out T> {
         fun <T> error(value: Throwable): Promise<T> =
             create<T> { _, reject -> reject(value) }
 
-        fun all(vararg promises: Promise<Any>): Promise<List<Any>> {
-            val values = mutableListOf<Any>()
+        fun <T> allAny(vararg promises: Promise<T>): Promise<List<T>> {
+            val values = CopyOnWriteArrayList<T>()
             return create { resolve, reject ->
                 for (promise in promises) {
                     promise.then({
@@ -47,6 +47,23 @@ interface Promise<out T> {
                         }
                     }, { reject(it) })
                 }
+            }
+        }
+
+        inline fun <reified A,reified B> all(promise1: Promise<A>, promise2: Promise<B>): Promise<Pair<A,B>> {
+            return allAny(promise1, promise2).map {
+                val first = it.find { it is A } as A
+                val second = it.find { it is B } as B
+                Pair(first, second)
+            }
+        }
+
+        inline fun <reified A,reified B,reified C> all(promise1: Promise<A>, promise2: Promise<B>, promise3: Promise<C>): Promise<Triple<A,B,C>> {
+            return allAny(promise1, promise2, promise3).map {
+                val first = it.find { it is A } as A
+                val second = it.find { it is B } as B
+                val third = it.find { it is C } as C
+                Triple(first, second, third)
             }
         }
     }
@@ -91,6 +108,7 @@ interface Promise<out T> {
     fun <S> map(
         onResolved: (T) -> S
     ): Promise<S>
+
     fun doOnResolved(onResolved: (T) -> Unit): Promise<T>
     fun doOnError(onRejected: (Throwable) -> Unit): Promise<T>
 }
@@ -313,3 +331,27 @@ private class SimplePromise<out T>(
         }
     }
 }
+
+fun <T> Promise<T>.onErrorResumeNext(
+    resumeNext: (Throwable) -> Promise<T>
+): Promise<T> =
+    flatMap(
+        { Promise.of(it) },
+        { resumeNext(it) })
+
+fun <T> Promise<T>.onErrorResumeNextValue(
+    resumeNext: (Throwable) -> T
+): Promise<T> = onErrorResumeNext { Promise.of(resumeNext(it)) }
+
+fun <T> Promise<T>.onErrorResumeNextError(
+    resumeNext: (Throwable) -> Throwable
+): Promise<T> = onErrorResumeNext { Promise.error(resumeNext(it)) }
+
+fun <T, ErrorType : Throwable> Promise<T>.onErrorResumeNext(
+    error: Class<ErrorType>,
+    resumeNext: (Throwable) -> Promise<T>
+): Promise<T> =
+    onErrorResumeNext {
+        if (it.javaClass == error) resumeNext(it)
+        else Promise.error(it)
+    }

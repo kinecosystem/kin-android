@@ -62,7 +62,7 @@ class PromiseTest {
 
     @Test
     fun testAll() {
-        Promise.all(Promise.of("asdf"), Promise.of(1))
+        Promise.allAny(Promise.of("asdf"), Promise.of(1))
             .test {
                 value?.forEach(::println)
                 assertEquals(listOf("asdf", 1), value)

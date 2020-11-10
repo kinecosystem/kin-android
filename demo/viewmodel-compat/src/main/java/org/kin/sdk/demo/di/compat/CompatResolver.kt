@@ -22,6 +22,7 @@ class CompatResolver(private val applicationContext: Context) : DemoResolver {
     object ViewModelNotSupportedException : IllegalStateException()
 
     private val testNet: KinClient by lazy {
+        KinClient.testMigration()
         KinClient(
             applicationContext,
             Environment.TEST,

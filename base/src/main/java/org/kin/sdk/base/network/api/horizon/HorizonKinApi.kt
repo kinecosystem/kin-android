@@ -4,7 +4,7 @@ import okhttp3.OkHttpClient
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.asKinTransaction
-import org.kin.sdk.base.models.envelopeXdrBytes
+import org.kin.sdk.base.models.bytesValue
 import org.kin.sdk.base.models.kinAccount
 import org.kin.sdk.base.models.resultXdrBytes
 import org.kin.sdk.base.models.toKeyPair
@@ -25,6 +25,7 @@ import org.kin.sdk.base.network.api.toSubmitTransactionResult
 import org.kin.sdk.base.stellar.models.ApiConfig
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransaction.RecordType
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.tools.ManagedServerSentEventStream
 import org.kin.sdk.base.tools.NetworkOperationsHandlerException.OperationTimeoutException
 import org.kin.sdk.base.tools.Observer
@@ -255,8 +256,8 @@ class HorizonKinApi(
                             response.resultXdrBytes()
                         ).also { type ->
                             transaction =
-                                KinTransaction(
-                                    response.envelopeXdrBytes(),
+                                StellarKinTransaction(
+                                    response.bytesValue(),
                                     type,
                                     environment.networkEnv
                                 )

@@ -11,6 +11,7 @@ import org.kin.sdk.base.network.api.KinAccountCreationApi
 import org.kin.sdk.base.network.api.KinStreamingApi
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.tools.ObservableCallback
 import org.kin.sdk.base.tools.Observer
 import org.kin.sdk.base.tools.ValueSubject
@@ -78,7 +79,7 @@ class AgoraKinAccountsApi(
                                         }
                                         event.hasTransactionEvent() -> {
                                             AgoraEvent.TransactionUpdate(
-                                                KinTransaction(
+                                                StellarKinTransaction(
                                                     event.transactionEvent.envelopeXdr.toByteArray(),
                                                     recordType = KinTransaction.RecordType.Acknowledged(
                                                         System.currentTimeMillis(),

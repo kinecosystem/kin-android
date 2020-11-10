@@ -160,4 +160,11 @@ public class KinClient {
     public String getStoreKey() {
         return delegate.getStoreKey();
     }
+
+    /**
+     * Used to enable migration to Solana
+     */
+    public static void testMigration() {
+        KinClientInternal.Companion.setTestMigration(true);
+    }
 }

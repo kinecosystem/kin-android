@@ -4,13 +4,14 @@ import org.kin.sdk.base.KinAccountContextImpl.ExistingAccountBuilder
 import org.kin.sdk.base.KinAccountContextImpl.NewAccountBuilder
 import org.kin.sdk.base.KinAccountContextReadOnlyImpl.ReadOnlyAccountBuilder
 import org.kin.sdk.base.ObservationMode.Passive
-import org.kin.sdk.base.models.KinBinaryMemo
+import org.kin.sdk.base.models.AccountSpec
 import org.kin.sdk.base.models.AppIdx
 import org.kin.sdk.base.models.Invoice
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
+import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
@@ -19,6 +20,7 @@ import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPrivateKey
+import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.merge
 import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
@@ -26,8 +28,10 @@ import org.kin.sdk.base.network.api.agora.sha224Hash
 import org.kin.sdk.base.network.api.agora.toProto
 import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
+import org.kin.sdk.base.network.services.KinServiceWrapper
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.storage.Storage
+import org.kin.sdk.base.tools.BackoffStrategy
 import org.kin.sdk.base.tools.Callback
 import org.kin.sdk.base.tools.DisposeBag
 import org.kin.sdk.base.tools.ExecutorServices
@@ -43,6 +47,7 @@ import org.kin.sdk.base.tools.ValueListener
 import org.kin.sdk.base.tools.ValueSubject
 import org.kin.sdk.base.tools.callback
 import org.kin.sdk.base.tools.listen
+import org.kin.sdk.base.tools.onErrorResumeNext
 import org.kin.stellarfork.KeyPair
 import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
@@ -222,7 +227,8 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
     fun payInvoice(
         invoice: Invoice,
         destinationAccount: KinAccount.Id,
-        processingAppIdx: AppIdx = appInfoProvider?.appInfo?.appIndex ?: throw RuntimeException("Need to specify an AppIdx"),
+        processingAppIdx: AppIdx = appInfoProvider?.appInfo?.appIndex
+            ?: throw RuntimeException("Need to specify an AppIdx"),
         type: KinBinaryMemo.TransferType = KinBinaryMemo.TransferType.Spend
     ): Promise<KinPayment>
 
@@ -250,13 +256,18 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
      *
      * Note: If any one payment's data is invalid, all payments will fail.
      *
+     * @param payments - a representation of the payments to send as a batch
      * @param memo (optional) a memo can be provided to reference what thes batch of payments
+     * @param sourceAccountSpec - a spec of how to interpret the source of funds
+     * @param destinationAccountSpec - a spec of how to interpret the source of funds
      * were for. If no memo is desired, then set it to [KinMemo.NONE]
      * @return a [Promise] with the blockchain confirmed [KinPayment]s or an error
      */
     fun sendKinPayments(
         payments: List<KinPaymentItem>,
-        memo: KinMemo = KinMemo.NONE
+        memo: KinMemo = KinMemo.NONE,
+        sourceAccountSpec: AccountSpec = AccountSpec.Preferred,
+        destinationAccountSpec: AccountSpec = AccountSpec.Preferred,
     ): Promise<List<KinPayment>>
 
     /**
@@ -268,7 +279,7 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
      * Payments should instead be sent with [sendKinPayment] or [sendKinPayments] functions.
      */
     fun sendKinTransaction(
-        transaction: KinTransaction
+        buildTransaction: () -> Promise<KinTransaction>
     ): Promise<List<KinPayment>>
 }
 
@@ -333,7 +344,13 @@ class KinAccountContextReadOnlyImpl private constructor(
         private val accountId: KinAccount.Id
     ) {
         fun build(): KinAccountContextReadOnly =
-            KinAccountContextReadOnlyImpl(env.executors, env.service, env.storage, accountId, env.logger)
+            KinAccountContextReadOnlyImpl(
+                env.executors,
+                env.service,
+                env.storage,
+                accountId,
+                env.logger
+            )
     }
 
     override fun getAccount(forceUpdate: Boolean): Promise<KinAccount> {
@@ -453,7 +470,7 @@ class KinAccountContextImpl private constructor(
     }
 
     private fun registerAccount(account: KinAccount): Promise<KinAccount> =
-        service.createAccount(account.id)
+        service.createAccount(account.id, account.key as Key.PrivateKey)
             .map {
                 val accountToStore = account.merge(it)
                 if (!storage.updateAccount(accountToStore)) {
@@ -492,82 +509,177 @@ class KinAccountContextImpl private constructor(
     }
 
     override fun sendKinTransaction(
-        transaction: KinTransaction
+        buildTransaction: () -> Promise<KinTransaction>
     ): Promise<List<KinPayment>> {
+        var buildConsumed = false
         log.log(::sendKinTransaction.name)
         return outgoingTransactions.queue(
-            computeExpectedNewBalance(transaction)
-                .flatMap { expectedNewBalance ->
-                    service.submitTransaction(transaction)
-                        .doOnResolved { storage.advanceSequence(accountId) }
-                        .flatMap { submittedTransaction ->
-                            storage.insertNewTransactionInStorage(
-                                accountId,
-                                submittedTransaction.copy(invoiceList = transaction.invoiceList)
-                            )
-                                .map { submittedTransaction.asKinPayments() }
-                        }
-                        .doOnResolved {
-                            // If we have an active stream then we rely on that update for balance changes
-                            if (accountStream == null) {
-                                storeAndNotifyOfBalanceUpdate(expectedNewBalance)
-                            }
+            buildTransaction()
+                .flatMap { transaction ->
+                    computeExpectedNewBalance(transaction)
+                        .flatMap { expectedNewBalance ->
+                            service
+                                .buildSignAndSubmitTransaction {
+                                    if (!buildConsumed) {
+                                        buildConsumed = true
+                                        Promise.of(transaction)
+                                    } else {
+                                        buildTransaction()
+                                    }
+                                }
+                                .doOnResolved { storage.advanceSequence(accountId) }
+                                .flatMap { submittedTransaction ->
+                                    storage
+                                        .insertNewTransactionInStorage(
+                                            accountId,
+                                            submittedTransaction
+                                        )
+                                        .map { submittedTransaction.asKinPayments() }
+                                }
+                                .doOnResolved {
+                                    // If we have an active stream then we rely on that update for balance changes
+                                    if (accountStream == null) {
+                                        storeAndNotifyOfBalanceUpdate(expectedNewBalance)
+                                    }
+                                }
                         }
                 }
         )
     }
 
+    private data class SourceAccountSigningData(
+        val nonce: Long,
+        val ownerKey: Key.PrivateKey,
+        val sourceKey: Key.PublicKey
+    )
+
     override fun sendKinPayments(
         payments: List<KinPaymentItem>,
-        memo: KinMemo
+        memo: KinMemo,
+        sourceAccountSpec: AccountSpec,
+        destinationAccountSpec: AccountSpec,
     ): Promise<List<KinPayment>> {
         log.log("sendKinPayments")
-        val MAX_ATTEMPTS = 2
-        fun attempt(number: Int) =
-            getAccount()
-                .flatMap {
-                    calculateFee(payments.size).flatMap { fee ->
-                        service.buildAndSignTransaction(it, payments, memo, fee)
+        val MAX_ATTEMPTS = 6
+        val FIXED_ATTEMPTS = 2
+        var attemptCount = 0
+        val invalidAccountErrorRetryStrategy =
+            BackoffStrategy.combine(BackoffStrategy.Fixed(
+                after = 3000,
+                maxAttempts = FIXED_ATTEMPTS
+            ), BackoffStrategy.ExponentialIncrease(
+                initial = 275,
+                multiplier = 2.0,
+                jitter = 1.0,
+                maxAttempts = MAX_ATTEMPTS - FIXED_ATTEMPTS,
+                maximumWaitTime = 60000
+            ))
+
+        fun buildAttempt(error: Throwable? = null): Promise<KinTransaction> {
+            if (error == null) {
+                // Resetting attempts (likely KinService api upgrade)
+                attemptCount = 0
+                invalidAccountErrorRetryStrategy.reset()
+            }
+            val sourceAccountPromise = getAccount()
+                .flatMap { account ->
+                    println("account.accounts.isEmpty(): ${account.tokenAccounts.isEmpty()}")
+                    if ((attemptCount == 0 && account.tokenAccounts.isEmpty()) || sourceAccountSpec == AccountSpec.Exact) {
+                        Promise.of(
+                            SourceAccountSigningData(
+                                (account.status as? KinAccount.Status.Registered)?.sequence ?: 0,
+                                account.key as Key.PrivateKey,
+                                account.key.asPublicKey()
+                            )
+                        )
+                    } else {
+                        service.resolveTokenAccounts(accountId)
+                            .flatMap {
+                                storage.updateAccountInStorage(account.copy(tokenAccounts = it))
+                            }.map { resolvedAccount ->
+                                SourceAccountSigningData(
+                                    (resolvedAccount.status as? KinAccount.Status.Registered)?.sequence
+                                        ?: 0,
+                                    resolvedAccount.key as Key.PrivateKey,
+                                    resolvedAccount.tokenAccounts.firstOrNull()
+                                        ?: resolvedAccount.key.asPublicKey()
+                                )
+                            }
                     }
                 }
-                .flatMap(::sendKinTransaction)
-                .workOn(executors.parallelIO)
 
-        return Promise.create { resolve, reject ->
-            var attemptNumber = 0
-            attempt(attemptNumber)
-                .then(
-                    resolve,
-                    { error ->
-                        if (attemptNumber >= MAX_ATTEMPTS) {
-                            reject(error)
-                        } else {
-                            when (error) {
-                                is KinService.FatalError.BadSequenceNumberInRequest -> {
-                                    service.getAccount(accountId)
+            val paymentItemsPromise =
+                if (attemptCount == 0 || destinationAccountSpec == AccountSpec.Exact) {
+                    Promise.of(payments)
+                } else {
+                    Promise.allAny(
+                        *payments.map { paymentItem ->
+                            service.resolveTokenAccounts(paymentItem.destinationAccount)
+                                .map {
+                                    paymentItem.copy(
+                                        destinationAccount = it.first().asKinAccountId()
+                                    )
+                                }
+                                .onErrorResumeNext { Promise.of(paymentItem) }
+                        }.toTypedArray()
+                    )
+                }
+
+            return sourceAccountPromise.flatMap { accountData ->
+                paymentItemsPromise.flatMap {
+                    attemptCount++
+                    calculateFee(payments.size).flatMap { fee ->
+                        service.buildAndSignTransaction(
+                            accountData.ownerKey,
+                            accountData.sourceKey,
+                            accountData.nonce,
+                            it,
+                            memo,
+                            fee
+                        )
+                    }
+                }
+            }
+        }
+
+        fun attempt(error: Throwable? = null): Promise<List<KinPayment>> {
+            log.log { "attempt: $attemptCount" }
+            return if (attemptCount >= MAX_ATTEMPTS) {
+                Promise.error(error!!)
+            } else {
+                Promise
+                    .defer { sendKinTransaction { buildAttempt(error) } }
+                    .workOn(executors.parallelIO)
+                    .onErrorResumeNext { error ->
+                        when (error) {
+                            is KinService.FatalError.BadSequenceNumberInRequest -> {
+                                if ((service as KinServiceWrapper).metaServiceApi.configuredMinApi == 4) {
+                                    service.invalidateBlockhashCache()
+                                    attempt(error)
+                                } else {
+                                    getAccount(true)
                                         .flatMap { storage.updateAccountInStorage(it) }
-                                        .then({
-                                            attempt(++attemptNumber)
-                                                .then(resolve, { reject.invoke(it) })
-                                        }, { reject.invoke(it) })
-
-                                }
-                                is KinService.FatalError.InsufficientFeeInRequest -> {
-                                    service.getMinFee()
-                                        .flatMap { storage.setMinFee(it) }
-                                        .then({
-                                            attempt(++attemptNumber)
-                                                .then(resolve, { reject.invoke(it) })
-                                        }, { reject.invoke(it) })
-                                }
-                                else -> {
-                                    reject.invoke(error)
+                                        .flatMap { attempt(error) }
                                 }
                             }
+                            is KinService.FatalError.InsufficientFeeInRequest -> {
+                                service.getMinFee()
+                                    .flatMap { storage.setMinFee(it) }
+                                    .flatMap { attempt(error) }
+                            }
+                            is KinService.FatalError.UnknownAccountInRequest -> {
+                                val delay = invalidAccountErrorRetryStrategy.nextDelay()
+                                log.log("waiting $delay ms...")
+                                Thread.sleep(delay)
+                                attempt(error)
+                            }
+                            else -> Promise.error(error)
                         }
                     }
-                )
+            }
         }
+
+        return attempt()
     }
 
     // Idiomatic Variants of Primary Functions
@@ -640,6 +752,25 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
     fun maybeFetchAccountDetails(): Promise<KinAccount> =
         service.getAccount(accountId)
             .flatMap { storage.updateAccountInStorage(it) }
+            .onErrorResumeNext(KinService.FatalError.ItemNotFound.javaClass) {
+                service.resolveTokenAccounts(accountId)
+                    .flatMap { accounts ->
+                        val maybeResolvedAccountId =
+                            accounts.firstOrNull()?.asKinAccountId() ?: accountId
+                        service.getAccount(maybeResolvedAccountId)
+                            .map {
+                                if (maybeResolvedAccountId != accountId) {
+                                    // b/c we want to update our on hand account with the resolved accountInfo details on solana
+                                    it.copy(
+                                        id = accountId,
+                                        key = Key.PublicKey(accountId.value),
+                                        tokenAccounts = accounts,
+                                    )
+                                } else it
+                            }
+                            .flatMap { storage.updateAccountInStorage(it) }
+                    }
+            }
 
     private val lifecycle = DisposeBag()
     internal var accountStream: Observer<KinAccount>? = null
@@ -783,7 +914,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
             .doOnResolved { paymentsSubject.onNext(it.asKinPayments(true)) }
 
     protected fun fetchUpdatedBalance(): Promise<KinBalance> {
-        return service.getAccount(accountId)
+        return getAccount(true)
             .flatMap { storage.updateAccountInStorage(it) }
             .map { it.balance }
             .doOnResolved { balanceSubject.onNext(it) }

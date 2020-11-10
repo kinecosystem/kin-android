@@ -24,6 +24,8 @@ interface Storage {
 
     fun removeAllInvoices(account: KinAccount.Id): Boolean
 
+    fun removeServiceConfig(): Boolean
+
     fun getTransactions(key: KinAccount.Id): KinTransactions?
 
     fun getOrCreateCID(): String
@@ -76,4 +78,10 @@ interface Storage {
     fun getMinFee(): Promise<Optional<QuarkAmount>>
 
     fun deleteAllStorage(accountId: KinAccount.Id): Promise<Boolean>
+
+    fun deleteAllStorage(): Promise<Boolean>
+
+    fun setMinApiVersion(apiVersion: Int): Promise<Int>
+
+    fun getMinApiVersion(): Promise<Optional<Int>>
 }

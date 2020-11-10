@@ -33,7 +33,7 @@ class DefaultHorizonKinTransactionWhitelistingApiTest {
             KinTransaction.RecordType.InFlight(System.currentTimeMillis())
         )
         val signedTransactionBase64String =
-            Base64.encodeBase64String(signedTransaction.envelopeXdrBytes)!!
+            Base64.encodeBase64String(signedTransaction.bytesValue)!!
 
         sut.whitelistTransaction(
             KinTransactionWhitelistingApi.WhitelistTransactionRequest(

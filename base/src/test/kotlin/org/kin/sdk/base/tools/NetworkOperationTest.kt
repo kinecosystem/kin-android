@@ -22,7 +22,10 @@ class NetworkOperationTest {
     @Before
     fun setUp() {
         sut =
-            NetworkOperationsHandlerImpl(shouldRetryError = { true }, logger = KinLoggerFactoryImpl(true))
+            NetworkOperationsHandlerImpl(
+                shouldRetryError = { true },
+                logger = KinLoggerFactoryImpl(true)
+            )
     }
 
     @Test
@@ -37,17 +40,17 @@ class NetworkOperationTest {
                 NetworkOperation(
                     onCompleted,
                     backoffStrategy = testBackupStrategy()
-                ) { it(1) })
+                ) { callback, _ -> callback(1) })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     backoffStrategy = testBackupStrategy()
-                ) { it(2) })
+                ) { callback, _ -> callback(2) })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     backoffStrategy = testBackupStrategy()
-                ) { it(3) })
+                ) { callback, _ -> callback(3) })
         }
         assertEquals(listOf(1, 2, 3), values)
     }
@@ -68,22 +71,22 @@ class NetworkOperationTest {
                     onCompleted,
                     id = "1",
                     backoffStrategy = testBackupStrategy()
-                ) {
+                ) { callback, _ ->
                     if (i++ % 3 != 0) throw RuntimeException()
-                    else it(1)
+                    else callback(1)
                 })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     id = "2",
                     backoffStrategy = testBackupStrategy()
-                ) { it(2) })
+                ) { callback, _ -> callback(2) })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     id = "3",
                     backoffStrategy = testBackupStrategy()
-                ) { it(3) })
+                ) { callback, _ -> callback(3) })
         }
         assertEquals(setOf(1, 2, 3), values)
     }
@@ -104,22 +107,22 @@ class NetworkOperationTest {
                     onCompleted,
                     id = "1",
                     backoffStrategy = BackoffStrategy.Never()
-                ) {
+                ) { callback, _ ->
                     if (i++ % 3 != 0) throw RuntimeException()
-                    else it(1)
+                    else callback(1)
                 })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     id = "2",
                     backoffStrategy = BackoffStrategy.Never()
-                ) { it(2) })
+                ) { callback, _ -> callback(2) })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     id = "3",
                     backoffStrategy = BackoffStrategy.Never()
-                ) { it(3) })
+                ) { callback, _ -> callback(3) })
         }
         assertEquals(setOf(2, 3), values)
     }
@@ -140,22 +143,22 @@ class NetworkOperationTest {
                     onCompleted,
                     id = "1",
                     backoffStrategy = BackoffStrategy.Fixed(1)
-                ) {
+                ) { callback, _ ->
                     if (i++ % 3 != 0) throw RuntimeException()
-                    else it(1)
+                    else callback(1)
                 })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     id = "2",
                     backoffStrategy = BackoffStrategy.Fixed(1)
-                ) { it(2) })
+                ) { callback, _ -> callback(2) })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     id = "3",
                     backoffStrategy = BackoffStrategy.Fixed(1)
-                ) { it(3) })
+                ) { callback, _ -> callback(3) })
         }
         assertEquals(setOf(1, 2, 3), values)
     }
@@ -175,23 +178,131 @@ class NetworkOperationTest {
                 NetworkOperation(
                     onCompleted,
                     id = "1",
-                    backoffStrategy = BackoffStrategy.Custom({ 5 })
-                ) {
+                    backoffStrategy = BackoffStrategy.Custom({ 5 }, {})
+                ) { callback, _ ->
                     if (i++ % 3 != 0) throw RuntimeException()
-                    else it(1)
+                    else callback(1)
                 })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     id = "2",
-                    backoffStrategy = BackoffStrategy.Custom({ 5 })
-                ) { it(2) })
+                    backoffStrategy = BackoffStrategy.Custom({ 5 }, {})
+                ) { callback, _ -> callback(2) })
             sut.queueOperation(
                 NetworkOperation(
                     onCompleted,
                     id = "3",
-                    backoffStrategy = BackoffStrategy.Custom({ 5 })
-                ) { it(3) })
+                    backoffStrategy = BackoffStrategy.Custom({ 5 }, {})
+                ) { callback, _ -> callback(3) })
+        }
+        assertEquals(setOf(1, 2, 3), values)
+    }
+
+    @Test
+    fun testRetry_exponentialIncrease() {
+        val values = mutableSetOf<Int>()
+        latchOperation(3, timeoutSeconds = 10) { latch ->
+            val onCompleted: (Int) -> Unit = {
+                synchronized(values) {
+                    values.add(it)
+                    latch.countDown()
+                }
+            }
+            var i = 1
+            sut.queueOperation(
+                NetworkOperation(
+                    onCompleted,
+                    id = "1",
+                    backoffStrategy = BackoffStrategy.ExponentialIncrease(
+                        initial = 10, // 10 millis
+                        multiplier = 2.0,
+                        jitter = 0.5,
+                        maximumWaitTime = 5000, // 5 Seconds
+                        maxAttempts = 3
+                    )
+                ) { callback, _ ->
+                    if (i++ % 3 != 0) throw RuntimeException()
+                    else callback(1)
+                })
+            sut.queueOperation(
+                NetworkOperation(
+                    onCompleted,
+                    id = "2",
+                    backoffStrategy = BackoffStrategy.ExponentialIncrease(
+                        initial = 10, // 10 millis
+                        multiplier = 2.0,
+                        jitter = 0.5,
+                        maximumWaitTime = 5000, // 5 Seconds
+                        maxAttempts = 3
+                    )
+                ) { callback, _ -> callback(2) })
+            sut.queueOperation(
+                NetworkOperation(
+                    onCompleted,
+                    id = "3",
+                    backoffStrategy = BackoffStrategy.ExponentialIncrease(
+                        initial = 10, // 10 millis
+                        multiplier = 2.0,
+                        jitter = 0.5,
+                        maximumWaitTime = 5000, // 5 Seconds
+                        maxAttempts = 3
+                    )
+                ) { callback, _ -> callback(3) })
+        }
+        assertEquals(setOf(1, 2, 3), values)
+    }
+
+    @Test
+    fun testRetry_strategyCombine() {
+        val values = mutableSetOf<Int>()
+        latchOperation(3, timeoutSeconds = 10) { latch ->
+            val onCompleted: (Int) -> Unit = {
+                synchronized(values) {
+                    values.add(it)
+                    latch.countDown()
+                }
+            }
+            var i = 1
+            sut.queueOperation(
+                NetworkOperation(
+                    onCompleted,
+                    id = "1",
+                    backoffStrategy = BackoffStrategy.combine(BackoffStrategy.Custom({ 5 }, {}), BackoffStrategy.ExponentialIncrease(
+                        initial = 10, // 10 millis
+                        multiplier = 2.0,
+                        jitter = 0.5,
+                        maximumWaitTime = 5000, // 5 Seconds
+                        maxAttempts = 3
+                    ))
+                ) { callback, _ ->
+                    if (i++ % 3 != 0) throw RuntimeException()
+                    else callback(1)
+                })
+            sut.queueOperation(
+                NetworkOperation(
+                    onCompleted,
+                    id = "2",
+                    backoffStrategy = BackoffStrategy.ExponentialIncrease(
+                        initial = 10, // 10 millis
+                        multiplier = 2.0,
+                        jitter = 0.5,
+                        maximumWaitTime = 5000, // 5 Seconds
+                        maxAttempts = 3
+                    )
+                ) { callback, _ -> callback(2) })
+            sut.queueOperation(
+                NetworkOperation(
+                    onCompleted,
+                    id = "3",
+                    backoffStrategy = BackoffStrategy.ExponentialIncrease(
+                        initial = 10, // 10 millis
+                        multiplier = 2.0,
+                        jitter = 0.5,
+                        maximumWaitTime = 5000, // 5 Seconds
+                        maxAttempts = 3
+                    )
+                ) { callback, _ -> callback(3) })
         }
         assertEquals(setOf(1, 2, 3), values)
     }
@@ -218,7 +329,7 @@ class NetworkOperationTest {
                         maximumWaitTime = 5000, // 5 Seconds
                         maxAttempts = maxAttempts
                     )
-                ) {
+                ) { _, _ ->
                     throw RuntimeException()
                         .also { latch.countDown() }
                 }
@@ -242,7 +353,7 @@ class NetworkOperationTest {
                     }
                 },
                 timeout = 2000
-            ) {
+            ) { _, _ ->
                 throw RuntimeException()
             })
         }

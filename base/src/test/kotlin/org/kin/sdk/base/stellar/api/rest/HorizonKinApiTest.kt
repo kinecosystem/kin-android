@@ -335,7 +335,7 @@ class HorizonKinApiTest {
                 )
             )
 
-        sut.submitTransaction(KinTransactionApi.SubmitTransactionRequest(expected.envelopeXdrBytes)) {
+        sut.submitTransaction(KinTransactionApi.SubmitTransactionRequest(expected.bytesValue)) {
             assertEquals(KinTransactionApi.SubmitTransactionResponse.Result.Ok, it.result)
             assertEquals(expected.paymentOperations, it.transaction?.paymentOperations)
         }
@@ -1324,7 +1324,7 @@ class HorizonKinApiTest {
                 "AAAAADdPtg+a9UnRk4LcC8Dj5g6J9fCWY/IiQ4ROk6sRzE0MAAAAZABZWrAAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAABAAAACHRlc3RNZW1vAAAAAQAAAAAAAAABAAAAADdPtg+a9UnRk4LcC8Dj5g6J9fCWY/IiQ4ROk6sRzE0MAAAAAAAAAAAAu67gAAAAAAAAAAERzE0MAAAAQB98hgcZ1AWvtdXA9HhtXb/1+SccGFA0xgtN55IECL9rGvCf+s4PQnIOhGQ4yxC8KoQ2PtNJhd9Ipr/4g0f87w0=",
                 KinTransaction.RecordType.InFlight(System.currentTimeMillis())
             )
-            assertTrue { expectedTxn.envelopeXdrBytes.contentEquals(value?.envelopeXdrBytes!!) }
+            assertTrue { expectedTxn.bytesValue.contentEquals(value?.bytesValue!!) }
         }.disposedBy(lifecycle)
 
         lifecycle.dispose()

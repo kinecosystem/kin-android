@@ -3,7 +3,6 @@ package org.kin.sdk.demo.viewmodel.modern
 import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.KinAccountContextImpl
 import org.kin.sdk.base.ObservationMode
-import org.kin.sdk.base.models.Invoice
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.KinPayment
@@ -54,7 +53,7 @@ class ModernWalletViewModel(
     private data class CopyAddressActionViewModel(val kinAccountContext: KinAccountContext) :
         WalletViewModel.CopyAddressActionViewModel {
         override val publicAddress: String
-            get() = kinAccountContext.accountId.encodeAsString()
+            get() = kinAccountContext.accountId.stellarBase32Encode()
     }
 
     private inner class FundActionViewModel : WalletViewModel.FundActionViewModel {
@@ -82,14 +81,14 @@ class ModernWalletViewModel(
 
     override fun getDefaultState(): WalletViewModel.State = WalletViewModel.State(
         WalletViewModel.WalletHeaderViewModel(
-            kinAccountContext.accountId.encodeAsString(),
+            kinAccountContext.accountId.stellarBase32Encode(),
         null
         ),
         WalletViewModel.WalletStatus.Unknown,
         listOf(
             CopyAddressActionViewModel(kinAccountContext),
             SendTransactionActionViewModel(navigator, args),
-            InvoicesActionActionViewModel(navigator, kinAccountContext.accountId.encodeAsString()),
+            InvoicesActionActionViewModel(navigator, kinAccountContext.accountId.stellarBase32Encode()),
             LatencyTestTransactionActionViewModel(navigator, args),
             FundActionViewModel(),
             DeleteWalletActionViewModel(kinAccountContext)
@@ -145,9 +144,9 @@ class ModernWalletViewModel(
             .add { payments ->
                 updateState { previousState ->
                     previousState.copy(paymentHistoryItems = payments.map {
-                        val destination = it.destinationAccountId.encodeAsString()
-                        val source = it.sourceAccountId.encodeAsString()
-                        val incoming = destination == kinAccountContext.accountId.encodeAsString()
+                        val destination = it.destinationAccountId.stellarBase32Encode()
+                        val source = it.sourceAccountId.stellarBase32Encode()
+                        val incoming = destination == kinAccountContext.accountId.stellarBase32Encode()
                         val amount = if (incoming) it.amount.value else it.amount.value.negate()
                         val address = if (incoming) source else destination
                         val memo = if (it.invoice != null) {

@@ -25,6 +25,7 @@ interface IKeyPair {
     val publicKey: ByteArray
     val signatureHint: SignatureHint
     val xdrPublicKey: org.kin.stellarfork.xdr.PublicKey
+
     val xdrSignerKey: SignerKey
 
     /**
@@ -46,7 +47,6 @@ interface IKeyPair {
      * @param data
      */
     fun signDecorated(data: ByteArray?): DecoratedSignature
-
     /**
      * Verify the provided data and signature match this keypair's public key.
      *
@@ -75,7 +75,7 @@ data class KeyPair
  * @param publicKey
  */
 constructor(
-    private val impl: IKeyPair
+    private val impl: IKeyPair,
 ) : IKeyPair {
     /**
      * Returns true if this Keypair is capable of signing

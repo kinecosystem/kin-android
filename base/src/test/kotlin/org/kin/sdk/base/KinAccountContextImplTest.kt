@@ -1,3 +1,4 @@
+
 package org.kin.sdk.base
 
 import com.nhaarman.mockitokotlin2.any
@@ -13,7 +14,10 @@ import com.nhaarman.mockitokotlin2.whenever
 import org.junit.Before
 import org.junit.Test
 import org.kin.sdk.base.models.AppIdx
+import org.kin.sdk.base.models.AppInfo
+import org.kin.sdk.base.models.AppUserCreds
 import org.kin.sdk.base.models.Invoice
+import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
@@ -24,14 +28,18 @@ import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.LineItem
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
+import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.merge
+import org.kin.sdk.base.models.toKeyPair
 import org.kin.sdk.base.models.toKin
+import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransactions
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.storage.Storage
 import org.kin.sdk.base.tools.DisposeBag
 import org.kin.sdk.base.tools.ExecutorServices
@@ -55,13 +63,13 @@ import kotlin.test.assertTrue
 class KinAccountContextImplTest {
 
     companion object {
-        val registeredAccount = TestUtils.newKinAccount()
+        val registeredAccount = TestUtils.newSigningKinAccount()
             .updateStatus(KinAccount.Status.Registered(1234)).copy(
                 balance = KinBalance(KinAmount(1000))
             )
         val registeredAccount2 = TestUtils.newSigningKinAccount()
             .updateStatus(KinAccount.Status.Registered(1234))
-        val unregisteredAccount = TestUtils.newKinAccount()
+        val unregisteredAccount = TestUtils.newSigningKinAccount()
 
         val fee = QuarkAmount(100)
 
@@ -96,6 +104,7 @@ class KinAccountContextImplTest {
         }
         mockStorage = mock {
             on { getMinFee() } doReturn Promise.of(Optional.of(fee))
+            on { getMinApiVersion() } doReturn Promise.of(Optional.empty())
         }
 
         mockService2 = mock {
@@ -104,21 +113,60 @@ class KinAccountContextImplTest {
         }
         mockStorage2 = mock {
             on { getMinFee() } doReturn Promise.of(Optional.of(fee))
+            on { getMinApiVersion() } doReturn Promise.of(Optional.empty())
         }
 
         sut = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+                .setAppInfoProvider(object : AppInfoProvider {
+                    override val appInfo: AppInfo by lazy {
+                        AppInfo(
+                            AppIdx(0),
+                            TestUtils.newKinAccount().id,
+                            "TestApp",
+                            0
+                        )
+                    }
+
+                    override fun getPassthroughAppUserCredentials(): AppUserCreds {
+                        return AppUserCreds("abcd", "1212")
+                    }
+                })
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
                 .setStorage(mockStorage)
         ).useExistingAccount(registeredAccount.id).build()
 
         sut2 = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+                .setAppInfoProvider(object : AppInfoProvider {
+                    override val appInfo: AppInfo by lazy {
+                        AppInfo(
+                            AppIdx(0),
+                            TestUtils.newKinAccount().id,
+                            "TestApp",
+                            0
+                        )
+                    }
+
+                    override fun getPassthroughAppUserCredentials(): AppUserCreds {
+                        return AppUserCreds("abcd", "1212")
+                    }
+                })
                 .setKinService(mockService2)
                 .setExecutorServices(excecutors)
                 .setStorage(mockStorage2)
         ).useExistingAccount(registeredAccount2.id).build()
+
+        doAnswer {
+            val accountId: KinAccount.Id = it.arguments.first() as KinAccount.Id
+            Promise.of(listOf(accountId.toKeyPair().asPublicKey()))
+        }.whenever(mockService).resolveTokenAccounts(any())
+
+        verify(mockStorage).getAllAccountIds()
+        verify(mockStorage2).getAllAccountIds()
+        verify(mockStorage).getMinApiVersion()
+        verify(mockStorage2).getMinApiVersion()
     }
 
     @Test
@@ -158,7 +206,7 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.SDKUpgradeRequired)
-        }.whenever(mockService).createAccount(eq(registeredAccount.id))
+        }.whenever(mockService).createAccount(eq(registeredAccount.id), eq(registeredAccount.key as Key.PrivateKey))
 
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.SDKUpgradeRequired)
@@ -169,7 +217,7 @@ class KinAccountContextImplTest {
             assertNull(value)
 
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
-            verify(mockService).createAccount(any())
+            verify(mockService).createAccount(any(), any())
             verifyZeroInteractions(mockService)
             verifyNoMoreInteractions(mockStorage)
         }
@@ -220,6 +268,44 @@ class KinAccountContextImplTest {
     }
 
     @Test
+    fun getSigningAccount_force_fetch_not_found_requires_resolve() {
+        doAnswer {
+            Promise.of(Optional.of(registeredAccount))
+        }.whenever(mockStorage).getStoredAccount(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.error<KinAccount>(KinService.FatalError.ItemNotFound)
+        }.whenever(mockService).getAccount(eq(registeredAccount.id))
+
+        val newKey = TestUtils.newPublicKey()
+        doAnswer {
+            Promise.of(listOf(newKey))
+        }.whenever(mockService).resolveTokenAccounts(eq(registeredAccount.id))
+
+        doAnswer {
+            Promise.of(KinAccount(newKey).copy(status = KinAccount.Status.Registered(0),balance = KinBalance(KinAmount(300))))
+        }.whenever(mockService).getAccount(eq(newKey.asKinAccountId()))
+
+        doAnswer {
+            Promise.of(registeredAccount.copy(status = KinAccount.Status.Registered(0), tokenAccounts = listOf(newKey), balance = KinBalance(KinAmount(300))))
+        }.whenever(mockStorage).updateAccountInStorage(any())
+
+        sut.getAccount(true).test {
+            assertNull(error)
+            assertNotNull(value)
+            assertEquals(registeredAccount.copy(status = KinAccount.Status.Registered(0), tokenAccounts = listOf(newKey), balance = KinBalance(KinAmount(300))), value)
+
+            verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockService).getAccount(eq(registeredAccount.id))
+            verify(mockStorage).updateAccountInStorage(any())
+            verify(mockService).getAccount(eq(newKey.asKinAccountId()))
+            verify(mockService).resolveTokenAccounts(eq(registeredAccount.id))
+            verifyZeroInteractions(mockService)
+            verifyNoMoreInteractions(mockStorage)
+        }
+    }
+
+    @Test
     fun getSigningAccount_needs_create_success() {
         val accountId = registeredAccount.id
         val unregisteredAccount = registeredAccount.updateStatus(KinAccount.Status.Unregistered)
@@ -229,7 +315,7 @@ class KinAccountContextImplTest {
             ))
         doAnswer {
             Promise.of(registeredAccountNoPrivKey)
-        }.whenever(mockService).createAccount(eq(accountId))
+        }.whenever(mockService).createAccount(eq(accountId), eq(registeredAccount.key as Key.PrivateKey))
 
         doAnswer {
             Promise.of(Optional.of(unregisteredAccount))
@@ -244,7 +330,7 @@ class KinAccountContextImplTest {
             assertNotNull(value)
             assertEquals(registeredAccount, value)
 
-            verify(mockService).createAccount(eq(accountId))
+            verify(mockService).createAccount(eq(accountId), eq(registeredAccount.key as Key.PrivateKey))
             verify(mockStorage).getStoredAccount(eq(accountId))
             verify(mockStorage).updateAccount(eq(registeredAccount))
             verifyNoMoreInteractions(mockService)
@@ -262,7 +348,7 @@ class KinAccountContextImplTest {
             ))
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.PermanentlyUnavailable)
-        }.whenever(mockService).createAccount(eq(accountId))
+        }.whenever(mockService).createAccount(eq(accountId), eq(registeredAccount.key as Key.PrivateKey))
 
         doAnswer {
             Promise.of(registeredAccountNoPrivKey)
@@ -285,10 +371,10 @@ class KinAccountContextImplTest {
             assertNotNull(value)
             assertEquals(registeredAccount, value)
 
-            verify(mockService).createAccount(eq(accountId))
+            verify(mockService).createAccount(eq(accountId), eq(registeredAccount.key as Key.PrivateKey))
             verify(mockService).getAccount(eq(accountId))
             verify(mockStorage).getStoredAccount(eq(accountId))
-            verify(mockStorage).updateAccountInStorage(eq(registeredAccount))
+            verify(mockStorage).updateAccountInStorage(eq(registeredAccountNoPrivKey))
             verifyNoMoreInteractions(mockService)
             verifyNoMoreInteractions(mockStorage)
         }
@@ -327,9 +413,9 @@ class KinAccountContextImplTest {
         }.apply {
             assertNull(error)
             assertEquals(listOf(KinBalance(KinAmount(1000)), KinBalance(KinAmount(123))), values)
-            verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).getAccount(eq(registeredAccount.id))
-            verify(mockStorage).updateAccountInStorage(eq(accountFromService))
+            verify(mockStorage,times(2)).updateAccountInStorage(eq(accountFromService))
         }
     }
 
@@ -358,9 +444,9 @@ class KinAccountContextImplTest {
         }.apply {
             assertNull(error)
             assertEquals(listOf(KinBalance(KinAmount(1000)), KinBalance(KinAmount(123))), values)
-            verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).getAccount(eq(registeredAccount.id))
-            verify(mockStorage).updateAccountInStorage(eq(accountFromService))
+            verify(mockStorage, times(2)).updateAccountInStorage(eq(accountFromService))
         }
     }
 
@@ -397,9 +483,9 @@ class KinAccountContextImplTest {
         }.apply {
             assertNull(error)
             assertEquals(listOf(KinBalance(KinAmount(1000)), KinBalance(KinAmount(123))), values)
-            verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).getAccount(eq(registeredAccount.id))
-            verify(mockStorage).updateAccountInStorage(eq(accountFromService))
+            verify(mockStorage, times(2)).updateAccountInStorage(eq(accountFromService))
         }
     }
 
@@ -410,11 +496,11 @@ class KinAccountContextImplTest {
         val expectedPayments = latestKinTransactions.asKinPayments()
 
         doAnswer {
-            Promise.of(latestKinTransactions)
+            Promise.of<List<KinTransaction>>(latestKinTransactions)
         }.whenever(mockService).getLatestTransactions(eq(registeredAccount.id))
 
         doAnswer {
-            Promise.of(latestKinTransactions)
+            Promise.of<List<KinTransaction>>(latestKinTransactions)
         }.whenever(mockStorage)
             .upsertNewTransactionsInStorage(eq(registeredAccount.id), eq(latestKinTransactions))
 
@@ -440,7 +526,7 @@ class KinAccountContextImplTest {
     @Test
     fun watchPayments_noneInStorage_fetchFromService_success2() {
 
-        val latestKinTransactions = listOf(historicalKinTransaction)
+        val latestKinTransactions: List<KinTransaction> = listOf(historicalKinTransaction)
         val expectedPayments = latestKinTransactions.asKinPayments()
 
         doAnswer {
@@ -483,12 +569,12 @@ class KinAccountContextImplTest {
     fun sendKinPayment_success() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -503,15 +589,19 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
         )
 
         doAnswer {
+            val buildAndSign = it.getArgument(0) as (() -> Promise<KinTransaction>)
+            buildAndSign()
             Promise.of(responseTransaction)
-        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+        }.whenever(mockService).buildSignAndSubmitTransaction(any())
 
         doAnswer {
             Promise.of(listOf(responseTransaction))
@@ -549,14 +639,17 @@ class KinAccountContextImplTest {
 
             verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).buildAndSignTransaction(
-                eq(registeredAccount),
+                eq(registeredAccount.key as Key.PrivateKey),
+                eq(registeredAccount.key.asPublicKey()),
+                eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
                 eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
                 eq(KinMemo.NONE),
                 eq(fee)
             )
             verify(mockService).canWhitelistTransactions()
             verify(mockStorage).getMinFee()
-            verify(mockService).submitTransaction(eq(transactionToBeSent))
+            val expectedTransactionToSubmit = {Promise.of(transactionToBeSent as KinTransaction)}
+            verify(mockService).buildSignAndSubmitTransaction(any())
             verify(mockStorage).advanceSequence(eq(registeredAccount.id))
             verify(mockStorage).insertNewTransactionInStorage(
                 eq(registeredAccount.id),
@@ -576,12 +669,12 @@ class KinAccountContextImplTest {
     fun payInvoice_success() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -606,11 +699,17 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id, Optional.of(invoice)))),
             eq(expectedMemo),
             eq(fee)
         )
+
+        doAnswer {
+            Promise.of(responseTransaction)
+        }.whenever(mockService).buildSignAndSubmitTransaction(any())
 
         doAnswer {
             Promise.of(responseTransaction)
@@ -652,14 +751,16 @@ class KinAccountContextImplTest {
 
             verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
             verify(mockService).buildAndSignTransaction(
-                eq(registeredAccount),
+                eq(registeredAccount.key as Key.PrivateKey),
+                eq(registeredAccount.key.asPublicKey()),
+                eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
                 eq(listOf(KinPaymentItem(KinAmount(123), destination.id, Optional.of(invoice)))),
                 eq(expectedMemo),
                 eq(fee)
             )
             verify(mockService).canWhitelistTransactions()
             verify(mockStorage).getMinFee()
-            verify(mockService).submitTransaction(eq(transactionToBeSent))
+            verify(mockService).buildSignAndSubmitTransaction(any())
             verify(mockStorage).advanceSequence(eq(registeredAccount.id))
             verify(mockStorage).insertNewTransactionInStorage(
                 eq(registeredAccount.id),
@@ -679,12 +780,12 @@ class KinAccountContextImplTest {
     fun sendMultipleKinPayments_success() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -699,7 +800,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -707,7 +810,7 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.of(responseTransaction)
-        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+        }.whenever(mockService).buildSignAndSubmitTransaction(any())
 
         doAnswer {
             Promise.of(registeredAccount)
@@ -764,12 +867,14 @@ class KinAccountContextImplTest {
 
         verify(mockStorage, times(6)).getStoredAccount(eq(registeredAccount.id))
         verify(mockService, times(3)).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
         )
-        verify(mockService, times(3)).submitTransaction(eq(transactionToBeSent))
+        verify(mockService, times(3)).buildSignAndSubmitTransaction(any())
         verify(mockStorage, times(3)).advanceSequence(eq(registeredAccount.id))
         verify(mockStorage, times(3)).insertNewTransactionInStorage(
             eq(registeredAccount.id),
@@ -790,12 +895,12 @@ class KinAccountContextImplTest {
     fun sendThreeKinPayments_with_bad_sequence_number_for_first_two() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -814,7 +919,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -823,6 +930,10 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(registeredAccount)
         }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount))
+
+        doAnswer {
+            Promise.of(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey())))
+        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey()))))
 
         doAnswer {
             Promise.of(listOf(responseTransaction))
@@ -839,7 +950,7 @@ class KinAccountContextImplTest {
             } else {
                 Promise.of(responseTransaction)
             }
-        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+        }.whenever(mockService).buildSignAndSubmitTransaction(any())
 
         val amountSpent = KinAmount(123)
         val updatedAccountWithNewBalance = registeredAccount.merge(
@@ -883,10 +994,12 @@ class KinAccountContextImplTest {
             assertEquals(responseTransaction.asKinPayments().first(), value)
         }
 
-        verify(mockStorage, times(10)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockStorage, times(12)).getStoredAccount(eq(registeredAccount.id))
         verify(mockService, times(2)).getAccount(eq(registeredAccount.id))
         verify(mockService, times(5)).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -894,10 +1007,10 @@ class KinAccountContextImplTest {
         verify(
             mockService,
             times(5)
-        ).submitTransaction(eq(transactionToBeSent)) // 5 due to 2 retries
+        ).buildSignAndSubmitTransaction(any()) // 5 due to 2 retries
         verify(mockStorage, times(3))
             .advanceSequence(eq(registeredAccount.id))
-        verify(mockStorage, times(2)).updateAccountInStorage(eq(registeredAccount))
+        verify(mockStorage, times(4)).updateAccountInStorage(eq(registeredAccount))
         verify(mockStorage, times(3)).insertNewTransactionInStorage(
             eq(registeredAccount.id),
             eq(responseTransaction)
@@ -909,6 +1022,9 @@ class KinAccountContextImplTest {
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
         verify(mockService, times(5)).canWhitelistTransactions()
         verify(mockStorage, times(5)).getMinFee()
+        verify(mockService, times(4)).resolveTokenAccounts(any())
+        verify(mockStorage, times(2)).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(
+            registeredAccount.key.asPublicKey()))))
         verifyNoMoreInteractions(mockService)
         verifyNoMoreInteractions(mockStorage)
     }
@@ -917,12 +1033,12 @@ class KinAccountContextImplTest {
     fun sendKinPayment_with_bad_sequence_number_max_tries() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -941,7 +1057,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -950,6 +1068,10 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(registeredAccount)
         }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount))
+
+        doAnswer {
+            Promise.of(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey())))
+        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey()))))
 
         doAnswer {
             Promise.of(listOf(responseTransaction))
@@ -962,7 +1084,7 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.error<KinTransaction>(KinService.FatalError.BadSequenceNumberInRequest)
-        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+        }.whenever(mockService).buildSignAndSubmitTransaction(any())
 
         val amountSpent = KinAmount(123)
         val updatedAccountWithNewBalance = registeredAccount.merge(
@@ -991,25 +1113,27 @@ class KinAccountContextImplTest {
             )
         }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
 
-        sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
+        sut.sendKinPayment(KinAmount(123), destination.id).test(1000) {
             assertEquals(KinService.FatalError.BadSequenceNumberInRequest, error)
         }
 
-        verify(mockStorage, times(4)).getStoredAccount(eq(registeredAccount.id))
-        verify(mockService, times(1)).getAccount(eq(registeredAccount.id))
-        verify(mockService, times(2)).buildAndSignTransaction(
-            eq(registeredAccount),
+        verify(mockStorage, times(18)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockService, times(6)).getAccount(eq(registeredAccount.id))
+        verify(mockService, times(6)).buildAndSignTransaction(
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
         )
         verify(
             mockService,
-            times(2)
-        ).submitTransaction(eq(transactionToBeSent)) // 2 due to 2 retries
+            times(6)
+        ).buildSignAndSubmitTransaction(any()) // 6 due to 6 retries
         verify(mockStorage, times(0))
             .advanceSequence(eq(registeredAccount.id))
-        verify(mockStorage, times(1)).updateAccountInStorage(eq(registeredAccount))
+        verify(mockStorage, times(12)).updateAccountInStorage(eq(registeredAccount))
         verify(mockStorage, times(0)).insertNewTransactionInStorage(
             eq(registeredAccount.id),
             eq(responseTransaction)
@@ -1019,8 +1143,11 @@ class KinAccountContextImplTest {
             eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(0)).getStoredTransactions(eq(registeredAccount.id))
-        verify(mockService, times(2)).canWhitelistTransactions()
-        verify(mockStorage, times(2)).getMinFee()
+        verify(mockService, times(6)).canWhitelistTransactions()
+        verify(mockStorage, times(6)).getMinFee()
+        verify(mockService, times(10)).resolveTokenAccounts(any())
+        verify(mockStorage, times(5)).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(
+            registeredAccount.key.asPublicKey()))))
         verifyNoMoreInteractions(mockService)
         verifyNoMoreInteractions(mockStorage)
     }
@@ -1029,12 +1156,12 @@ class KinAccountContextImplTest {
     fun sendKinPayment_with_unknown_error() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -1053,7 +1180,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1071,10 +1200,10 @@ class KinAccountContextImplTest {
         )
 
         var i = -1
-
         doAnswer {
             Promise.error<KinTransaction>(IllegalArgumentException("explosion!"))
-        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+        }.whenever(mockService).buildSignAndSubmitTransaction(any())
+
 
         val amountSpent = KinAmount(123)
         val updatedAccountWithNewBalance = registeredAccount.merge(
@@ -1110,7 +1239,9 @@ class KinAccountContextImplTest {
         verify(mockStorage, times(2)).getStoredAccount(eq(registeredAccount.id))
         verify(mockService, times(0)).getAccount(eq(registeredAccount.id))
         verify(mockService, times(1)).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1118,7 +1249,7 @@ class KinAccountContextImplTest {
         verify(
             mockService,
             times(1)
-        ).submitTransaction(eq(transactionToBeSent)) // 2 due to 2 retries
+        ).buildSignAndSubmitTransaction(any()) // 2 due to 2 retries
         verify(mockStorage, times(0))
             .advanceSequence(eq(registeredAccount.id))
         verify(mockStorage, times(0)).updateAccountInStorage(eq(registeredAccount))
@@ -1141,12 +1272,12 @@ class KinAccountContextImplTest {
     fun sendThreeKinPayments_with_insufficient_fee_for_first_two() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -1165,7 +1296,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1174,6 +1307,10 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(registeredAccount)
         }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount))
+
+        doAnswer {
+            Promise.of(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey())))
+        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey()))))
 
         doAnswer {
             Promise.of(listOf(responseTransaction))
@@ -1194,7 +1331,7 @@ class KinAccountContextImplTest {
             } else {
                 Promise.of(responseTransaction)
             }
-        }.whenever(mockService).submitTransaction(eq(transactionToBeSent))
+        }.whenever(mockService).buildSignAndSubmitTransaction(any())
 
         val amountSpent = KinAmount(123)
         val updatedAccountWithNewBalance = registeredAccount.merge(
@@ -1240,7 +1377,9 @@ class KinAccountContextImplTest {
 
         verify(mockStorage, times(10)).getStoredAccount(eq(registeredAccount.id))
         verify(mockService, times(5)).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1248,7 +1387,7 @@ class KinAccountContextImplTest {
         verify(
             mockService,
             times(5)
-        ).submitTransaction(eq(transactionToBeSent)) // 5 due to 2 retries
+        ).buildSignAndSubmitTransaction(any()) // 5 due to 2 retries
         verify(mockStorage, times(3))
             .advanceSequence(eq(registeredAccount.id))
         verify(mockService, times(2)).getMinFee()
@@ -1264,6 +1403,9 @@ class KinAccountContextImplTest {
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
         verify(mockService, times(5)).canWhitelistTransactions()
         verify(mockStorage, times(5)).getMinFee()
+        verify(mockService, times(4)).resolveTokenAccounts(any())
+        verify(mockStorage, times(2)).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(
+            registeredAccount.key.asPublicKey()))))
         verifyNoMoreInteractions(mockService)
         verifyNoMoreInteractions(mockStorage)
     }
@@ -1272,19 +1414,19 @@ class KinAccountContextImplTest {
     fun sendMultipleKinPayments_receiveMultiplePayments_requestNextPage_success() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
             ),
             networkEnvironment
         )
-        val historicalTransaction1 = KinTransaction(
+        val historicalTransaction1 = StellarKinTransaction(
             Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAABhqAAAAAAAAAAATVwrhgAAABAf3uEfHbs4JpaOWthX9wTq0PetHyX8WexBA4nx8cQDljAkcW/9n+4DWyAGoHQKebIRg1M6zWWg0RTqhuQ4hyfAQ==")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1293,7 +1435,7 @@ class KinAccountContextImplTest {
             ),
             networkEnvironment
         )
-        val historicalTransaction2 = KinTransaction(
+        val historicalTransaction2 = StellarKinTransaction(
             Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAADDUAAAAAAAAAAATVwrhgAAABAGeunbexebrTLt7dEdXeFFlig7dWVNVYJyXa/W7TB/thjE67fTkmhZbW12fmTvvuPg6sCNqnVfNDdL79UdlIdDg==")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1302,7 +1444,7 @@ class KinAccountContextImplTest {
             ),
             networkEnvironment
         )
-        val historicalTransaction3 = KinTransaction(
+        val historicalTransaction3 = StellarKinTransaction(
             Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAADAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAAEk+AAAAAAAAAAATVwrhgAAABAVfNN1H1DykJlsRsBYXo+6MQEuLSVRiw6scxe4fEsUnYjaAPYv6vajfThorq+xMtrd1ZIsR6lkidKJ7ZFe8FFBw==\n")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1311,7 +1453,7 @@ class KinAccountContextImplTest {
             ),
             networkEnvironment
         )
-        val historicalTransaction4 = KinTransaction(
+        val historicalTransaction4 = StellarKinTransaction(
             Base64.decodeBase64("AAAAAB31EZCHw5EX1YTCqquo6lPyqLnZw4oKNmFwaSlq3MUEAAAAZABYP0QAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAO8BR2Aqchj3Jk2d2qmfg6dE6Z3m9ooNDiPW3FTVwrhgAAAAAAAAAAAAGGoAAAAAAAAAAAWrcxQQAAABAVlo9avGN5377ziEKULCDYJARlDTFrY8wKXbl3NJNGjcm8gH8Gdn1LGGD0RCd/sHpam29l8g/xlBnb+/zMrVqDg==")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1320,7 +1462,7 @@ class KinAccountContextImplTest {
             ),
             networkEnvironment
         )
-        val historicalTransaction5 = KinTransaction(
+        val historicalTransaction5 = StellarKinTransaction(
             Base64.decodeBase64("AAAAAB31EZCHw5EX1YTCqquo6lPyqLnZw4oKNmFwaSlq3MUEAAAAZABYP0QAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAO8BR2Aqchj3Jk2d2qmfg6dE6Z3m9ooNDiPW3FTVwrhgAAAAAAAAAAAAHoSAAAAAAAAAAAWrcxQQAAABAznP+g/Hot6I5o37RMBC4tTIApC4IcWNQcGODzv6Gr9NuLpea8Xy3DhA8KMLyEJ0Bdt21ri2ec5NztYV4bQ6YAA==")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1345,7 +1487,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(1), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1354,7 +1498,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(2), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1363,7 +1509,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(3), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1420,7 +1568,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService2).buildAndSignTransaction(
-            eq(registeredAccount2),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount2.key.asPublicKey()),
+            eq((registeredAccount2.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(4), registeredAccount.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1429,7 +1579,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService2).buildAndSignTransaction(
-            eq(registeredAccount2),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount2.key.asPublicKey()),
+            eq((registeredAccount2.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(5), registeredAccount.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1497,19 +1649,19 @@ class KinAccountContextImplTest {
 
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
             ),
             networkEnvironment
         )
-        val historicalTransaction1 = KinTransaction(
+        val historicalTransaction1 = StellarKinTransaction(
             Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAABhqAAAAAAAAAAATVwrhgAAABAf3uEfHbs4JpaOWthX9wTq0PetHyX8WexBA4nx8cQDljAkcW/9n+4DWyAGoHQKebIRg1M6zWWg0RTqhuQ4hyfAQ==")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1518,7 +1670,7 @@ class KinAccountContextImplTest {
             ),
             networkEnvironment
         )
-        val historicalTransaction2 = KinTransaction(
+        val historicalTransaction2 = StellarKinTransaction(
             Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAADDUAAAAAAAAAAATVwrhgAAABAGeunbexebrTLt7dEdXeFFlig7dWVNVYJyXa/W7TB/thjE67fTkmhZbW12fmTvvuPg6sCNqnVfNDdL79UdlIdDg==")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1527,7 +1679,7 @@ class KinAccountContextImplTest {
             ),
             networkEnvironment
         )
-        val historicalTransaction3 = KinTransaction(
+        val historicalTransaction3 = StellarKinTransaction(
             Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAADAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAAEk+AAAAAAAAAAATVwrhgAAABAVfNN1H1DykJlsRsBYXo+6MQEuLSVRiw6scxe4fEsUnYjaAPYv6vajfThorq+xMtrd1ZIsR6lkidKJ7ZFe8FFBw==\n")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1536,7 +1688,7 @@ class KinAccountContextImplTest {
             ),
             networkEnvironment
         )
-        val historicalTransaction4 = KinTransaction(
+        val historicalTransaction4 = StellarKinTransaction(
             Base64.decodeBase64("AAAAAB31EZCHw5EX1YTCqquo6lPyqLnZw4oKNmFwaSlq3MUEAAAAZABYP0QAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAO8BR2Aqchj3Jk2d2qmfg6dE6Z3m9ooNDiPW3FTVwrhgAAAAAAAAAAAAGGoAAAAAAAAAAAWrcxQQAAABAVlo9avGN5377ziEKULCDYJARlDTFrY8wKXbl3NJNGjcm8gH8Gdn1LGGD0RCd/sHpam29l8g/xlBnb+/zMrVqDg==")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1545,7 +1697,7 @@ class KinAccountContextImplTest {
             ),
             networkEnvironment
         )
-        val historicalTransaction5 = KinTransaction(
+        val historicalTransaction5 = StellarKinTransaction(
             Base64.decodeBase64("AAAAAB31EZCHw5EX1YTCqquo6lPyqLnZw4oKNmFwaSlq3MUEAAAAZABYP0QAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAO8BR2Aqchj3Jk2d2qmfg6dE6Z3m9ooNDiPW3FTVwrhgAAAAAAAAAAAAHoSAAAAAAAAAAAWrcxQQAAABAznP+g/Hot6I5o37RMBC4tTIApC4IcWNQcGODzv6Gr9NuLpea8Xy3DhA8KMLyEJ0Bdt21ri2ec5NztYV4bQ6YAA==")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
@@ -1570,7 +1722,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(3), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1578,7 +1732,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(4), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1587,7 +1743,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount),
+            eq(registeredAccount.key as Key.PrivateKey),
+            eq(registeredAccount.key.asPublicKey()),
+            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(5), destination.id))),
             eq(KinMemo.NONE),
             eq(fee)
@@ -1668,12 +1826,12 @@ class KinAccountContextImplTest {
     @Test
     fun observePayments_actively_success() {
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -1720,12 +1878,12 @@ class KinAccountContextImplTest {
     @Test
     fun observePayments_newActiveOnly_success() {
         val transactionToBeSent =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = KinTransaction(
-            transactionToBeSent.envelopeXdrBytes,
+        val responseTransaction = StellarKinTransaction(
+            transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
                 Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
@@ -1751,7 +1909,7 @@ class KinAccountContextImplTest {
     fun test_getPaymentsForTransactionHash() {
 
         val transaction =
-            KinTransaction(
+            StellarKinTransaction(
                 Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
                 networkEnvironment = networkEnvironment
             )

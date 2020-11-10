@@ -125,10 +125,16 @@ internal fun <T, V> Observer<T>.asListenerRegistrationToList(
 // Conversation Utils
 
 internal fun KinTransaction.asTransaction(network: Network): Transaction {
-    val txnEnvelope = TransactionEnvelope.decode(
-        XdrDataInputStream(ByteArrayInputStream(envelopeXdrBytes))
-    )
-    val txn = org.kin.stellarfork.Transaction.fromEnvelopeXdr(txnEnvelope, network)
+
+    val txn = try {
+        val txnEnvelope = TransactionEnvelope.decode(
+            XdrDataInputStream(ByteArrayInputStream(bytesValue))
+        )
+        org.kin.stellarfork.Transaction.fromEnvelopeXdr(txnEnvelope, network)
+    } catch (t: Throwable) {
+        null
+    }
+
     val payOp = paymentOperations.first()
     return Transaction(
         payOp.destination.toKeyPair(),
@@ -138,8 +144,10 @@ internal fun KinTransaction.asTransaction(network: Network): Transaction {
         memo.rawValue.toUTF8String(),
         transactionHash.toTransactionId(),
         txn,
-        WhitelistableTransaction(txn.toEnvelopeXdrBase64(), network.networkPassphrase)
-    )
+        txn?.let { WhitelistableTransaction(txn.toEnvelopeXdrBase64(), network.networkPassphrase) }
+    ).also {
+        it.kinTransaction = this
+    }
 }
 
 internal fun TransactionHash.toTransactionId(): TransactionId {

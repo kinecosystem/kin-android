@@ -7,6 +7,8 @@ import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.SolanaKinTransaction
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.codec.Base64
 import java.util.Collections
@@ -82,7 +84,7 @@ fun <T : Any> LatchedValueCaptor<T>.testValue(
 }
 
 inline fun <reified T : Any> Promise<T>.test(
-    timeout: Long = 5,
+    timeout: Long = 15,
     onTest: (LatchedValueCaptor<T>).() -> Unit
 ): Promise<T> {
     latchOperationValueCapture<T>(timeoutSeconds = timeout) { capture ->
@@ -129,11 +131,18 @@ class TestUtils {
             recordType: KinTransaction.RecordType,
             networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNet,
             invoiceList: InvoiceList? = null
-        ) = KinTransaction(Base64.decodeBase64(base64StringXdr)!!, recordType, networkEnvironment, invoiceList)
+        ) = StellarKinTransaction(Base64.decodeBase64(base64StringXdr)!!, recordType, networkEnvironment, invoiceList)
+
+        fun kinTransactionFromSolanaTransaction(
+            base64StringBytes: String,
+            recordType: KinTransaction.RecordType,
+            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNet,
+            invoiceList: InvoiceList? = null
+        ) = SolanaKinTransaction(Base64.decodeBase64(base64StringBytes)!!, recordType, networkEnvironment, invoiceList)
     }
 }
 
-fun KinAccount.updateStatus(status: KinAccount.Status) = KinAccount(key, id, balance, status)
+fun KinAccount.updateStatus(status: KinAccount.Status) = KinAccount(key, id, tokenAccounts, balance, status)
 
 fun String.chunkForStream(id: String = "data", chunkSize: Int = Int.MAX_VALUE): String =
     "id: $id\n\n" + chunked(chunkSize) { "data: ${it}\n" }

@@ -44,4 +44,8 @@ ignore:
   - "**/OkHttpChannelBuilderForcedTls12.*"
   - "**/AppUserAuthInterceptor.*"
   - "**/UserAgentInterceptor.*"
+  - "**/LoggingInterceptor.*"
+  - "**/UpgradeApiV4Interceptor.*"
   - "**/SDKConfig.*"
+  - "**/KinTestServiceImpl.*"
+  - "**/KinTestServiceImplV4.*"

@@ -33,7 +33,7 @@ data class SpendController(
                 navigator.navigateToForResult(
                     PaymentFlowViewModel.NavigationArgs(
                         it.id.invoiceHash.encodedValue,
-                        payerAccount.encodeAsString(),
+                        payerAccount.stellarBase32Encode(),
                         processingAppInfo.appIndex.value
                     )
                 ) {

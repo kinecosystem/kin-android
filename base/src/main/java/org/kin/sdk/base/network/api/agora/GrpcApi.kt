@@ -6,7 +6,6 @@ import io.grpc.StatusRuntimeException
 import io.grpc.stub.ClientCallStreamObserver
 import io.grpc.stub.ClientResponseObserver
 import io.grpc.stub.StreamObserver
-import org.kin.sdk.base.network.api.agora.GrpcApi.Companion.canRetry
 import org.kin.sdk.base.tools.NetworkOperationsHandlerException.OperationTimeoutException
 import org.kin.sdk.base.tools.ObservableCallback
 import org.kin.sdk.base.tools.PromisedCallback
@@ -33,7 +32,11 @@ abstract class GrpcApi(protected val managedChannel: ManagedChannel) {
 
     }
 
-    object UnrecognizedResultException : Exception("Received an unknown result type")
+    object UnrecognizedProtoResponse :
+        Exception("Unregonized Response format...possible breaking proto changes")
+
+    data class UnrecognizedResultException(override val cause: Throwable) :
+        Exception("Received an unknown result type", cause)
 
     fun <Request, Response> KFunction2<Request, StreamObserver<Response>, Unit>.callAsPromisedCallback(
         request: Request,

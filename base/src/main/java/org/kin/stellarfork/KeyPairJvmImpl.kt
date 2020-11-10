@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.security.GeneralSecurityException
 import java.security.MessageDigest
+import java.security.SecureRandom
 import java.security.SignatureException
 import java.util.Arrays
 
@@ -44,7 +45,7 @@ data class KeyPairJvmImpl @JvmOverloads
  */
 constructor(
     private val mPublicKey: EdDSAPublicKey,
-    private val mPrivateKey: EdDSAPrivateKey? = null
+    private val mPrivateKey: EdDSAPrivateKey? = null,
 ) : IKeyPair {
     /**
      * Returns true if this Keypair is capable of signing

@@ -19,15 +19,12 @@ import org.kin.sdk.base.network.services.KinService;
 import org.kin.sdk.base.stellar.models.NetworkEnvironment;
 import org.kin.sdk.base.storage.Storage;
 import org.kin.sdk.base.tools.ExecutorServices;
-import org.kin.sdk.base.tools.KinLoggerFactoryImpl;
 import org.kin.sdk.base.tools.Optional;
 import org.kin.sdk.base.tools.Promise;
 import org.kin.stellarfork.KeyPair;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.ILoggerFactory;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -539,6 +536,9 @@ public class KinClientTest {
 
         Context ctx = mock(Context.class);
 
+        Storage mockStorage = mock(Storage.class);
+        doAnswer( invocation -> Promise.Companion.of(Optional.Companion.empty())).when(mockStorage).getMinApiVersion();
+
         kinClient = new KinClient(
                 ctx,
                 environment,
@@ -546,7 +546,8 @@ public class KinClientTest {
                 "",
                 mock(BackupRestore.class),
                 fakeKeyStore,
-                mock(Storage.class));
+                mockStorage
+                );
         Environment actualEnvironment = kinClient.getEnvironment();
 
         assertNotNull(actualEnvironment);

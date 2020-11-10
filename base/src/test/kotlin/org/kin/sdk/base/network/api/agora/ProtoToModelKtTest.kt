@@ -7,13 +7,14 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.kin.agora.gen.account.v3.AccountService
 import org.kin.agora.gen.common.v3.Model
+import org.kin.agora.gen.common.v3.Model.InvoiceError
 import org.kin.agora.gen.transaction.v3.TransactionService
-import org.kin.agora.gen.transaction.v3.TransactionService.SubmitTransactionResponse.InvoiceError
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.network.api.KinAccountApi
 import org.kin.sdk.base.network.api.KinAccountCreationApi
+import org.kin.sdk.base.network.api.KinAccountCreationApiV4
 import org.kin.sdk.base.network.api.KinTransactionApi
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
@@ -78,7 +79,7 @@ class ProtoToModelKtTest {
             .build()
             .toAcknowledgedKinTransaction(NetworkEnvironment.KinStellarTestNet)
 
-        assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(resultKinTransaction!!.envelopeXdrBytes) }
+        assertTrue { expectedKinTransaction.bytesValue.contentEquals(resultKinTransaction!!.bytesValue) }
         assertTrue { resultKinTransaction?.recordType is KinTransaction.RecordType.Acknowledged }
     }
 
@@ -99,7 +100,7 @@ class ProtoToModelKtTest {
             .build()
             .toHistoricalKinTransaction(NetworkEnvironment.KinStellarTestNet)
 
-        assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(resultKinTransaction!!.envelopeXdrBytes) }
+        assertTrue { expectedKinTransaction.bytesValue.contentEquals(resultKinTransaction!!.bytesValue) }
         assertTrue { resultKinTransaction?.recordType is KinTransaction.RecordType.Historical }
     }
 
@@ -152,10 +153,7 @@ class ProtoToModelKtTest {
     @Test
     fun createAccountResponse_undefinedFailure_fromResponse() {
         val onCompleted: (KinAccountCreationApi.CreateAccountResponse) -> Unit = {
-            assertEquals(
-                KinAccountCreationApi.CreateAccountResponse.Result.UndefinedError(GrpcApi.UnrecognizedResultException),
-                it.result
-            )
+            assertTrue(it.result is KinAccountCreationApi.CreateAccountResponse.Result.UndefinedError)
             assertNull(it.account)
         }
 
@@ -169,10 +167,7 @@ class ProtoToModelKtTest {
     @Test
     fun createAccountResponse_undefinedFailure_fromError() {
         val onCompleted: (KinAccountCreationApi.CreateAccountResponse) -> Unit = {
-            assertEquals(
-                KinAccountCreationApi.CreateAccountResponse.Result.UndefinedError(GrpcApi.UnrecognizedResultException),
-                it.result
-            )
+            assertTrue(it.result is KinAccountCreationApi.CreateAccountResponse.Result.UndefinedError)
             assertNull(it.account)
         }
 
@@ -270,7 +265,7 @@ class ProtoToModelKtTest {
             assertTrue(it.result is KinAccountApi.GetAccountResponse.Result.UndefinedError)
             assertNull(it.account)
         }.getAccountResponse()
-            .onError?.invoke(GrpcApi.UnrecognizedResultException)
+            .onError?.invoke(GrpcApi.UnrecognizedResultException(Exception()))
     }
 
     @Test
@@ -285,7 +280,7 @@ class ProtoToModelKtTest {
         )
 
         val onCompleted: (KinTransactionApi.GetTransactionHistoryResponse) -> Unit = {
-            assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(it.transactions!!.first().envelopeXdrBytes) }
+            assertTrue { expectedKinTransaction.bytesValue.contentEquals(it.transactions!!.first().bytesValue) }
             assertTrue { it.transactions?.first()?.recordType is KinTransaction.RecordType.Historical }
         }
 
@@ -352,7 +347,7 @@ class ProtoToModelKtTest {
             assertTrue(it.result is KinTransactionApi.GetTransactionHistoryResponse.Result.UndefinedError)
             assertNull(it.transactions)
         }.getTransactionHistoryResponse(NetworkEnvironment.KinStellarTestNet)
-            .onError?.invoke(GrpcApi.UnrecognizedResultException)
+            .onError?.invoke(GrpcApi.UnrecognizedResultException(Exception()))
     }
 
     @Test
@@ -367,7 +362,7 @@ class ProtoToModelKtTest {
         )
 
         val onCompleted: (KinTransactionApi.GetTransactionResponse) -> Unit = {
-            assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(it.transaction!!.envelopeXdrBytes) }
+            assertTrue { expectedKinTransaction.bytesValue.contentEquals(it.transaction!!.bytesValue) }
             assertTrue { it.transaction?.recordType is KinTransaction.RecordType.Historical }
         }
 
@@ -411,7 +406,7 @@ class ProtoToModelKtTest {
             assertTrue(it.result is KinTransactionApi.GetTransactionResponse.Result.UndefinedError)
             assertNull(it.transaction)
         }.getTransactionResponse(NetworkEnvironment.KinStellarTestNet)
-            .onError?.invoke(GrpcApi.UnrecognizedResultException)
+            .onError?.invoke(GrpcApi.UnrecognizedResultException(Exception()))
     }
 
     @Test
@@ -425,7 +420,7 @@ class ProtoToModelKtTest {
         )
 
         val onCompleted: (KinTransactionApi.SubmitTransactionResponse) -> Unit = {
-            assertTrue { expectedKinTransaction.envelopeXdrBytes.contentEquals(it.transaction!!.envelopeXdrBytes) }
+            assertTrue { expectedKinTransaction.bytesValue.contentEquals(it.transaction!!.bytesValue) }
             assertTrue { it.transaction?.recordType is KinTransaction.RecordType.Acknowledged }
         }
 

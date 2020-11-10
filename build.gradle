@@ -108,7 +108,7 @@ buildscript {
         versions.googleCommonProtos = '1.14.0'
         versions.multidex = '2.0.0'
         versions.grpcNetty_tcnative_boringssl = '2.0.20.Final'
-        versions.agora_api = "0.19.0"
+        versions.agora_api = "0.23.0"
         versions.grpc_validate = "0.2.0"
         versions.firebase = "17.2.2"
         versions.play_services_base = "17.3.0"
@@ -153,7 +153,7 @@ buildscript {
         deps.grpc_validate = "io.envoyproxy.protoc-gen-validate:pgv-java-stub:${versions.grpc_validate}"
         deps.grpc_testing = "io.grpc:grpc-testing:${versions.grpcProtobuf}"
 
-        deps.agora_api = "org.kin.agora.gen:agora-api:${versions.agora_api}"
+        deps.agora_api = "com.github.kinecosystem:agora-api-internal:${versions.agora_api}" //"org.kin.agora.gen:agora-api:${versions.agora_api}"
 
         pomConfig = {
             licenses {
@@ -210,6 +210,8 @@ dokka {
     }
 }
 
+def jitpackAuthToken = findProperty("jitpackAuthToken") ?: System.getenv("authToken")
+
 allprojects {
     ext {
         // Libraries
@@ -229,12 +231,21 @@ allprojects {
         maven {
             url  "https://dl.bintray.com/kinecosystem/agora-api"
         }
-        maven { url "https://jitpack.io" }
+        maven {
+            url "https://jitpack.io"
+            credentials { username jitpackAuthToken }
+        }
+//        maven { url "https://jitpack.io" }
     }
 
     tasks.withType(Test) {
         systemProperty "java.library.path", "${System.getProperty("java.library.path")}:$rootDir/jniLibs/macOS:$rootDir/jniLibs/linux"
+        testLogging {
+            outputs.upToDateWhen {false}
+            showStandardStreams = true
+        }
     }
+
 }
 
 task copyNativeLibsForLinux() {

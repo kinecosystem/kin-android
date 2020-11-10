@@ -234,7 +234,8 @@ class CompatWalletViewModel(
             override fun onResult(balance: Balance?) {
                 updateState { previousState ->
                     if (balance == null) {
-                        makeStateInactive(previousState)
+//                        makeStateInactive(previousState)
+                        previousState
                     } else {
                         makeStateActive(previousState).copy(walletHeaderViewModel = previousState.walletHeaderViewModel.copy(balance = balance.value()))
                     }
@@ -242,9 +243,9 @@ class CompatWalletViewModel(
             }
 
             override fun onError(e: Exception?) {
-                updateState { previousState ->
-                    makeStateInactive(previousState)
-                }
+//                updateState { previousState ->
+//                    makeStateInactive(previousState)
+//                }
             }
         })
     }

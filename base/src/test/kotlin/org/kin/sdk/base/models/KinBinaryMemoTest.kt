@@ -1,9 +1,6 @@
 package org.kin.sdk.base.models
 
 import org.junit.Test
-import org.kin.sdk.base.tools.intToByteArray
-import org.kin.sdk.base.tools.printBits
-import org.kin.sdk.base.tools.toBitSet
 import org.kin.sdk.base.tools.toByteArray
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -21,8 +18,6 @@ class KinBinaryMemoTest {
         val bytes: ByteArray = agoraMemo.encode()
 
         with(KinBinaryMemo.decode(bytes)) {
-            printValues()
-            println("foreignKeyBytes: ${agoraMemo.foreignKeyBytes.asList()}\nforeignKeyBytes(): ${this.foreignKeyBytes.asList()}")
             assertTrue { agoraMemo.foreignKeyBytes.contentEquals(this.foreignKeyBytes) }
         }
     }
@@ -32,7 +27,6 @@ class KinBinaryMemoTest {
 
         // FK Less than max
         (0..500).forEach {
-            println("index: $it")
             val agoraMemo = KinBinaryMemo.Builder(10, 1, 2)
                 .setTranferType(KinBinaryMemo.TransferType.P2P)
                 .setForeignKey(UUID.randomUUID().toByteArray())
@@ -40,22 +34,7 @@ class KinBinaryMemoTest {
 
             val bytes: ByteArray = agoraMemo.encode()
 
-            bytes.apply {
-                printBits("totalbits")
-                printBits("totalbits", true)
-            }
-            agoraMemo.foreignKeyBytes.apply {
-                printBits("input.fkbits")
-                printBits("input.fkbits", true)
-            }
-
             with(KinBinaryMemo.decode(bytes)) {
-                foreignKeyBytes.apply {
-                    printBits("fkbits.decoded")
-                    printBits("fkbits.decoded", true)
-                }
-                printValues()
-                println("agoraMemo.foreignKeyBytes: ${agoraMemo.foreignKeyBytes.asList()}\n    input.foreignKeyBytes: ${this.foreignKeyBytes.asList()}")
                 assertTrue { agoraMemo.foreignKeyBytes.contentEquals(this.foreignKeyBytes) }
             }
         }
@@ -65,7 +44,6 @@ class KinBinaryMemoTest {
     fun testAgoraEncoding_validFK_atOrLargerThanMax() {
         // FK at/larger than max (which gets truncated)
         (0..500).forEach {
-            println("index: $it")
             val agoraMemo = KinBinaryMemo.Builder(10, 1, 2)
                 .setTranferType(KinBinaryMemo.TransferType.P2P)
                 .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
@@ -73,22 +51,7 @@ class KinBinaryMemoTest {
 
             val bytes: ByteArray = agoraMemo.encode()
 
-            bytes.apply {
-                printBits("totalbits")
-                printBits("totalbits", true)
-            }
-            agoraMemo.foreignKeyBytes.apply {
-                printBits("input.fkbits")
-                printBits("input.fkbits", true)
-            }
-
             with(KinBinaryMemo.decode(bytes)) {
-                foreignKeyBytes.apply {
-                    printBits("fkbits.decoded")
-                    printBits("fkbits.decoded", true)
-                }
-                printValues()
-                println("agoraMemo.foreignKeyBytes: ${agoraMemo.foreignKeyBytes.asList()}\n    input.foreignKeyBytes: ${this.foreignKeyBytes.asList()}")
                 assertTrue { agoraMemo.foreignKeyBytes.contentEquals(this.foreignKeyBytes) }
             }
         }
@@ -104,7 +67,7 @@ class KinBinaryMemoTest {
 
             val bytes: ByteArray = agoraMemo.encode()
             with(KinBinaryMemo.decode(bytes)) {
-                printValues()
+
                 assertEquals(index, appIdx)
                 assertEquals(3, magicByteIndicator)
                 assertEquals(7, version)
@@ -187,9 +150,8 @@ class KinBinaryMemoTest {
                 .build()
 
             val bytes: ByteArray = agoraMemo.encode()
-            bytes.printBits("totalbits", true)
             with(KinBinaryMemo.decode(bytes)) {
-                printValues()
+
                 assertEquals(65535, appIdx)
                 assertEquals(index, magicByteIndicator)
                 assertEquals(7, version)
@@ -225,7 +187,7 @@ class KinBinaryMemoTest {
 
             val bytes: ByteArray = agoraMemo.encode()
             with(KinBinaryMemo.decode(bytes)) {
-                printValues()
+
                 assertEquals(65535, appIdx)
                 assertEquals(3, magicByteIndicator)
                 assertEquals(index, version)
@@ -262,7 +224,7 @@ class KinBinaryMemoTest {
 
             val bytes: ByteArray = agoraMemo.encode()
             with(KinBinaryMemo.decode(bytes)) {
-                printValues()
+
                 assertEquals(65535, appIdx)
                 assertEquals(3, magicByteIndicator)
                 assertEquals(7, version)
@@ -292,21 +254,5 @@ class KinBinaryMemoTest {
             .setTranferType(KinBinaryMemo.TransferType.ANY(32))
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
-    }
-
-
-    // Utils
-
-    private fun KinBinaryMemo.printValues() {
-        println("AgoraMemoValues {\n  ${toString()}")
-        magicByteIndicator.intToByteArray().printBits(" magicByteIndicator", true)
-        version.intToByteArray().printBits(" version", true)
-        typeId.value.intToByteArray().printBits(" typeId", true)
-        appIdx.intToByteArray().printBits(" appIdx", true)
-        foreignKeyBytes.toBitSet().apply {
-            printBits(" foreignKeyBytes", true, showByteOffset = true, size = size())
-        }
-        encode().printBits(" binary", true)
-        println("}")
     }
 }
