@@ -103,9 +103,12 @@ data class Transaction internal constructor(
             null
         }
     }
-
-    val signatures: List<DecoratedSignature>
+    var signatures: List<DecoratedSignature>
         get() = mSignatures
+        set(value) {
+            mSignatures.clear()
+            mSignatures.addAll(value)
+        }
 
     /**
      * Generates Transaction XDR object.

@@ -145,7 +145,7 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
-        when(mockAccountContext.sendKinPayments(any(), any(), any(), any()))
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
 
         Transaction transaction = kinAccount.buildTransactionSync(expectedAccountId, expectedAmount, 100);
@@ -163,7 +163,7 @@ public class KinAccountImplTest {
         TransactionId transactionId = kinAccount.sendTransactionSync(transaction);
 
         verify(mockKinService).buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -172,6 +172,46 @@ public class KinAccountImplTest {
         assertEquals(expectedTransactionId, transactionId);
         assertEquals(expectedTransactionId.id(), transactionId.id());
     }
+
+    @Test
+    public void sendWhitelistedTransactionSync() throws Exception {
+        KinTransaction kinTransaction = TestUtils.kinTransactionFromXDR("AAAAAOsas8dY1Z3wb918WHGIPznz+qYdxDgCILjMvkNfoccdAAAAAACvhksAAAACAAAAAAAAAAEAAAAHMS1sODNoLQAAAAABAAAAAQAAAADrGrPHWNWd8G/dfFhxiD858/qmHcQ4AiC4zL5DX6HHHQAAAAEAAAAANWTpaxPindylRungCZ28VOxyXIBGDpwEA9ST5LEC/bEAAAAAAAAAAAX14QAAAAAAAAAAAl+hxx0AAABAhB7rhuYfyeFVcFkgvxKO/gkjE5RkRPglNCF2+m1Ws4oOxNuw2jjpz+gZhhpQm0yzhGNIR//IvAACQbW2ttiyBbEC/bEAAABALKCiOluhSzhzEP1g4l6ZnjEpzIS5o8PJLpWyC/pRCxHTFzuzjnBEdMbIW3wzLZnsC4a3/pM/ePoRBy9otl/sDQ==");
+        KinPayment kinPayment = StellarBaseTypeConversionsKt.asKinPayments(kinTransaction).get(0);
+        TransactionId expectedTransactionId = new TransactionIdImpl(kinTransaction.getTransactionHash());
+
+        String expectedAccountId = kinTransaction.getSigningSource().stellarBase32Encode();
+        BigDecimal expectedAmount = StellarBaseTypeConversionsKt.asKinPayments(kinTransaction).get(0).getAmount().getValue();
+
+        when(mockKinService.buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any()))
+                .thenReturn(Promise.Companion.of(kinTransaction));
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
+                .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
+
+        Transaction transaction = kinAccount.buildTransactionSync(expectedAccountId, expectedAmount, 100);
+
+        assertEquals(transaction.getAmount(), expectedAmount);
+       // assertEquals(transaction.getDestination(), KeyPair.fromAccountId("GAZGCY6DQN7ESXHCYHL2P3CFZMBPUOYXI5UWYJMO26UXQV55FDSQ4LUY"));
+        //assertEquals(transaction.getSource(), KeyPair.fromAccountId("GDS3RPC4HBRWJXXS6HPRV4K56SOGSTLP6YX2RZ4YI6RQ57PJIYUVXEIL"));
+        assertEquals(transaction.getFee(), 0);
+        //assertEquals(transaction.getId(), new TransactionIdImpl(new TransactionHash(Hex.decodeHex("91484c283c10bdc3fe45e3295e2df3993e03343d250d54b98039fb614139657b"))));
+        assertEquals(transaction.getMemo(), "1-l83h-");
+        assertEquals(transaction.getStellarTransaction(), UtilsKt.asTransaction(kinTransaction, Network.getTestNetwork()).getStellarTransaction());
+        assertEquals(transaction.getStellarTransaction().hashCode(), UtilsKt.asTransaction(kinTransaction, Network.getTestNetwork()).getStellarTransaction().hashCode());
+        assertEquals(transaction.getWhitelistableTransaction(), new WhitelistableTransaction("AAAAAOsas8dY1Z3wb918WHGIPznz+qYdxDgCILjMvkNfoccdAAAAAACvhksAAAACAAAAAAAAAAEAAAAHMS1sODNoLQAAAAABAAAAAQAAAADrGrPHWNWd8G/dfFhxiD858/qmHcQ4AiC4zL5DX6HHHQAAAAEAAAAANWTpaxPindylRungCZ28VOxyXIBGDpwEA9ST5LEC/bEAAAAAAAAAAAX14QAAAAAAAAAAAl+hxx0AAABAhB7rhuYfyeFVcFkgvxKO/gkjE5RkRPglNCF2+m1Ws4oOxNuw2jjpz+gZhhpQm0yzhGNIR//IvAACQbW2ttiyBbEC/bEAAABALKCiOluhSzhzEP1g4l6ZnjEpzIS5o8PJLpWyC/pRCxHTFzuzjnBEdMbIW3wzLZnsC4a3/pM/ePoRBy9otl/sDQ==", "Kin Testnet ; December 2018"));
+
+        TransactionId transactionId = kinAccount.sendTransactionSync(transaction);
+
+        verify(mockKinService).buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
+        verify(mockAccountContext).getAccount();
+
+        verifyNoMoreInteractions(mockKinService);
+        verifyNoMoreInteractions(mockAccountContext);
+
+        assertEquals(expectedTransactionId, transactionId);
+        assertEquals(expectedTransactionId.id(), transactionId.id());
+    }
+
 
     @Test(expected = OperationFailedException.class)
     public void sendTransactionSync_build_error() throws Exception {
@@ -239,7 +279,7 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(),any(), anyLong(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
-        when(mockAccountContext.sendKinPayments(any(), any(), any(), any()))
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
 
         final Transaction[] transaction = new Transaction[1];
@@ -279,7 +319,7 @@ public class KinAccountImplTest {
         });
 
         verify(mockKinService).buildAndSignTransaction(any(),any(),anyLong(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -299,7 +339,7 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(),any(), anyLong(), any(), eq(new KinMemo("1-1a2c-someMemo")), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
-        when(mockAccountContext.sendKinPayments(any(), any(), any(), any()))
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
 
         final Transaction[] transaction = new Transaction[1];
@@ -339,7 +379,7 @@ public class KinAccountImplTest {
         });
 
         verify(mockKinService).buildAndSignTransaction(any(),any(),anyLong(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -360,7 +400,7 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(),any(), anyLong(), any(), eq(new KinMemo("1-1a2c-")), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
-        when(mockAccountContext.sendKinPayments(any(), any(), any(), any()))
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
 
         final Transaction[] transaction = new Transaction[1];
@@ -400,7 +440,7 @@ public class KinAccountImplTest {
         });
 
         verify(mockKinService).buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -421,7 +461,7 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(),any(), anyLong(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
-        when(mockAccountContext.sendKinPayments(any(), any(), any(), any()))
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
 
         Transaction transaction = kinAccount.buildTransactionSync(expectedAccountId, expectedAmount, 100);
@@ -432,7 +472,7 @@ public class KinAccountImplTest {
         TransactionId transactionId = kinAccount.sendWhitelistTransactionSync("AAAAAOW4vFw4Y2Te8vHfGvFd9JxpTW/2L6jnmEejDv3pRilbAAAAZABZ2/gAAAADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAADJhY8ODfklc4sHXp+xFywL6OxdHaWwljtepeFe9KOUOAAAAAAAAAAAAIAsgAAAAAAAAAAHpRilbAAAAQN1YkzWbQdhatwAHZW4dlfVo61cbHfFFY5I6UOcnrwgMZ5bN+iaCMi6V8tEjxnKjP9BjLGJnbvg7d9iYCcQiWg4=");
 
         verify(mockKinService).buildAndSignTransaction(any(),any(), anyLong(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -452,14 +492,14 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any()))
                 .thenReturn(Promise.Companion.error(new IndexOutOfBoundsException()));
-        when(mockAccountContext.sendKinPayments(any(), any(), any(), any()))
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
 
         Transaction transaction = kinAccount.buildTransactionSync(expectedAccountId, expectedAmount, 100);
         TransactionId transactionId = kinAccount.sendWhitelistTransactionSync("AAAAAOW4vFw4Y2Te8vHfGvFd9JxpTW/2L6jnmEejDv3pRilbAAAAZABZ2/gAAAADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAADJhY8ODfklc4sHXp+xFywL6OxdHaWwljtepeFe9KOUOAAAAAAAAAAAAIAsgAAAAAAAAAAHpRilbAAAAQN1YkzWbQdhatwAHZW4dlfVo61cbHfFFY5I6UOcnrwgMZ5bN+iaCMi6V8tEjxnKjP9BjLGJnbvg7d9iYCcQiWg4=");
 
         verify(mockKinService).buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -479,14 +519,14 @@ public class KinAccountImplTest {
 
         when(mockKinService.buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(kinTransaction));
-        when(mockAccountContext.sendKinPayments(any(), any(), any(), any()))
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.error(new KinService.FatalError.UnexpectedServiceError(new Exception())));
 
         Transaction transaction = kinAccount.buildTransactionSync(expectedAccountId, expectedAmount, 100);
         TransactionId transactionId = kinAccount.sendWhitelistTransactionSync("AAAAAOW4vFw4Y2Te8vHfGvFd9JxpTW/2L6jnmEejDv3pRilbAAAAZABZ2/gAAAADAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAADJhY8ODfklc4sHXp+xFywL6OxdHaWwljtepeFe9KOUOAAAAAAAAAAAAIAsgAAAAAAAAAAHpRilbAAAAQN1YkzWbQdhatwAHZW4dlfVo61cbHfFFY5I6UOcnrwgMZ5bN+iaCMi6V8tEjxnKjP9BjLGJnbvg7d9iYCcQiWg4=");
 
         verify(mockKinService).buildAndSignTransaction(any(), any(), anyLong(), any(), any(), any());
-        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
         verify(mockAccountContext).getAccount();
 
         verifyNoMoreInteractions(mockKinService);
@@ -501,7 +541,7 @@ public class KinAccountImplTest {
         KinPayment kinPayment = StellarBaseTypeConversionsKt.asKinPayments(kinTransaction).get(0);
         TransactionId expectedTransactionId = new TransactionIdImpl(kinTransaction.getTransactionHash());
 
-        when(mockAccountContext.sendKinPayments(any(), any(), any(), any()))
+        when(mockAccountContext.sendKinPayments(any(), any(), any(), any(), any(), any()))
                 .thenReturn(Promise.Companion.of(Collections.singletonList(kinPayment)));
 
         final TransactionId[] transactionId = new TransactionId[1];
@@ -522,7 +562,7 @@ public class KinAccountImplTest {
             return null;
         });
 
-        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any());
+        verify(mockAccountContext).sendKinPayments(any(), any(), any(), any(), any(), any());
 
         verifyNoMoreInteractions(mockKinService);
         verifyNoMoreInteractions(mockAccountContext);

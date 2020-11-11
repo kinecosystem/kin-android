@@ -21,6 +21,7 @@ import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
+import org.kin.sdk.base.models.getNetwork
 import org.kin.sdk.base.models.merge
 import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
@@ -30,6 +31,7 @@ import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.network.services.KinServiceWrapper
 import org.kin.sdk.base.stellar.models.KinTransaction
+import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.storage.Storage
 import org.kin.sdk.base.tools.BackoffStrategy
 import org.kin.sdk.base.tools.Callback
@@ -49,6 +51,8 @@ import org.kin.sdk.base.tools.callback
 import org.kin.sdk.base.tools.listen
 import org.kin.sdk.base.tools.onErrorResumeNext
 import org.kin.stellarfork.KeyPair
+import org.kin.stellarfork.codec.Base64
+import org.kin.stellarfork.xdr.DecoratedSignature
 import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -269,6 +273,20 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
         sourceAccountSpec: AccountSpec = AccountSpec.Preferred,
         destinationAccountSpec: AccountSpec = AccountSpec.Preferred,
     ): Promise<List<KinPayment>>
+
+    /**
+     * This is a total hack, won't exist forever, don't use this, to support base-compat ONLY
+     *
+     * This is not meant for other external consumption. Use at your own risk.
+     */
+    fun sendKinPayments(
+        payments: List<KinPaymentItem>,
+        memo: KinMemo,
+        sourceAccountSpec: AccountSpec,
+        destinationAccountSpec: AccountSpec,
+        additionalSignatures: List<DecoratedSignature>,
+        feeOverride: QuarkAmount? = null
+    ) : Promise<List<KinPayment>>
 
     /**
      * Directly sends a [KinTransaction].
@@ -558,6 +576,19 @@ class KinAccountContextImpl private constructor(
         memo: KinMemo,
         sourceAccountSpec: AccountSpec,
         destinationAccountSpec: AccountSpec,
+    ): Promise<List<KinPayment>> =
+        sendKinPayments(payments, memo, sourceAccountSpec, destinationAccountSpec, emptyList())
+
+    /**
+     * This is a total hack, won't exist forever, don't use this
+     */
+    override fun sendKinPayments(
+        payments: List<KinPaymentItem>,
+        memo: KinMemo,
+        sourceAccountSpec: AccountSpec,
+        destinationAccountSpec: AccountSpec,
+        signaturesOverride: List<DecoratedSignature>,
+        feeOverride: QuarkAmount?
     ): Promise<List<KinPayment>> {
         log.log("sendKinPayments")
         val MAX_ATTEMPTS = 6
@@ -635,8 +666,17 @@ class KinAccountContextImpl private constructor(
                             accountData.nonce,
                             it,
                             memo,
-                            fee
-                        )
+                            feeOverride ?: fee
+                        ).map {
+                            if (it is StellarKinTransaction) {
+                                val tx = org.kin.stellarfork.Transaction.fromEnvelopeXdr(Base64.encodeBase64String(it.bytesValue), it.networkEnvironment.getNetwork())
+                                if (signaturesOverride.isNotEmpty()) {
+                                    tx.signatures = signaturesOverride
+                                }
+
+                                it.copy(bytesValue = Base64.decodeBase64(tx.toEnvelopeXdrBase64())!!)
+                            } else it
+                        }
                     }
                 }
             }

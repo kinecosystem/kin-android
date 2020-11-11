@@ -14,7 +14,9 @@ import kin.sdk.exception.CryptoException
 import kin.sdk.exception.OperationFailedException
 import kin.utils.Request
 import org.kin.sdk.base.KinAccountContext
+import org.kin.sdk.base.KinAccountContextImpl
 import org.kin.sdk.base.ObservationMode
+import org.kin.sdk.base.models.AccountSpec
 import org.kin.sdk.base.models.AppId
 import org.kin.sdk.base.models.ClassicKinMemo
 import org.kin.sdk.base.models.Key
@@ -35,6 +37,8 @@ import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.Promise
 import org.kin.stellarfork.KeyPair
+import org.kin.stellarfork.codec.Base64
+import org.kin.stellarfork.xdr.DecoratedSignature
 import java.io.IOException
 import java.math.BigDecimal
 import java.util.concurrent.Executors
@@ -294,7 +298,15 @@ internal class KinAccountImpl(
             }
         val memo: KinMemo = kinTransaction.memo
 
-        return accountContext.sendKinPayments(payments, memo)
+        val sigs = mutableListOf<DecoratedSignature>()
+
+        try {
+            sigs.addAll(org.kin.stellarfork.Transaction.fromEnvelopeXdr(Base64.encodeBase64String(kinTransaction.bytesValue), network).signatures)
+        } catch (t: Throwable) {
+            // do nothing
+        }
+
+        return accountContext.sendKinPayments(payments, memo, AccountSpec.Preferred, AccountSpec.Preferred, sigs, kinTransaction.fee)
     }
 
     private fun getStatusInternal(): Promise<Int> {
