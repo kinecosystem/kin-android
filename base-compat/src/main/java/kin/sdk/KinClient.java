@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import org.kin.sdk.base.KinEnvironment;
+import org.kin.sdk.base.network.services.AppInfoProvider;
 import org.kin.sdk.base.storage.Storage;
 
 import kin.sdk.exception.CorruptedDataException;
@@ -27,7 +28,18 @@ public class KinClient {
     public KinClient(@NonNull Context context, @NonNull Environment environment, String appId) {
         this(context, environment, appId, "");
 
-        delegate = new KinClientInternal(context, environment, appId);
+        delegate = new KinClientInternal(context, environment, appId, new KinClientInternal.DummyAppInfoProvider());
+    }
+
+    /**
+     * Alternative constructor meant to service apps that want to provide auth for their webhooks without moving directly to the base library yet
+     *
+     * @param appInfoProvider
+     */
+    public KinClient(@NonNull Context context, @NonNull Environment environment, String appId, @NonNull AppInfoProvider appInfoProvider) {
+        this(context, environment, appId, "");
+
+        delegate = new KinClientInternal(context, environment, appId, appInfoProvider);
     }
 
     /**
@@ -41,17 +53,26 @@ public class KinClient {
      * @param storeKey    an optional param which is the key for storing this KinClient data, different keys will store a different accounts.
      */
     public KinClient(@NonNull Context context, @NonNull Environment environment, @NonNull String appId, @NonNull String storeKey) {
-        delegate = new KinClientInternal(context, environment, appId, storeKey);
+        delegate = new KinClientInternal(context, environment, appId, storeKey, new KinClientInternal.DummyAppInfoProvider());
+    }
+
+    /**
+     * Alternative constructor meant to service apps that want to provide auth for their webhooks without moving directly to the base library yet
+     *
+     * @param appInfoProvider
+     */
+    public KinClient(@NonNull Context context, @NonNull Environment environment, @NonNull String appId, @NonNull String storeKey, @NonNull AppInfoProvider appInfoProvider) {
+        delegate = new KinClientInternal(context, environment, appId, storeKey, appInfoProvider);
     }
 
     @VisibleForTesting
     public KinClient(Context context, Environment environment, String appId, String storeKey, BackupRestore backupRestore, KeyStore keyStore, Storage storage, KinEnvironment kinEnvironment) {
-        delegate = new KinClientInternal(context, environment, appId, storeKey, backupRestore, keyStore, storage, kinEnvironment);
+        delegate = new KinClientInternal(context, environment, appId, storeKey, backupRestore, keyStore, storage, new KinClientInternal.DummyAppInfoProvider(), kinEnvironment);
     }
 
     @VisibleForTesting
     public KinClient(Context context, Environment environment, String appId, String storeKey, BackupRestore backupRestore, KeyStore keyStore, Storage storage) {
-        delegate = new KinClientInternal(context, environment, appId, storeKey, backupRestore, keyStore, storage);
+        delegate = new KinClientInternal(context, environment, appId, storeKey, backupRestore, keyStore, storage, new KinClientInternal.DummyAppInfoProvider());
     }
 
     /**

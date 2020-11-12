@@ -36,7 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * An account manager for a [KinAccount].
  */
 internal class KinClientInternal {
-    private class DummyAppInfoProvider : AppInfoProvider {
+    protected class DummyAppInfoProvider : AppInfoProvider {
         override val appInfo: AppInfo = AppInfo(AppIdx.TEST_APP_IDX, org.kin.sdk.base.models.KinAccount.Id(ByteArray(0)), "", 123)
 
         override fun getPassthroughAppUserCredentials(): AppUserCreds {
@@ -61,10 +61,11 @@ internal class KinClientInternal {
 
         private fun enirvonmentToKinEnvironment(
             environment: Environment,
-            storage: Storage
+            storage: Storage,
+            appInfoProvider: AppInfoProvider
         ): KinEnvironment {
             return KinEnvironment.Agora.Builder(environmentToNetworkEnvironment(environment))
-                .setAppInfoProvider(DummyAppInfoProvider())
+                .setAppInfoProvider(appInfoProvider)
                 .apply {
                     if (testMigration) {
                         testMigration()
@@ -110,8 +111,9 @@ internal class KinClientInternal {
         context: Context,
         environment: Environment,
         appId: String,
-        storeKey: String
-    ) : this(context, environment, appId, storeKey, BackupRestoreImpl())
+        storeKey: String,
+        appInfoProvider: AppInfoProvider
+    ) : this(context, environment, appId, storeKey, BackupRestoreImpl(), appInfoProvider)
 
     /**
      * For more details please look at [KinClientInternal]
@@ -119,8 +121,9 @@ internal class KinClientInternal {
     constructor(
         context: Context,
         environment: Environment,
-        appId: String
-    ) : this(context, environment, appId, "")
+        appId: String,
+        appInfoProvider: AppInfoProvider
+    ) : this(context, environment, appId, "", appInfoProvider)
 
     @JvmOverloads
     constructor(
@@ -131,7 +134,8 @@ internal class KinClientInternal {
         backupRestore: BackupRestore,
         keyStore: KeyStore,
         storage: Storage,
-        kinEnvironment: KinEnvironment = enirvonmentToKinEnvironment(environment, storage)
+        appInfoProvider: AppInfoProvider,
+        kinEnvironment: KinEnvironment = enirvonmentToKinEnvironment(environment, storage, appInfoProvider)
     ) {
         this.context = context
         this.environment = environment
@@ -152,7 +156,8 @@ internal class KinClientInternal {
         environment: Environment,
         appId: String,
         storeKey: String,
-        backupRestore: BackupRestore
+        backupRestore: BackupRestore,
+        appInfoProvider: AppInfoProvider
     ) : this(
         context,
         environment,
@@ -165,7 +170,8 @@ internal class KinClientInternal {
         ),
         KinFileStorage.Builder(context.filesDir.absolutePath + "kin.sdk_" + storeKey)
             .setNetworkEnvironment(environmentToNetworkEnvironment(environment))
-            .build()
+            .build(),
+        appInfoProvider
     )
 
     private constructor(
@@ -174,7 +180,8 @@ internal class KinClientInternal {
         appId: String,
         storeKey: String,
         keyStore: KeyStore,
-        storage: Storage
+        storage: Storage,
+        appInfoProvider: AppInfoProvider
     ) : this(
         context,
         environment,
@@ -183,7 +190,8 @@ internal class KinClientInternal {
         BackupRestoreImpl(),
         keyStore,
         storage,
-        enirvonmentToKinEnvironment(environment, storage)
+        appInfoProvider,
+        enirvonmentToKinEnvironment(environment, storage, appInfoProvider)
     )
 
     private fun loadAccounts() {
