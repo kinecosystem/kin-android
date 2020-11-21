@@ -7,6 +7,7 @@ import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
+import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.solana.MemoProgram
 import org.kin.sdk.base.models.solana.SystemProgram
@@ -15,6 +16,7 @@ import org.kin.sdk.base.models.solana.Transaction
 import org.kin.sdk.base.models.solana.marshal
 import org.kin.sdk.base.models.solana.unmarshal
 import org.kin.sdk.base.models.toKeyPair
+import org.kin.sdk.base.models.toSigningKeyPair
 import org.kin.sdk.base.network.api.KinAccountApiV4
 import org.kin.sdk.base.network.api.KinAccountCreationApiV4
 import org.kin.sdk.base.network.api.KinStreamingApiV4
@@ -31,7 +33,9 @@ import org.kin.sdk.base.tools.Observer
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.base.tools.onErrorResumeNextError
 import org.kin.sdk.base.tools.queueWork
+import org.kin.sdk.base.tools.sha256
 import org.kin.sdk.base.tools.toHexString
+import org.kin.stellarfork.KeyPair
 import java.util.concurrent.TimeUnit
 
 class KinServiceImplV4(
@@ -109,37 +113,39 @@ class KinServiceImplV4(
                 }
                 .then({ (serviceConfig, recentBlockHash, minRentExemption) ->
 
-                    val subsidizer: Key.PublicKey =
-                        serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
-                    val accountPub: Key.PublicKey = signer.asPublicKey()
+                    val tokenAccountSeed = signer.toSigningKeyPair().rawSecretSeed!!.sha256()
+                    val tokenAccount = KeyPair.fromSecretSeed(tokenAccountSeed).asPrivateKey()
+                    val tokenAccountPub: Key.PublicKey = tokenAccount.asPublicKey()
+
+                    val subsidizer: Key.PublicKey = serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
                     val owner: Key.PublicKey = signer.asPublicKey()
-                    val tokenProgram = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
-                    val token = serviceConfig.token!!.toKeyPair().asPublicKey()
+                    val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
+                    val mint = serviceConfig.token!!.toKeyPair().asPublicKey()
 
                     val transaction = Transaction.newTransaction(
                         subsidizer,
                         SystemProgram.CreateAccount(
                             subsidizer = subsidizer,
-                            address = accountPub,
-                            owner = tokenProgram,
+                            address = tokenAccountPub,
+                            owner = programKey,
                             lamports = minRentExemption.lamports!!,
                             size = TokenProgram.accountSize
                         ).instruction,
                         TokenProgram.InitializeAccount(
-                            account = accountPub,
-                            mint = token,
+                            account = tokenAccountPub,
+                            mint = mint,
                             owner = owner,
-                            programKey = tokenProgram
+                            programKey = programKey
                         ).instruction,
                         TokenProgram.SetAuthority(
-                            account = accountPub,
-                            currentAuthority = accountPub,
+                            account = tokenAccountPub,
+                            currentAuthority = owner,
                             newAuthority = subsidizer,
                             authorityType = TokenProgram.AuthorityType.AuthorityCloseAccount,
-                            programKey = tokenProgram
+                            programKey = programKey
                         ).instruction
                     ).copyAndSetRecentBlockhash(recentBlockHash.blockHash!!)
-                        .copyAndSign(signer)
+                        .copyAndSign(tokenAccount, signer)
 
                     log.log { "serviceConfig: $serviceConfig" }
                     log.log { "recentBlockHash: $recentBlockHash" }
@@ -356,7 +362,7 @@ class KinServiceImplV4(
                     val ownerAccount = ownerKey.asPublicKey()
                     val subsidizer: Key.PublicKey =
                         serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
-                    val tokenProgram = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
+                    val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
                     val paymentInstructions = paymentItems.map { paymentItem ->
                         val destinationAccount = paymentItem.destinationAccount.toKeyPair()
                             .asPublicKey()
@@ -366,7 +372,7 @@ class KinServiceImplV4(
                             destinationAccount,
                             ownerAccount,
                             paymentItem.amount,
-                            programKey = tokenProgram
+                            programKey = programKey
                         ).instruction
                     }
                     val memoInstruction = if (memo != KinMemo.NONE) {

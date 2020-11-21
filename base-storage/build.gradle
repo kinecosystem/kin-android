@@ -4,7 +4,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.12'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.14'
     }
 }
 
@@ -21,7 +21,6 @@ repositories {
 dependencies {
     implementation deps.grpc_protobuf
     implementation deps.grpc_stub
-    implementation deps.grpc_validate
 }
 
 def generatedSrcRoot = file("${buildDir}/generated/source/proto/main/java/")
@@ -38,23 +37,27 @@ compileJava {
     options.annotationProcessorGeneratedSourcesDirectory generatedSrcRoot
 }
 
+def protocVersion = "3.12.0"
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:3.5.1-1"
+        artifact = "com.google.protobuf:protoc:${protocVersion}"
     }
     plugins {
         grpc {
             artifact = "io.grpc:protoc-gen-grpc-java:${versions.grpcProtobuf}"
         }
-        javapgv {
-            artifact = "io.envoyproxy.protoc-gen-validate:protoc-gen-validate:0.1.0"
-        }
     }
     generateProtoTasks {
+        all().each { task ->
+            task.builtins {
+                java {
+                    option "lite"
+                }
+            }
+        }
         all()*.plugins {
-            grpc {}
-            javapgv {
-                option "lang=java"
+            grpc {
+                option 'lite'
             }
         }
     }

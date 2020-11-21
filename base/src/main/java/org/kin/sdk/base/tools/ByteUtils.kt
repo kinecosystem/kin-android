@@ -133,3 +133,14 @@ fun ByteArray.sha224(): ByteArray {
         md.doFinal(this, 0)
     }
 }
+
+fun ByteArray.sha256(): ByteArray {
+    return try {
+        MessageDigest.getInstance("SHA-256")
+            .apply { update(this@sha256) }
+            .digest()
+
+    } catch (e: NoSuchAlgorithmException) {
+        throw RuntimeException("SHA-256 not implemented")
+    }
+}

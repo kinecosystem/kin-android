@@ -28,10 +28,10 @@ class MetaServiceApiImpl(
     private val storage: Storage
 ) : MetaServiceApi {
 
-    fun postInit() : Promise<Unit> {
+    fun postInit(): Promise<Unit> {
         return storage.getMinApiVersion().doOnResolved {
             it.map {
-                if(it >= configuredMinApi) {
+                if (it >= configuredMinApi) {
                     configuredMinApi = it
                 }
             }
@@ -64,36 +64,54 @@ class KinServiceWrapper(
     val metaServiceApi: MetaServiceApi
 ) : KinService {
 
+    private var configuredService: KinService = kinServiceV3
+
     override fun createAccount(
         accountId: KinAccount.Id,
         signer: Key.PrivateKey
     ): Promise<KinAccount> =
-        checkChainUpgrade(::createAccount.name, accountId, signer)
+        checkAndMaybeUpgradeApi {
+            configuredService.createAccount(accountId, signer)
+        }
 
     override fun getAccount(accountId: KinAccount.Id): Promise<KinAccount> =
-        checkChainUpgrade(::getAccount.name, accountId)
+        checkAndMaybeUpgradeApi {
+            configuredService.getAccount(accountId)
+        }
 
     override fun resolveTokenAccounts(accountId: KinAccount.Id): Promise<List<Key.PublicKey>> =
-        checkChainUpgrade(::resolveTokenAccounts.name, accountId)
+        checkAndMaybeUpgradeApi {
+            configuredService.resolveTokenAccounts(accountId)
+        }
 
     override fun getLatestTransactions(kinAccountId: KinAccount.Id): Promise<List<KinTransaction>> =
-        checkChainUpgrade(::getLatestTransactions.name, kinAccountId)
+        checkAndMaybeUpgradeApi {
+            configuredService.getLatestTransactions(kinAccountId)
+        }
 
     override fun getTransactionPage(
         kinAccountId: KinAccount.Id,
         pagingToken: KinTransaction.PagingToken,
         order: KinService.Order
     ): Promise<List<KinTransaction>> =
-        checkChainUpgrade(::getTransactionPage.name, kinAccountId, pagingToken, order)
+        checkAndMaybeUpgradeApi {
+            configuredService.getTransactionPage(kinAccountId, pagingToken, order)
+        }
 
     override fun getTransaction(transactionHash: TransactionHash): Promise<KinTransaction> =
-        checkChainUpgrade(::getTransaction.name, transactionHash)
+        checkAndMaybeUpgradeApi {
+            configuredService.getTransaction(transactionHash)
+        }
 
     override fun canWhitelistTransactions(): Promise<Boolean> =
-        checkChainUpgrade(::canWhitelistTransactions.name)
+        checkAndMaybeUpgradeApi {
+            configuredService.canWhitelistTransactions()
+        }
 
     override fun getMinFee(): Promise<QuarkAmount> =
-        checkChainUpgrade(::getMinFee.name)
+        checkAndMaybeUpgradeApi {
+            configuredService.getMinFee()
+        }
 
     override fun buildAndSignTransaction(
         ownerKey: Key.PrivateKey,
@@ -103,43 +121,48 @@ class KinServiceWrapper(
         memo: KinMemo,
         fee: QuarkAmount
     ): Promise<KinTransaction> =
-        checkChainUpgrade(
-            ::buildAndSignTransaction.name,
-            ownerKey,
-            sourceKey,
-            nonce,
-            paymentItems,
-            memo,
-            fee
-        )
+        checkAndMaybeUpgradeApi {
+            configuredService.buildAndSignTransaction(
+                ownerKey,
+                sourceKey,
+                nonce,
+                paymentItems,
+                memo,
+                fee
+            )
+        }
 
     override fun submitTransaction(transaction: KinTransaction): Promise<KinTransaction> =
-        checkChainUpgrade(::submitTransaction.name, transaction)
+        checkAndMaybeUpgradeApi {
+            configuredService.submitTransaction(transaction)
+        }
 
     override fun buildSignAndSubmitTransaction(buildAndSignTransaction: () -> Promise<KinTransaction>): Promise<KinTransaction> =
-        checkChainUpgrade(::buildSignAndSubmitTransaction.name, buildAndSignTransaction)
+        checkAndMaybeUpgradeApi {
+            configuredService.buildSignAndSubmitTransaction(buildAndSignTransaction)
+        }
 
     // TODO: need to trigger update to streams on apiVersion change
     override fun streamAccount(kinAccountId: KinAccount.Id): Observer<KinAccount> =
-        checkChainVerObserver(::streamAccount.name, kinAccountId)
+        checkAndMaybeUpgradeApiObserver {
+            configuredService.streamAccount(kinAccountId)
+        }
 
     // TODO: need to trigger update to streams on apiVersion change
     override fun streamNewTransactions(kinAccountId: KinAccount.Id): Observer<KinTransaction> =
-        checkChainVerObserver(::streamNewTransactions.name, kinAccountId)
+        checkAndMaybeUpgradeApiObserver {
+            configuredService.streamNewTransactions(kinAccountId)
+        }
 
     override fun invalidateBlockhashCache() {
-        kinServiceV3.invalidateBlockhashCache()
-        kinServiceV4.invalidateBlockhashCache()
+        configuredService.invalidateBlockhashCache()
     }
 
     override val testService: KinTestService = object : KinTestService {
         override fun fundAccount(accountId: KinAccount.Id): Promise<KinAccount> =
-            checkChainUpgrade(
-                v3 = kinServiceV3.testService,
-                v4 = kinServiceV4.testService,
-                methodName = "fundAccount",
-                parameters = arrayOf(accountId)
-            )
+            checkAndMaybeUpgradeApi {
+                configuredService.testService.fundAccount(accountId)
+            }
     }
 
     // Utils
@@ -150,44 +173,28 @@ class KinServiceWrapper(
      * MetaServiceApi and try again on the appropriate Api version. In this fashion we can
      * upgrade our api calls to a different version (typically only higher)
      */
-    private fun <T> checkChainUpgrade(
-        v3: Any,
-        v4: Any,
-        methodName: String,
-        vararg parameters: Any
-    ): Promise<T> {
-        fun v3ApiCall(): Promise<T> = v3.findMethod(methodName, *parameters)
-        fun v4ApiCall(): Promise<T> = v4.findMethod(methodName, *parameters)
 
-        val configuredVersionCall = when (metaServiceApi.configuredMinApi) {
-            3 -> v3ApiCall()
-            else -> v4ApiCall()
+    private fun delegateCheck(version: Int) {
+        configuredService = when (version) {
+            3 -> kinServiceV3
+            else -> kinServiceV4
         }
+    }
 
-        return configuredVersionCall.onErrorResumeNext(KinService.FatalError.SDKUpgradeRequired.javaClass) {
+    private fun <T> checkAndMaybeUpgradeApi(execute: () -> Promise<T>): Promise<T> {
+        delegateCheck(metaServiceApi.configuredMinApi)
+        return execute().onErrorResumeNext(KinService.FatalError.SDKUpgradeRequired.javaClass) {
             metaServiceApi.getMinApiVersion()
                 .flatMap { minVersion ->
-                    when (minVersion) {
-                        3 -> v3ApiCall()
-                        else -> v4ApiCall()
-                    }
+                    delegateCheck(minVersion)
+                    execute()
                 }
         }
     }
 
-    private fun <T> checkChainUpgrade(methodName: String, vararg parameters: Any): Promise<T> =
-        checkChainUpgrade(
-            v3 = kinServiceV3,
-            v4 = kinServiceV4,
-            methodName = methodName,
-            parameters = parameters
-        )
-
-    private fun <T> checkChainVerObserver(methodName: String, vararg parameters: Any): Observer<T> {
-        return when (metaServiceApi.configuredMinApi) {
-            3 -> kinServiceV3.findMethod(methodName, *parameters) as Observer<T>
-            else -> kinServiceV4.findMethod(methodName, *parameters) as Observer<T>
-        }
+    private fun <T> checkAndMaybeUpgradeApiObserver(execute: () -> Observer<T>): Observer<T> {
+        delegateCheck(metaServiceApi.configuredMinApi)
+        return execute()
     }
 
     @Suppress("UNCHECKED_CAST")

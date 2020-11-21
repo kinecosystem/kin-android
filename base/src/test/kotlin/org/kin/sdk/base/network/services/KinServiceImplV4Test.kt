@@ -45,8 +45,10 @@ import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
 import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.TestUtils
 import org.kin.sdk.base.tools.ValueSubject
+import org.kin.sdk.base.tools.sha256
 import org.kin.sdk.base.tools.test
 import org.kin.sdk.base.tools.updateStatus
+import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.codec.Base64
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -69,7 +71,12 @@ class KinServiceImplV4Test {
         val registeredAccount = account.updateStatus(KinAccount.Status.Registered(1234))
         val createRequest = run {
             val subsidizer: Key.PublicKey = subsidizerId.toKeyPair().asPublicKey()
-            val accountPub: Key.PublicKey = account.id.toKeyPair().asPublicKey()
+
+            val signer = account.toSigningKeyPair().asPrivateKey()
+            val tokenAccountSeed = signer.toSigningKeyPair().rawSecretSeed!!.sha256()
+            val tokenAccount = KeyPair.fromSecretSeed(tokenAccountSeed).asPrivateKey()
+            val accountPub: Key.PublicKey = tokenAccount.asPublicKey()
+            val owner = account.key.asPublicKey()
 
             val transaction = Transaction.newTransaction(
                 subsidizer,
@@ -83,18 +90,18 @@ class KinServiceImplV4Test {
                 TokenProgram.InitializeAccount(
                     account = accountPub,
                     mint = mintKey,
-                    owner = account.key.asPublicKey(),
+                    owner = owner,
                     programKey = tokenKey
                 ).instruction,
                 TokenProgram.SetAuthority(
                     account = accountPub,
-                    currentAuthority = accountPub,
+                    currentAuthority = owner,
                     newAuthority = subsidizer,
                     authorityType = TokenProgram.AuthorityType.AuthorityCloseAccount,
                     programKey = tokenKey
                 ).instruction
             ).copyAndSetRecentBlockhash(recentBlockHash)
-                .copyAndSign(account.toSigningKeyPair().asPrivateKey())
+                .copyAndSign(signer, tokenAccount)
 
             KinAccountCreationApiV4.CreateAccountRequest(transaction)
         }

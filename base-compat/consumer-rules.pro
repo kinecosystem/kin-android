@@ -34,3 +34,19 @@
 -dontwarn org.kin.sdk.**
 -dontwarn java.lang.ClassValue
 
+# definitely need
+-keep class org.kin.sdk.base.network.services.KinService.*$* {*;}
+-keep class org.kin.agora.gen.** {*;}
+-keep class org.kin.agora.gen.**$* {*;}
+-keep class org.kin.agora.gen.account.v3.AccountService {*;}
+
+## Trying to avoid these below by refining further in the future...
+# For normal builds
+-keep class org.kin.*$* {*;}
+-keep class org.kin.**$* {*;}
+-keep class io.grpc.** {*;}
+-keep class org.kin.** {*;}
+
+# For shaded builds
+-keep class org.kin.shaded.** {*;}
+-keep class org.kin.shaded.*$* {*;}

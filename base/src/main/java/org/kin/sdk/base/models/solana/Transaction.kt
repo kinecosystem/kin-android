@@ -36,9 +36,7 @@ data class Transaction(
     val message: Message,
     val signatures: List<Signature> = emptyList(),
 ) {
-    val numRequiredSignatures: Int by lazy {
-        message.header.numSignatures + message.header.numReadOnlySigned
-    }
+    val numRequiredSignatures: Int = message.header.numSignatures
 
     companion object {
         fun newTransaction(
@@ -75,7 +73,7 @@ data class Transaction(
                 .quickSort()
 
             val header = Header(
-                numSignatures = uniqueAccounts.filter { it.isWritable && it.isSigner }.count(),
+                numSignatures = uniqueAccounts.filter { it.isSigner }.count(),
                 numReadOnlySigned = uniqueAccounts.filter { !it.isWritable && it.isSigner }.count(),
                 numReadOnly = uniqueAccounts.filter { !it.isWritable && !it.isSigner }.count()
             )

@@ -279,6 +279,7 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
      *
      * This is not meant for other external consumption. Use at your own risk.
      */
+    @Deprecated("Don't use this version of sendKinPayments")
     fun sendKinPayments(
         payments: List<KinPaymentItem>,
         memo: KinMemo,

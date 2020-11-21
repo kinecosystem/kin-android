@@ -304,12 +304,12 @@ sealed class KinEnvironment {
                 private fun ApiConfig.asManagedChannel(logger: KinLoggerFactory) =
                     OkHttpChannelBuilderForcedTls12.forAddress(networkEndpoint, tlsPort)
                         .intercept(
-                            *listOf(
+                            *listOfNotNull(
                                 AppUserAuthInterceptor(appInfoProvider!!),
                                 UserAgentInterceptor(storage),
                                 LoggingInterceptor(logger),
                                 if (testMigration) UpgradeApiV4Interceptor() else null
-                            ).filterNotNull().toTypedArray()
+                            ).toTypedArray()
                         )
                         .build()
             }

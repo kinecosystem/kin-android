@@ -148,7 +148,7 @@ class TransactionTest {
 
         assertEquals(tx.signatures.size, 3)
         assertEquals(tx.message.accounts.size, 6)
-        assertEquals(2, tx.message.header.numSignatures)
+        assertEquals(3, tx.message.header.numSignatures)
         assertEquals(1, tx.message.header.numReadOnlySigned)
         assertEquals(2, tx.message.header.numReadOnly)
 
@@ -213,7 +213,7 @@ class TransactionTest {
 
         assertEquals(tx.signatures.size, 4)
         assertEquals(tx.message.accounts.size, 6)
-        assertEquals(3, tx.message.header.numSignatures)
+        assertEquals(4, tx.message.header.numSignatures)
         assertEquals(1, tx.message.header.numReadOnlySigned)
         assertEquals(1, tx.message.header.numReadOnly)
 

@@ -1,5 +1,8 @@
 package org.kin.sdk.base.network.api.agora
 
+import io.grpc.ClientInterceptor
+import io.grpc.ManagedChannelBuilder
+import io.grpc.internal.AbstractManagedChannelImplBuilder
 import io.grpc.okhttp.OkHttpChannelBuilder
 import okhttp3.TlsVersion
 import java.security.KeyStore
@@ -10,7 +13,10 @@ import javax.net.ssl.X509TrustManager
 /**
  * OkHttpChannelBuilder which forces Tls1.2 ssl context in the builder in case it is not the default set by the system
  */
-class OkHttpChannelBuilderForcedTls12(host: String?, port: Int) : OkHttpChannelBuilder(host, port) {
+class OkHttpChannelBuilderForcedTls12(host: String?, port: Int) : AbstractManagedChannelImplBuilder<OkHttpChannelBuilder>() {
+
+    private val builder = OkHttpChannelBuilder.forAddress(host, port)
+
     companion object {
         /**
          * @return [X509TrustManager] from [TrustManagerFactory]
@@ -31,19 +37,23 @@ class OkHttpChannelBuilderForcedTls12(host: String?, port: Int) : OkHttpChannelB
          * For some reason, Android supports TLS v1.2 from [Build.VERSION_CODES.JELLY_BEAN], but the spec only has it
          * enabled by default from API [Build.VERSION_CODES.KITKAT]. Furthermore, some devices on
          * [Build.VERSION_CODES.LOLLIPOP] don't have it enabled, despite the spec saying they should.
-         *
+         *insertNewTransaction
          * @return the (potentially modified) [OkHttpChannelBuilder]
          */
-        fun forAddress(host: String?, port: Int): OkHttpChannelBuilderForcedTls12 {
+        fun forAddress(host: String?, port: Int): ManagedChannelBuilder<*> {
             val builder = OkHttpChannelBuilderForcedTls12(host, port)
             try {
                 val sslContext = SSLContext.getInstance(TlsVersion.TLS_1_2.javaName())
                 sslContext.init(null, arrayOf(trustManager), null)
 
-                builder.sslSocketFactory(Tls12SocketFactory(sslContext.socketFactory))
+                builder.builder.sslSocketFactory(Tls12SocketFactory(sslContext.socketFactory))
             } catch (e: Exception) {
             }
             return builder
         }
+    }
+
+    override fun delegate(): ManagedChannelBuilder<*> {
+        return builder
     }
 }

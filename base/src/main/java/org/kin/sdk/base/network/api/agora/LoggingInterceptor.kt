@@ -1,7 +1,7 @@
 package org.kin.sdk.base.network.api.agora
 
-import com.google.protobuf.Message
-import com.google.protobuf.TextFormat
+//import com.google.protobuf.Message
+//import com.google.protobuf.TextFormat
 import io.grpc.CallOptions
 import io.grpc.Channel
 import io.grpc.ClientCall
@@ -25,7 +25,7 @@ class LoggingInterceptor(private val logger: KinLoggerFactory) : ClientIntercept
             SimpleForwardingClientCall<ReqT, RespT>(next?.newCall(method, callOptions)) {
             override fun sendMessage(message: ReqT) {
                 log.log{"request --- [gRPCLogInterceptor]::${method?.fullMethodName}" +
-                        "\n${TextFormat.printToString(message as? Message)}" +
+                        "\n${message.toString()}" +
                         "--- request"}
                 super.sendMessage(message)
             }
@@ -34,7 +34,7 @@ class LoggingInterceptor(private val logger: KinLoggerFactory) : ClientIntercept
                 val listener: Listener<RespT> = object : Listener<RespT>() {
                     override fun onMessage(message: RespT) {
                         log.log{"response --- [gRPCLogInterceptor]::${method?.fullMethodName}" +
-                                "\n${TextFormat.printToString(message as? Message)}" +
+                                "\n${message.toString()}" +
                                 "--- response"}
                         responseListener?.onMessage(message)
                         super.onMessage(message)

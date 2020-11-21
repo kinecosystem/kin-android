@@ -127,7 +127,7 @@ class KinServiceImpl(
     }
 
     override fun resolveTokenAccounts(accountId: KinAccount.Id): Promise<List<Key.PublicKey>> {
-        return Promise.of(listOf(accountId.toKeyPair().asPublicKey()))
+        return Promise.of(emptyList())
     }
 
     override fun getLatestTransactions(kinAccountId: KinAccount.Id): Promise<List<KinTransaction>> {
