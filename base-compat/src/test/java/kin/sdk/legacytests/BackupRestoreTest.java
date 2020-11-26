@@ -81,7 +81,7 @@ public class BackupRestoreTest {
     }
 
     private KinClient createNewKinClient(KeyStore keyStore) {
-        KinEnvironment kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet.INSTANCE)
+        KinEnvironment kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
                 .setKinService(mockKinService)
                 .setStorage(mockStorage)
                 .build();

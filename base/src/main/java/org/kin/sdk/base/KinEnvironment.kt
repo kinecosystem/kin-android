@@ -5,6 +5,7 @@ import okhttp3.OkHttpClient
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.asKinAccountId
+import org.kin.sdk.base.models.isKin2
 import org.kin.sdk.base.network.api.FriendBotApi
 import org.kin.sdk.base.network.api.KinAccountApi
 import org.kin.sdk.base.network.api.KinAccountCreationApi
@@ -17,6 +18,7 @@ import org.kin.sdk.base.network.api.agora.AgoraKinAccountsApi
 import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApi
 import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApiV4
 import org.kin.sdk.base.network.api.agora.AppUserAuthInterceptor
+import org.kin.sdk.base.network.api.agora.KinVersionInterceptor
 import org.kin.sdk.base.network.api.agora.LoggingInterceptor
 import org.kin.sdk.base.network.api.agora.OkHttpChannelBuilderForcedTls12
 import org.kin.sdk.base.network.api.agora.UpgradeApiV4Interceptor
@@ -80,8 +82,10 @@ sealed class KinEnvironment {
 
             inner class CompletedBuilder internal constructor() {
                 private fun NetworkEnvironment.horizonApiConfig() = when (this) {
-                    NetworkEnvironment.KinStellarTestNet -> ApiConfig.TestNetHorizon
-                    NetworkEnvironment.KinStellarMainNet -> ApiConfig.MainNetHorizon
+                    NetworkEnvironment.KinStellarTestNetKin3 -> ApiConfig.TestNetHorizon
+                    NetworkEnvironment.KinStellarMainNetKin3 -> ApiConfig.MainNetHorizon
+                    NetworkEnvironment.KinStellarTestNetKin2 -> throw NotImplementedError("Unsupported: please upgrade to Agora")
+                    NetworkEnvironment.KinStellarMainNetKin2 -> throw NotImplementedError("Unsupported: please upgrade to Agora")
                 }
 
                 fun build(): KinEnvironment {
@@ -190,7 +194,7 @@ sealed class KinEnvironment {
         class Builder(private val networkEnvironment: NetworkEnvironment) {
             private var managedChannel: ManagedChannel? = null
             private var executors: ExecutorServices? = null
-            private var enableLogging: Boolean = networkEnvironment == NetworkEnvironment.KinStellarTestNet
+            private var enableLogging: Boolean = networkEnvironment == NetworkEnvironment.KinStellarTestNetKin3
             private var logger: KinLoggerFactory? = null
             private var networkHandler: NetworkOperationsHandler? = null
             private var appInfoProvider: AppInfoProvider? = null
@@ -202,11 +206,6 @@ sealed class KinEnvironment {
             private var storageBuilder: KinFileStorage.Builder? = null
 
             inner class CompletedBuilder internal constructor() {
-                private fun NetworkEnvironment.horizonApiConfig() = when (this) {
-                    NetworkEnvironment.KinStellarTestNet -> ApiConfig.TestNetHorizon
-                    NetworkEnvironment.KinStellarMainNet -> ApiConfig.MainNetHorizon
-                }
-
                 fun build(): Agora {
                     val logger = logger ?: KinLoggerFactoryImpl(enableLogging)
                     val executors = executors ?: ExecutorServices()
@@ -222,9 +221,11 @@ sealed class KinEnvironment {
                     if (!this@Builder::storage.isInitialized && storageBuilder != null) {
                         storage = storageBuilder.setNetworkEnvironment(networkEnvironment).build()
                     }
+                    val blockchainVersion = if (networkEnvironment.isKin2()) 2 else minApiVersion
                     val managedChannel =
                         managedChannel ?: networkEnvironment.agoraApiConfig()
-                            .asManagedChannel(logger)
+                            .asManagedChannel(logger, blockchainVersion)
+
 
                     fun buildV3ApiService(): KinService {
                         val accountsApi = AgoraKinAccountsApi(managedChannel, networkEnvironment)
@@ -297,17 +298,20 @@ sealed class KinEnvironment {
                 }
 
                 private fun NetworkEnvironment.agoraApiConfig() = when (this) {
-                    NetworkEnvironment.KinStellarTestNet -> ApiConfig.TestNetAgora
-                    NetworkEnvironment.KinStellarMainNet -> ApiConfig.MainNetAgora
+                    NetworkEnvironment.KinStellarTestNetKin3,
+                    NetworkEnvironment.KinStellarTestNetKin2-> ApiConfig.TestNetAgora
+                    NetworkEnvironment.KinStellarMainNetKin3,
+                    NetworkEnvironment.KinStellarMainNetKin2-> ApiConfig.MainNetAgora
                 }
 
-                private fun ApiConfig.asManagedChannel(logger: KinLoggerFactory) =
+                private fun ApiConfig.asManagedChannel(logger: KinLoggerFactory, blockchainVersion: Int) =
                     OkHttpChannelBuilderForcedTls12.forAddress(networkEndpoint, tlsPort)
                         .intercept(
                             *listOfNotNull(
                                 AppUserAuthInterceptor(appInfoProvider!!),
                                 UserAgentInterceptor(storage),
                                 LoggingInterceptor(logger),
+                                if (blockchainVersion == 2) KinVersionInterceptor(blockchainVersion) else null,
                                 if (testMigration) UpgradeApiV4Interceptor() else null
                             ).toTypedArray()
                         )
@@ -329,11 +333,14 @@ sealed class KinEnvironment {
 
             /**
              * This option allows developers to force which api version the KinService should use.
-             * v3 - stellar
+             * v3 - stellar (Kin 2 or Kin 3 blockchains)
              * v4 - solana
              * It is *not* required to set this as we default to v3 until migration day to solana.
              */
             fun setMinApiVersion(minApiVersion: Int): Builder = apply {
+                if (minApiVersion < 3 || minApiVersion > 4) {
+                    throw IllegalArgumentException("$minApiVersion is not supported, must be 3 or 4")
+                }
                 this.minApiVersion = minApiVersion
             }
 

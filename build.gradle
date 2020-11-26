@@ -1,6 +1,6 @@
 buildscript {
-    ext.kotlin_version = '1.4.0'
-    ext.jacoco_version = "0.8.5"
+    ext.kotlin_version = '1.4.20'
+    ext.jacoco_version = "0.8.6"
     ext.dokka_version = '0.10.1'
     ext.enableJacoco = { Project project, String variant ->
         project.plugins.apply('jacoco')
@@ -217,7 +217,7 @@ allprojects {
     ext {
         // Libraries
         groupId = "org.kin.sdk.android"
-        libraryVersion = "0.4.3" // NOTE: ALSO CHANGE SDKConfig.versionString when updating. Should be identical.
+        libraryVersion = "0.4.4" // NOTE: ALSO CHANGE SDKConfig.versionString when updating. Should be identical.
         siteUrl = "https://github.com/kinecosystem/kin-android"
         gitUrl = "https://github.com/kinecosystem/kin-android.git"
     }

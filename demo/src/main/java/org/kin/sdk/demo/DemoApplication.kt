@@ -70,7 +70,7 @@ class DemoApplication : MultiDexApplication(), ResolverProvider, AppInfoProvider
     }
 
     private val testKinEnvironment: KinEnvironment.Agora by lazy {
-        KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+        KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
             .setAppInfoProvider(object : AppInfoProvider {
                 override val appInfo: AppInfo =
                     AppInfo(
@@ -94,7 +94,7 @@ class DemoApplication : MultiDexApplication(), ResolverProvider, AppInfoProvider
     }
 
     private val mainNetKinEnvironment: KinEnvironment.Agora by lazy {
-        KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarMainNet)
+        KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarMainNetKin3)
             .setAppInfoProvider(this)
             .setEnableLogging()
             .setStorage(KinFileStorage.Builder("${applicationContext.filesDir}/kin"))

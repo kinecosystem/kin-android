@@ -12,7 +12,6 @@ import org.kin.sdk.base.KinEnvironment
 import org.kin.sdk.base.ObservationMode
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinPaymentItem
-import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.storage.KinFileStorage
 import org.kin.sdk.base.tools.DisposeBag
@@ -43,7 +42,7 @@ class HorizonKinAccountContextTest {
             tempFolder.root.invariantSeparatorsPath
         )
         sut = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setStorage(storage)
                 .build()
         ).createNewAccount()
@@ -54,7 +53,7 @@ class HorizonKinAccountContextTest {
         }
 
         sut2 = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setStorage(storage)
                 .build()
         ).createNewAccount()

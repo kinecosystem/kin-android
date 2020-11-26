@@ -92,7 +92,7 @@ class AgoraKinTransactionsApiTest {
             InProcessChannelBuilder.forName(serverName).directExecutor().build()
         )
 
-        sut = AgoraKinTransactionsApi(channel, NetworkEnvironment.KinStellarTestNet)
+        sut = AgoraKinTransactionsApi(channel, NetworkEnvironment.KinStellarTestNetKin3)
     }
 
 

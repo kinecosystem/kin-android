@@ -46,6 +46,7 @@ ignore:
   - "**/UserAgentInterceptor.*"
   - "**/LoggingInterceptor.*"
   - "**/UpgradeApiV4Interceptor.*"
+  - "**/KinVersionInterceptor.*"
   - "**/SDKConfig.*"
   - "**/KinTestServiceImpl.*"
   - "**/KinTestServiceImplV4.*"

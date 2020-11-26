@@ -124,7 +124,7 @@ class AgoraKinTransactionsApiV4Test {
             InProcessChannelBuilder.forName(serverName).directExecutor().build()
         )
 
-        sut = AgoraKinTransactionsApiV4(channel, NetworkEnvironment.KinStellarTestNet)
+        sut = AgoraKinTransactionsApiV4(channel, NetworkEnvironment.KinStellarTestNetKin3)
     }
 
     @Test

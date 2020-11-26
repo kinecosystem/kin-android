@@ -155,10 +155,7 @@ internal fun TransactionHash.toTransactionId(): TransactionId {
 }
 
 internal fun NetworkEnvironment.toNetwork(): Network {
-    return when (this) {
-        NetworkEnvironment.KinStellarTestNet -> Network.testNetwork
-        NetworkEnvironment.KinStellarMainNet -> Network.publicNetwork
-    }
+    return Network(networkPassphrase)
 }
 
 internal fun KinBalance.toBalance(): Balance {

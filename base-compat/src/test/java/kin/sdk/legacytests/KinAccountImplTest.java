@@ -119,7 +119,7 @@ public class KinAccountImplTest {
                 new FakeBackupRestore(),
                 mockAccountContext,
                 mockKinService,
-                NetworkEnvironment.KinStellarTestNet.INSTANCE,
+                NetworkEnvironment.KinStellarTestNetKin3.INSTANCE,
                 new AppId(APP_ID)
         );
     }
@@ -791,7 +791,7 @@ public class KinAccountImplTest {
                 mockBackupRestore,
                 mockAccountContext,
                 mockKinService,
-                NetworkEnvironment.KinStellarTestNet.INSTANCE,
+                NetworkEnvironment.KinStellarTestNetKin3.INSTANCE,
                 new AppId(APP_ID)
         );
 

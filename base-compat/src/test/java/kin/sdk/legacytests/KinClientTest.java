@@ -107,7 +107,7 @@ public class KinClientTest {
         }
         ExecutorServices executors = new ExecutorServices();
         ILoggerFactory logger = LoggerFactory.getILoggerFactory();
-        kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet.INSTANCE)
+        kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
                 .setKinService(mockKinService)
                 .setStorage(mockStorage)
                 .build();
@@ -718,7 +718,7 @@ public class KinClientTest {
         mockBackupRestore = mock(BackupRestore.class);
         mockKinService = mock(KinService.class);
         ExecutorServices executors = new ExecutorServices();
-        kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet.INSTANCE)
+        kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
                 .setKinService(mockKinService)
                 .setStorage(mockStorage)
                 .build();
@@ -755,7 +755,7 @@ public class KinClientTest {
                         mockBackupRestore,
                         new KinAccountContext.Builder(kinEnvironment).useExistingAccount(new org.kin.sdk.base.models.KinAccount.Id(account1.getPublicKey())).build(),
                         mockKinService,
-                        NetworkEnvironment.KinStellarTestNet.INSTANCE,
+                        NetworkEnvironment.KinStellarTestNetKin3.INSTANCE,
                         new AppId(APP_ID)
                 ),
                 kinAccount1

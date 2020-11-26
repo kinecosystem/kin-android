@@ -46,6 +46,7 @@ import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.network.services.KinServiceImpl
 import org.kin.sdk.base.stellar.models.ApiConfig
 import org.kin.sdk.base.stellar.models.KinTransaction
+import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
 import org.kin.sdk.base.tools.Optional
@@ -105,6 +106,8 @@ class KinServiceImplTest {
     private lateinit var mockAccountCreationApi: KinAccountCreationApi
     private lateinit var mockTransactionWhitelistingApi: KinTransactionWhitelistingApi
 
+    val logger = KinLoggerFactoryImpl(true)
+
     @Before
     fun setUp() {
         mockAccountApi = mock {}
@@ -114,9 +117,6 @@ class KinServiceImplTest {
         mockTransactionWhitelistingApi = mock {
             on { isWhitelistingAvailable } doReturn false
         }
-
-        val logger = KinLoggerFactoryImpl(true)
-
         sut = KinServiceImpl(
             ApiConfig.TestNetHorizon.networkEnv,
             NetworkOperationsHandlerImpl(logger = logger),
@@ -916,6 +916,46 @@ class KinServiceImplTest {
             assertNotNull(value)
             println(Base64.encodeBase64String(value.bytesValue))
             assertTrue(expected.bytesValue.contentEquals(value.bytesValue))
+            assertTrue(value.recordType is KinTransaction.RecordType.InFlight)
+
+            verifyNoMoreInteractions(mockTransactionApi)
+            verifyZeroInteractions(mockAccountApi)
+        }
+    }
+
+    @Test
+    fun buildAndSignTransaction_success_no_memo_kin2() {
+
+        sut = KinServiceImpl(
+            NetworkEnvironment.KinStellarTestNetKin2,
+            NetworkOperationsHandlerImpl(logger = logger),
+            mockAccountApi,
+            mockTransactionApi,
+            mockStreamingApi,
+            mockAccountCreationApi,
+            mockTransactionWhitelistingApi,
+            logger
+        )
+
+        val sourceAccount =
+            TestUtils.fromSecretSeed("SDFDPC5VK7FSFDH4Q3CQPQRA4OPFXYM6CFRXVQOA767OGXFYBEDEQGMF")
+                .updateStatus(KinAccount.Status.Registered(16576250185252864))
+        val destinationAccount =
+            TestUtils.fromAccountId("GAQQOLVJB35BIUZMARHI75OYLIS7NWFZOBV3C7YQ37CT3RVXRIQC6CXN")
+
+        sut.buildAndSignTransaction(
+            sourceAccount.key as Key.PrivateKey,
+            sourceAccount.key.asPublicKey(),
+            (sourceAccount.status as KinAccount.Status.Registered).sequence,
+            listOf(KinPaymentItem(KinAmount(123), destinationAccount.id)),
+            KinMemo.NONE,
+            QuarkAmount(100)
+        ).test {
+            assertNull(error)
+            assertNotNull(value)
+            assertEquals(QuarkAmount(100*100), value.fee)
+            assertEquals(KinAmount(123*100), value.paymentOperations.map { it.amount }.reduce { acc, kinAmount -> acc + kinAmount })
+            assertEquals(KinAmount(123), value.asKinPayments().map { it.amount }.reduce { acc, kinAmount -> acc + kinAmount })
             assertTrue(value.recordType is KinTransaction.RecordType.InFlight)
 
             verifyNoMoreInteractions(mockTransactionApi)

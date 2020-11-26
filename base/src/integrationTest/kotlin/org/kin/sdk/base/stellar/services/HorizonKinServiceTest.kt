@@ -59,7 +59,7 @@ class HorizonKinServiceTest {
     private lateinit var sutTransactionWhitelistingApi: KinTransactionWhitelistingApi
     private lateinit var friendBotApi: FriendBotApi
 
-    private val networkEnvironment = NetworkEnvironment.KinStellarTestNet
+    private val networkEnvironment = NetworkEnvironment.KinStellarTestNetKin3
 
     @Before
     fun setUp() {

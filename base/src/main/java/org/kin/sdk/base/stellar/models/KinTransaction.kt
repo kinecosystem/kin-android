@@ -19,6 +19,7 @@ import org.kin.sdk.base.stellar.models.KinTransaction.RecordType
 import org.kin.sdk.base.tools.byteArrayToLong
 import org.kin.sdk.base.tools.subByteArray
 import org.kin.sdk.base.tools.toHexString
+import org.kin.stellarfork.AssetTypeCreditAlphaNum4
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.PaymentOperation
 import org.kin.stellarfork.Transaction
@@ -251,6 +252,13 @@ data class StellarKinTransaction @JvmOverloads constructor(
     override val networkEnvironment: NetworkEnvironment,
     override val invoiceList: InvoiceList? = null
 ) : KinTransaction {
+
+    fun isKinNonNativeAsset(): Boolean {
+        return transactionEnvelope.tx!!.operations.filter { operation ->
+            operation!!.body!!.discriminant == OperationType.PAYMENT
+        }.map { PaymentOperation.Builder(it!!.body!!.paymentOp!!).build() }
+            .map { (it.asset as? AssetTypeCreditAlphaNum4)?.code == "KIN" }.reduce { acc, b -> acc && b }
+    }
 
     internal val transactionEnvelope: TransactionEnvelope by lazy {
         TransactionEnvelope.decode(XdrDataInputStream(ByteArrayInputStream(bytesValue)))

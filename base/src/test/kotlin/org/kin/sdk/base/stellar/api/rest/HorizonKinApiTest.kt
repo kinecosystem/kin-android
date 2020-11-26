@@ -52,7 +52,7 @@ class HorizonKinApiTest {
         sut = HorizonKinApi(
             ApiConfig.CustomConfig(
                 mockWebServer.url("/").url().toString(),
-                NetworkEnvironment.KinStellarTestNet,
+                NetworkEnvironment.KinStellarTestNetKin3,
                 5555
             ), OkHttpClient().newBuilder()
                 .readTimeout(Duration.ofSeconds(2))

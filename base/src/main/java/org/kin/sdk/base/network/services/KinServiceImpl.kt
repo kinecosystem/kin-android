@@ -4,6 +4,7 @@ import okhttp3.OkHttpClient
 import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
+import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.QuarkAmount
@@ -11,6 +12,7 @@ import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.createStellarSigningAccount
 import org.kin.sdk.base.models.getNetwork
+import org.kin.sdk.base.models.isKin2
 import org.kin.sdk.base.models.toKeyPair
 import org.kin.sdk.base.models.toKinTransaction
 import org.kin.sdk.base.models.toSigningKeyPair
@@ -30,11 +32,15 @@ import org.kin.sdk.base.tools.NetworkOperationsHandler
 import org.kin.sdk.base.tools.Observer
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.base.tools.queueWork
+import org.kin.stellarfork.Asset
 import org.kin.stellarfork.AssetTypeNative
+import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.Memo
 import org.kin.stellarfork.PaymentOperation
 import org.kin.stellarfork.Transaction
 import org.kin.stellarfork.codec.Base64
+import org.kin.stellarfork.xdr.AssetType
+import java.math.BigDecimal
 
 class KinServiceImpl(
     private val networkEnvironment: NetworkEnvironment,
@@ -262,16 +268,23 @@ class KinServiceImpl(
                         .apply {
                             paymentItems.forEach {
                                 addOperation(
-                                    PaymentOperation.Builder(
-                                        it.destinationAccount.toKeyPair(),
-                                        AssetTypeNative,
-                                        it.amount.toString()
-                                    )
-                                        .setSourceAccount(account.keypair)
+                                    if (networkEnvironment.isKin2()) {
+                                        PaymentOperation.Builder(
+                                            it.destinationAccount.toKeyPair(),
+                                            Asset.createNonNativeAsset("KIN", networkEnvironment.issuer),
+                                            it.amount.multiply(KinAmount(100)).toString()
+                                        )
+                                    } else {
+                                        PaymentOperation.Builder(
+                                            it.destinationAccount.toKeyPair(),
+                                            AssetTypeNative,
+                                            it.amount.toString()
+                                        )
+                                    }.setSourceAccount(account.keypair)
                                         .build()
                                 )
                             }
-                            addFee(fee.value.toInt())
+                            addFee( fee.value.toInt().let { if (networkEnvironment.isKin2()) it * 100 else it } )
                             if (memo != KinMemo.NONE) {
                                 val stellarMemo = when (memo.type) {
                                     KinMemo.Type.NoEncoding -> Memo.hash(memo.rawValue)
@@ -280,6 +293,7 @@ class KinServiceImpl(
                                 addMemo(stellarMemo)
                             }
                         }
+
                         .build()
                         .apply { sign(ownerKey.toSigningKeyPair()) }
                         .toKinTransaction(networkEnvironment, paymentItems.toInvoiceList())

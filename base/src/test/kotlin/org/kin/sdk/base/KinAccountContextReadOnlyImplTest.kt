@@ -53,7 +53,7 @@ class KinAccountContextReadOnlyImplTest {
                 pagingToken
             )
         )
-        val networkEnvironment = NetworkEnvironment.KinStellarTestNet
+        val networkEnvironment = NetworkEnvironment.KinStellarTestNetKin3
     }
 
     private lateinit var sut: KinAccountContextReadOnly
@@ -89,14 +89,14 @@ class KinAccountContextReadOnlyImplTest {
         }
 
         sut = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
                 .setStorage(mockStorage)
         ).useExistingAccountReadOnly(registeredAccount.id).build()
 
         sut2 = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setKinService(mockService2)
                 .setExecutorServices(excecutors)
                 .setStorage(mockStorage2)

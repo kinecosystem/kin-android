@@ -40,6 +40,9 @@
 -keep class org.kin.agora.gen.**$* {*;}
 -keep class org.kin.agora.gen.account.v3.AccountService {*;}
 
+# ProtobufLite - https://github.com/protocolbuffers/protobuf/blob/543817295e05bcf226628ec26706e575741a0722/java/lite.md
+-keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
+
 ## Trying to avoid these below by refining further in the future...
 # For normal builds
 -keep class org.kin.*$* {*;}

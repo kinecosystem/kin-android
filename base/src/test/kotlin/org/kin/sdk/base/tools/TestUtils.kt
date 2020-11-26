@@ -129,14 +129,14 @@ class TestUtils {
         fun kinTransactionFromXdr(
             base64StringXdr: String,
             recordType: KinTransaction.RecordType,
-            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNet,
+            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNetKin3,
             invoiceList: InvoiceList? = null
         ) = StellarKinTransaction(Base64.decodeBase64(base64StringXdr)!!, recordType, networkEnvironment, invoiceList)
 
         fun kinTransactionFromSolanaTransaction(
             base64StringBytes: String,
             recordType: KinTransaction.RecordType,
-            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNet,
+            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNetKin3,
             invoiceList: InvoiceList? = null
         ) = SolanaKinTransaction(Base64.decodeBase64(base64StringBytes)!!, recordType, networkEnvironment, invoiceList)
     }

@@ -53,5 +53,13 @@ data class KinAmount(private val amount: BigDecimal) {
     operator fun minus(amount: KinAmount): KinAmount {
         return KinAmount(this.amount - amount.amount)
     }
+
+    fun multiply(amount: KinAmount): KinAmount {
+        return KinAmount(this.amount.multiply(amount.value))
+    }
+
+    fun divide(amount: KinAmount): KinAmount {
+        return KinAmount(this.amount.divide(amount.value))
+    }
 }
 

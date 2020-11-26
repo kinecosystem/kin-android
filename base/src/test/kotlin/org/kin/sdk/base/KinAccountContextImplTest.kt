@@ -82,7 +82,7 @@ class KinAccountContextImplTest {
                 pagingToken
             )
         )
-        val networkEnvironment = NetworkEnvironment.KinStellarTestNet
+        val networkEnvironment = NetworkEnvironment.KinStellarTestNetKin3
     }
 
     private lateinit var sut: KinAccountContext
@@ -117,7 +117,7 @@ class KinAccountContextImplTest {
         }
 
         sut = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setAppInfoProvider(object : AppInfoProvider {
                     override val appInfo: AppInfo by lazy {
                         AppInfo(
@@ -138,7 +138,7 @@ class KinAccountContextImplTest {
         ).useExistingAccount(registeredAccount.id).build()
 
         sut2 = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setAppInfoProvider(object : AppInfoProvider {
                     override val appInfo: AppInfo by lazy {
                         AppInfo(
@@ -172,7 +172,7 @@ class KinAccountContextImplTest {
     @Test
     fun testNewAccountBuilder() {
         val context = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
                 .setStorage(mockStorage)

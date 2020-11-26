@@ -111,7 +111,7 @@ class AgoraKinAccountsApiV4Test {
         )
 
         sut =
-            AgoraKinAccountApiV4(channel, networkEnvironment = NetworkEnvironment.KinStellarTestNet)
+            AgoraKinAccountApiV4(channel, networkEnvironment = NetworkEnvironment.KinStellarTestNetKin3)
         sut2 = AgoraKinAccountCreationApiV4(channel)
     }
 

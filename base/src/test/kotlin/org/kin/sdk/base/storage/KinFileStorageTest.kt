@@ -41,7 +41,7 @@ import kotlin.test.assertTrue
 class KinFileStorageTest {
 
     companion object {
-        val networkEnvironment = NetworkEnvironment.KinStellarTestNet
+        val networkEnvironment = NetworkEnvironment.KinStellarTestNetKin3
     }
 
     lateinit var sut: Storage
@@ -54,7 +54,7 @@ class KinFileStorageTest {
     fun setUp() {
         sut = KinFileStorage(
             tempFolder.root.invariantSeparatorsPath,
-            NetworkEnvironment.KinStellarTestNet,
+            NetworkEnvironment.KinStellarTestNetKin3,
             ExecutorServices()
         )
     }

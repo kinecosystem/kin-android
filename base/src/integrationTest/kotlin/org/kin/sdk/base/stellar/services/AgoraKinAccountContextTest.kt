@@ -9,19 +9,14 @@ import org.junit.rules.TemporaryFolder
 import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.KinAccountContextImpl
 import org.kin.sdk.base.KinEnvironment
-import org.kin.sdk.base.ObservationMode
 import org.kin.sdk.base.models.KinAmount
-import org.kin.sdk.base.models.KinPaymentItem
-import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.AgoraMemo
-import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.storage.KinFileStorage
 import org.kin.sdk.base.tools.DisposeBag
 import org.kin.sdk.base.tools.test
 import java.security.Security
 import kotlin.test.assertEquals
-import org.kin.sdk.base.tools.intToByteArray
 import org.kin.sdk.base.tools.toByteArray
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -56,7 +51,7 @@ class AgoraKinAccountContextTest {
             tempFolder.root.invariantSeparatorsPath
         )
         sut = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setStorage(storage)
                 .build()
         ).createNewAccount()
@@ -73,7 +68,7 @@ class AgoraKinAccountContextTest {
 
 
         sut2 = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
                 .setStorage(storage)
                 .build()
         ).createNewAccount()

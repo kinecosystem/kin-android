@@ -16,16 +16,16 @@ sealed class ApiConfig(
     }
 
     object TestNetHorizon :
-        ApiConfig(TestNetHorizonEndpoint, NetworkEnvironment.KinStellarTestNet, TLS_PORT)
+        ApiConfig(TestNetHorizonEndpoint, NetworkEnvironment.KinStellarTestNetKin3, TLS_PORT)
 
     object MainNetHorizon :
-        ApiConfig(MainNetHorizonEndpoint, NetworkEnvironment.KinStellarMainNet, TLS_PORT)
+        ApiConfig(MainNetHorizonEndpoint, NetworkEnvironment.KinStellarMainNetKin3, TLS_PORT)
 
     object TestNetAgora :
-        ApiConfig(TestNetAgoraEndpoint, NetworkEnvironment.KinStellarTestNet, TLS_PORT)
+        ApiConfig(TestNetAgoraEndpoint, NetworkEnvironment.KinStellarTestNetKin3, TLS_PORT)
 
     object MainNetAgora :
-        ApiConfig(MainNetAgoraEndpoint, NetworkEnvironment.KinStellarMainNet, TLS_PORT)
+        ApiConfig(MainNetAgoraEndpoint, NetworkEnvironment.KinStellarMainNetKin3, TLS_PORT)
 
     class CustomConfig(
         networkEndpoint: String,
