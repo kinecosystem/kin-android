@@ -5,6 +5,7 @@ import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.stellar.models.KinTransaction
+import org.kin.stellarfork.codec.Base64
 
 interface KinTransactionApi {
 
@@ -81,6 +82,10 @@ interface KinTransactionApi {
             var result = transactionEnvelopeXdr.contentHashCode()
             result = 31 * result + (invoiceList?.hashCode() ?: 0)
             return result
+        }
+
+        override fun toString(): String {
+            return "SubmitTransactionRequest(transactionEnvelopeXdr=${Base64.encodeBase64String(transactionEnvelopeXdr)}, invoiceList=$invoiceList)"
         }
     }
 

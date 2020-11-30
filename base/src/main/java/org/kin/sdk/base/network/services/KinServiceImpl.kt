@@ -284,7 +284,7 @@ class KinServiceImpl(
                                         .build()
                                 )
                             }
-                            addFee( fee.value.toInt().let { if (networkEnvironment.isKin2()) it * 100 else it } )
+                            addFee( fee.value.toInt().let { if (networkEnvironment.isKin2()) 100 * 100 * paymentItems.size else it } ) // Hack: Kin 2 will always pay fee of 100 quarks, inflated by 100 because of decimal scaling, times the number of payment operations and in the base currency: XLM
                             if (memo != KinMemo.NONE) {
                                 val stellarMemo = when (memo.type) {
                                     KinMemo.Type.NoEncoding -> Memo.hash(memo.rawValue)
@@ -293,7 +293,6 @@ class KinServiceImpl(
                                 addMemo(stellarMemo)
                             }
                         }
-
                         .build()
                         .apply { sign(ownerKey.toSigningKeyPair()) }
                         .toKinTransaction(networkEnvironment, paymentItems.toInvoiceList())
