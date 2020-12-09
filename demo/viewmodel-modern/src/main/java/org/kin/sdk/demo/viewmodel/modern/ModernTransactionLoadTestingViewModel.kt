@@ -51,7 +51,7 @@ class ModernTransactionLoadTestingViewModel(
             randomQuarkAmount(100).toKin(),
             KinAccount.Id(destinationAddress),
             KinBinaryMemo.Builder(DemoAppConfig.DEMO_APP_IDX.value)
-                .setTranferType(KinBinaryMemo.TransferType.P2P)
+                .setTransferType(KinBinaryMemo.TransferType.P2P)
                 .build()
                 .toKinMemo()
         ).then({

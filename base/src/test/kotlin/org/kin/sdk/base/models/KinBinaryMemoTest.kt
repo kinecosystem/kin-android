@@ -9,9 +9,9 @@ import kotlin.test.assertTrue
 class KinBinaryMemoTest {
 
     @Test
-    fun testAgoraEncoding_specicFK() {
+    fun testAgoraEncoding_specificFK() {
         val agoraMemo = KinBinaryMemo.Builder(10, 1, 2)
-            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setTransferType(KinBinaryMemo.TransferType.P2P)
             .setForeignKey(byteArrayOf(0xAE.toByte(), 0xFD.toByte()))
             .build()
 
@@ -28,7 +28,7 @@ class KinBinaryMemoTest {
         // FK Less than max
         (0..500).forEach {
             val agoraMemo = KinBinaryMemo.Builder(10, 1, 2)
-                .setTranferType(KinBinaryMemo.TransferType.P2P)
+                .setTransferType(KinBinaryMemo.TransferType.P2P)
                 .setForeignKey(UUID.randomUUID().toByteArray())
                 .build()
 
@@ -45,7 +45,7 @@ class KinBinaryMemoTest {
         // FK at/larger than max (which gets truncated)
         (0..500).forEach {
             val agoraMemo = KinBinaryMemo.Builder(10, 1, 2)
-                .setTranferType(KinBinaryMemo.TransferType.P2P)
+                .setTransferType(KinBinaryMemo.TransferType.P2P)
                 .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
                 .build()
 
@@ -61,7 +61,7 @@ class KinBinaryMemoTest {
     fun testAgoraEncoding_appIdx_validRange() {
         (0..65535).forEach { index ->
             val agoraMemo = KinBinaryMemo.Builder(index, 3, 7)
-                .setTranferType(KinBinaryMemo.TransferType.P2P)
+                .setTransferType(KinBinaryMemo.TransferType.P2P)
                 .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
                 .build()
 
@@ -80,7 +80,7 @@ class KinBinaryMemoTest {
     @Test(expected = KinBinaryMemo.Builder.KinBinaryMemoFormatException::class)
     fun testAgoraEncoding_appIdx_invalid_tooSmall() {
         KinBinaryMemo.Builder(appIdx = -1, magicByteIndicator = 1, version = 7)
-            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setTransferType(KinBinaryMemo.TransferType.P2P)
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
     }
@@ -88,7 +88,7 @@ class KinBinaryMemoTest {
     @Test(expected = KinBinaryMemo.Builder.KinBinaryMemoFormatException::class)
     fun testAgoraEncoding_appIdx_invalid_tooLarge() {
         KinBinaryMemo.Builder(65536, 1, 2)
-            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setTransferType(KinBinaryMemo.TransferType.P2P)
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
     }
@@ -103,7 +103,7 @@ class KinBinaryMemoTest {
     @Test
     fun testAgoraEncoding_no_fk_default_0s() {
         val memo = KinBinaryMemo.Builder(123, 1, 2)
-            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setTransferType(KinBinaryMemo.TransferType.P2P)
             .build()
 
         assertTrue {
@@ -145,7 +145,7 @@ class KinBinaryMemoTest {
     fun testAgoraEncoding_magicByteIndicator_validRange() {
         (0..3).forEach { index ->
             val agoraMemo = KinBinaryMemo.Builder(65535, index, 7)
-                .setTranferType(KinBinaryMemo.TransferType.P2P)
+                .setTransferType(KinBinaryMemo.TransferType.P2P)
                 .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
                 .build()
 
@@ -164,7 +164,7 @@ class KinBinaryMemoTest {
     @Test(expected = KinBinaryMemo.Builder.KinBinaryMemoFormatException::class)
     fun testAgoraEncoding_magicByteIndicator_invalid_tooSmall() {
         KinBinaryMemo.Builder(65535, -1, 7)
-            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setTransferType(KinBinaryMemo.TransferType.P2P)
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
     }
@@ -172,7 +172,7 @@ class KinBinaryMemoTest {
     @Test(expected = KinBinaryMemo.Builder.KinBinaryMemoFormatException::class)
     fun testAgoraEncoding_magicByteIndicator_invalid_tooLarge() {
         KinBinaryMemo.Builder(65535, 3, 8)
-            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setTransferType(KinBinaryMemo.TransferType.P2P)
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
     }
@@ -181,7 +181,7 @@ class KinBinaryMemoTest {
     fun testAgoraEncoding_version_validRange() {
         (0..7).forEach { index ->
             val agoraMemo = KinBinaryMemo.Builder(65535, 3, index)
-                .setTranferType(KinBinaryMemo.TransferType.P2P)
+                .setTransferType(KinBinaryMemo.TransferType.P2P)
                 .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
                 .build()
 
@@ -200,7 +200,7 @@ class KinBinaryMemoTest {
     @Test(expected = KinBinaryMemo.Builder.KinBinaryMemoFormatException::class)
     fun testAgoraEncoding_version_invalid_tooSmall() {
         KinBinaryMemo.Builder(65535, 3, -1)
-            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setTransferType(KinBinaryMemo.TransferType.P2P)
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
     }
@@ -208,7 +208,7 @@ class KinBinaryMemoTest {
     @Test(expected = KinBinaryMemo.Builder.KinBinaryMemoFormatException::class)
     fun testAgoraEncoding_version_invalid_tooLarge() {
         KinBinaryMemo.Builder(65535, 3, 8)
-            .setTranferType(KinBinaryMemo.TransferType.P2P)
+            .setTransferType(KinBinaryMemo.TransferType.P2P)
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
     }
@@ -218,7 +218,7 @@ class KinBinaryMemoTest {
 
         fun verifyTypeId(inputTypeId: KinBinaryMemo.TransferType) {
             val agoraMemo = KinBinaryMemo.Builder(65535, 3, 7)
-                .setTranferType(inputTypeId)
+                .setTransferType(inputTypeId)
                 .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
                 .build()
 
@@ -243,7 +243,7 @@ class KinBinaryMemoTest {
     @Test(expected = KinBinaryMemo.Builder.KinBinaryMemoFormatException::class)
     fun testAgoraEncoding_typeId_invalid_tooSmall() {
         KinBinaryMemo.Builder(65535, 3, -1)
-            .setTranferType(KinBinaryMemo.TransferType.ANY(-1))
+            .setTransferType(KinBinaryMemo.TransferType.ANY(-1))
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
     }
@@ -251,7 +251,7 @@ class KinBinaryMemoTest {
     @Test(expected = KinBinaryMemo.Builder.KinBinaryMemoFormatException::class)
     fun testAgoraEncoding_typeId_invalid_tooLarge() {
         KinBinaryMemo.Builder(65535, 3, 8)
-            .setTranferType(KinBinaryMemo.TransferType.ANY(32))
+            .setTransferType(KinBinaryMemo.TransferType.ANY(32))
             .setForeignKey(UUID.randomUUID().toByteArray() + UUID.randomUUID().toByteArray())
             .build()
     }

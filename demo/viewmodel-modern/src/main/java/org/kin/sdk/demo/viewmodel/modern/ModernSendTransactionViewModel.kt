@@ -55,7 +55,7 @@ class ModernSendTransactionViewModel(
                 KinAmount(amount),
                 KinAccount.Id(destinationAddress),
                 KinBinaryMemo.Builder(DEMO_APP_IDX.value)
-                    .setTranferType(KinBinaryMemo.TransferType.P2P)
+                    .setTransferType(KinBinaryMemo.TransferType.P2P)
                     .build()
                     .toKinMemo()
             ).then({

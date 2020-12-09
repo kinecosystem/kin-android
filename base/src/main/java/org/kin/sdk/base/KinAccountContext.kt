@@ -509,7 +509,7 @@ class KinAccountContextImpl private constructor(
             destinationAccount,
             KinBinaryMemo.Builder(processingAppIdx.value)
                 .setForeignKey(listOf(invoice).toProto().sha224Hash().decode())
-                .setTranferType(type)
+                .setTransferType(type)
                 .build()
                 .toKinMemo(),
             Optional.of(invoice)

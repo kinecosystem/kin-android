@@ -1030,7 +1030,7 @@ class KinServiceImplTest {
             listOf(KinPaymentItem(KinAmount(123), destinationAccount.id, Optional.of(invoice))),
             KinBinaryMemo.Builder(destinationKinAppIdx.value)
                 .setForeignKey(invoiceList.id.invoiceHash.decode())
-                .setTranferType(KinBinaryMemo.TransferType.Spend)
+                .setTransferType(KinBinaryMemo.TransferType.Spend)
                 .build()
                 .toKinMemo(),
             QuarkAmount(100)
