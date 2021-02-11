@@ -82,8 +82,8 @@ dependencies {
     implementation deps.grpc_stub
     implementation deps.grpc_protobuf
     implementation deps.grpc_okhttp
-    implementation deps.agora_api
-    implementation project(':base-storage')
+    api deps.agora_api
+    api project(':base-storage')
     implementation 'com.github.joshjdevl.libsodiumjni:libsodium-jni:2.0.1'
 
     testImplementation deps.kotlin_stdlib
