@@ -30,7 +30,7 @@ class AppUserAuthInterceptor(
                 responseListener: Listener<RespT>,
                 headers: Metadata
             ) {
-                if (method?.fullMethodName == "kin.agora.transaction.v3.Transaction/SubmitTransaction") {
+                if (method?.fullMethodName == "kin.agora.transaction.v3.Transaction/SubmitTransaction" || method?.fullMethodName == "kin.agora.transaction.v4.Transaction/SubmitTransaction") {
                     val creds = appInfoProvider.getPassthroughAppUserCredentials()
                     headers.put(HEADER_KEY_APP_USER_ID, creds.appUserId)
                     headers.put(HEADER_KEY_APP_USER_PASSKEY, creds.appUserPasskey)
