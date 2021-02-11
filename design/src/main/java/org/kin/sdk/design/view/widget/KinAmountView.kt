@@ -18,7 +18,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.ceil
 
-class KinAmountView(
+class KinAmountView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     attributeSetId: Int = 0
