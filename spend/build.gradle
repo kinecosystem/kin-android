@@ -40,6 +40,7 @@ dependencies {
     implementation deps.appcompat
     implementation deps.android_material
     api project(":design")
+    api project(":base-viewmodel")
     api project(":base-viewmodel-impl")
     api(project(":base")) {
         exclude module: 'libsodium-jni'
