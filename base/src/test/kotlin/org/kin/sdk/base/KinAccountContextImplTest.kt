@@ -1847,6 +1847,11 @@ class KinAccountContextImplTest {
             subject
         }.whenever(mockService).streamAccount(eq(registeredAccount.id))
 
+        val stream = ValueSubject<KinTransaction>()
+        stream.onNext(responseTransaction)
+        whenever(mockService.streamNewTransactions(eq(registeredAccount.id)))
+            .thenReturn(stream)
+
         doAnswer {
             Promise.of(registeredAccount)
         }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount))
