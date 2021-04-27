@@ -20,7 +20,6 @@ import org.kin.sdk.base.models.toSigningKeyPair
 import org.kin.sdk.base.network.api.KinAccountApiV4
 import org.kin.sdk.base.network.api.KinAccountCreationApiV4
 import org.kin.sdk.base.network.api.KinStreamingApiV4
-import org.kin.sdk.base.network.api.KinTransactionApi
 import org.kin.sdk.base.network.api.KinTransactionApiV4
 import org.kin.sdk.base.network.api.agora.sha224Hash
 import org.kin.sdk.base.network.api.agora.toProto
@@ -431,7 +430,7 @@ class KinServiceImplV4(
                     KinTransactionApiV4.SubmitTransactionResponse.Result.InsufficientBalance ->
                         KinService.FatalError.InsufficientBalanceForSourceAccountInRequest
                     is KinTransactionApiV4.SubmitTransactionResponse.Result.InvoiceErrors ->
-                        KinService.FatalError.InvoiceErrorsInRequest(response.result.errors.toV3InvoiceErrors())
+                        KinService.FatalError.InvoiceErrorsInRequest(response.result.errors)
                     KinTransactionApiV4.SubmitTransactionResponse.Result.WebhookRejected ->
                         KinService.FatalError.WebhookRejectedTransaction
                     is KinTransactionApiV4.SubmitTransactionResponse.Result.UndefinedError ->
@@ -479,13 +478,3 @@ class KinServiceImplV4(
         }
 
 }
-
-private fun List<KinTransactionApiV4.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError>.toV3InvoiceErrors(): List<KinTransactionApi.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError> =
-    map {
-        when (it) {
-            is KinTransactionApiV4.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.ALREADY_PAID -> KinTransactionApi.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.ALREADY_PAID
-            KinTransactionApiV4.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.UNKNOWN -> KinTransactionApi.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.UNKNOWN
-            KinTransactionApiV4.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.WRONG_DESTINATION -> KinTransactionApi.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.WRONG_DESTINATION
-            KinTransactionApiV4.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.SKU_NOT_FOUND -> KinTransactionApi.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.SKU_NOT_FOUND
-        }
-    }

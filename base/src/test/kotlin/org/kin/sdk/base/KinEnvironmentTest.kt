@@ -5,7 +5,6 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import io.grpc.okhttp.OkHttpChannelBuilder
-import okhttp3.OkHttpClient
 import org.junit.Before
 import org.junit.Test
 import org.kin.sdk.base.models.AppIdx
@@ -16,8 +15,6 @@ import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asPublicKey
-import org.kin.sdk.base.network.api.KinAccountCreationApi
-import org.kin.sdk.base.network.api.KinTransactionWhitelistingApi
 import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
@@ -49,8 +46,6 @@ class KinEnvironmentTest {
 
     lateinit var mockStorage: Storage
     lateinit var mockService: KinService
-    lateinit var mockAccountCreationApi: KinAccountCreationApi
-    lateinit var mockWhitelistingApi: KinTransactionWhitelistingApi
 
 
     @Before
@@ -59,8 +54,6 @@ class KinEnvironmentTest {
             on { getMinApiVersion() } doReturn Promise.of(Optional.empty())
         }
         mockService = mock {}
-        mockAccountCreationApi = mock {}
-        mockWhitelistingApi = mock {}
     }
 
     @Suppress("UNUSED_VARIABLE")

@@ -6,7 +6,8 @@ import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
-import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionResponse
+import org.kin.sdk.base.network.api.KinTransactionApiV4
+import org.kin.sdk.base.network.api.KinTransactionApiV4.SubmitTransactionResponse
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.tools.Observer
 import org.kin.sdk.base.tools.Promise

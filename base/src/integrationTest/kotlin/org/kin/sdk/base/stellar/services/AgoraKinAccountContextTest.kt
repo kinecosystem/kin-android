@@ -23,7 +23,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.kin.sdk.base.network.api.FriendBotApi
 import org.kin.sdk.base.tools.latchOperation
-import org.kin.sdk.base.network.api.KinAccountCreationApi
 
 class AgoraKinAccountContextTest {
 
