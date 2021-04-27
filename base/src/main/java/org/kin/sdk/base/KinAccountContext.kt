@@ -27,10 +27,12 @@ import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
 import org.kin.sdk.base.network.api.agora.sha224Hash
 import org.kin.sdk.base.network.api.agora.toProto
+import org.kin.sdk.base.network.api.agora.toResultXdr
 import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.network.services.KinServiceWrapper
 import org.kin.sdk.base.stellar.models.KinTransaction
+import org.kin.sdk.base.stellar.models.SolanaKinTransaction
 import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.storage.Storage
 import org.kin.sdk.base.tools.BackoffStrategy
@@ -53,6 +55,7 @@ import org.kin.sdk.base.tools.onErrorResumeNext
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.codec.Base64
 import org.kin.stellarfork.xdr.DecoratedSignature
+import org.kin.stellarfork.xdr.TransactionResultCode
 import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -815,6 +818,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
 
     private val lifecycle = DisposeBag()
     internal var accountStream: Observer<KinAccount>? = null
+    internal var transactionStream: Observer<KinTransaction>? = null
     private val streamLock = Any()
 
     private fun <T> Observer<T>.setupActiveStreamingUpdatesIfNecessary(mode: ObservationMode): Observer<T> {
@@ -829,21 +833,23 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                                     storage.updateAccountInStorage(kinAccount)
                                         .map { it.balance }
                                         .doOnResolved { balance ->
-                                            // Yea...this 5s delay is gross but reads aren't
-                                            // deterministic with the account update events so
-                                            // instead of polling (worse), we delay for a
-                                            // 'best effort' history update.
-                                            // TODO: Maybe we can do better with a future event for history updates.
                                             Promise.defer { fetchUpdatedTransactionHistory() }
                                                 .doOnResolved { balanceSubject.onNext(balance) }
-                                                .resolveIn(5, TimeUnit.SECONDS)
+                                                .resolve()
                                         }
                                 }.resolve()
+                        }
+                        transactionStream = service.streamNewTransactions(accountId)
+                            .apply {
+                            disposedBy(lifecycle)
+                                .flatMapPromise { fetchUpdatedTransactionHistory() }
+                                .resolve()
                         }
 
                         doOnDisposed {
                             lifecycle.dispose()
                             accountStream = null
+                            transactionStream = null
                         }
                     }
                 }
