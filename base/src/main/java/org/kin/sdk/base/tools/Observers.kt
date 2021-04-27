@@ -86,7 +86,6 @@ open class ValueSubject<T>(
     private val listeners by lazy { CopyOnWriteArrayList<(T) -> Unit>() }
     private var currentValue: T? = null
     private val onDisposed by lazy { mutableListOf<() -> Unit>() }
-    var distinctUntilChanged: Boolean = true
 
     override fun add(listener: (T) -> Unit): Observer<T> = apply {
         listeners.add(listener)
@@ -94,9 +93,6 @@ open class ValueSubject<T>(
     }
 
     fun onNext(newValue: T) {
-        if (distinctUntilChanged && newValue == currentValue) {
-            return
-        }
         listeners.forEach { it(newValue) }
         currentValue = newValue
     }
@@ -107,7 +103,7 @@ open class ValueSubject<T>(
 
     override fun listenerCount(): Int = listeners.size
 
-    override fun dispose() = listeners.forEach {
+    override fun dispose() = apply {
         remove(it)
         onDisposed.forEach { it.invoke() }
         onDisposed.clear()
