@@ -16,16 +16,7 @@ apply plugin: "signing"
 
 enableJacoco(project, 'debug')
 
-sourceSets {
-    integrationTest {
-        compileClasspath += main.output + test.output
-        runtimeClasspath += main.output + test.output
-    }
-}
-
 configurations {
-    integrationTestImplementation.extendsFrom testImplementation
-    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
     shaded.extendsFrom(shadow)
 }
 
@@ -95,17 +86,6 @@ dependencies {
     testImplementation deps.okhttp_mockwebserver
     testImplementation deps.grpc_testing
 }
-
-task integrationTest(type: Test) {
-    description = 'Runs integration tests.'
-    group = 'verification'
-    testClassesDirs = sourceSets.integrationTest.output.classesDirs
-    classpath = sourceSets.integrationTest.runtimeClasspath
-    outputs.upToDateWhen { false }
-    shouldRunAfter test
-}
-
-check.dependsOn integrationTest
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
