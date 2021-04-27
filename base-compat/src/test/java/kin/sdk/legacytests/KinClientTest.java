@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -13,12 +14,18 @@ import org.junit.rules.ExpectedException;
 import org.kin.sdk.base.KinAccountContext;
 import org.kin.sdk.base.KinEnvironment;
 import org.kin.sdk.base.models.AppId;
+import org.kin.sdk.base.models.AppIdx;
+import org.kin.sdk.base.models.AppInfo;
+import org.kin.sdk.base.models.AppUserCreds;
 import org.kin.sdk.base.models.Key;
 import org.kin.sdk.base.models.QuarkAmount;
+import org.kin.sdk.base.network.services.AppInfoProvider;
 import org.kin.sdk.base.network.services.KinService;
 import org.kin.sdk.base.stellar.models.NetworkEnvironment;
 import org.kin.sdk.base.storage.Storage;
 import org.kin.sdk.base.tools.ExecutorServices;
+import org.kin.sdk.base.tools.KinLogger;
+import org.kin.sdk.base.tools.KinLoggerFactory;
 import org.kin.sdk.base.tools.Optional;
 import org.kin.sdk.base.tools.Promise;
 import org.kin.stellarfork.KeyPair;
@@ -41,8 +48,10 @@ import kin.sdk.KinClient;
 import kin.sdk.exception.OperationFailedException;
 import kin.sdk.internal.KinAccountImpl;
 import kin.sdk.internal.UtilsKt;
+import kin.sdk.legacytests.KinClientTest.DummyAppInfoProvider;
 import kin.utils.Request;
 import kin.utils.ResultCallback;
+import kotlin.jvm.functions.Function0;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -94,21 +103,80 @@ public class KinClientTest {
         return createNewKinClient(null);
     }
 
+    class DummyAppInfoProvider implements AppInfoProvider {
+        @NotNull
+        @Override
+        public AppInfo getAppInfo() {
+            return new AppInfo(AppIdx.Companion.getTEST_APP_IDX(), new org.kin.sdk.base.models.KinAccount.Id(new byte[0]), "", 123);
+        }
+
+        @NotNull
+        @Override
+        public AppUserCreds getPassthroughAppUserCredentials() {
+            return new AppUserCreds("uid0", "pass123");
+        }
+    }
+
     @NonNull
     private KinClient createNewKinClient(@Nullable KinService kinService) {
 
         ctx = mock(Context.class);
         mockStorage = mock(Storage.class);
+
         mockBackupRestore = mock(BackupRestore.class);
         if (kinService == null) {
             this.mockKinService = mock(KinService.class);
         } else {
             this.mockKinService = kinService;
         }
-        ExecutorServices executors = new ExecutorServices();
-        ILoggerFactory logger = LoggerFactory.getILoggerFactory();
-        kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
+
+        when(mockStorage.getMinApiVersion())
+                .thenReturn(Promise.Companion.of(Optional.of(4)));
+
+        when(mockStorage.getAllAccountIds())
+                .thenReturn(new ArrayList<>());
+
+        kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
                 .setKinService(mockKinService)
+                .setLogger(new KinLoggerFactory() {
+
+                    @NotNull
+                    @Override
+                    public KinLogger getLogger(@NotNull String name) {
+                        return new KinLogger() {
+                            @Override
+                            public void log(@NotNull Function0<String> msg) {
+
+                            }
+
+                            @Override
+                            public void log(@NotNull String msg) {
+
+                            }
+
+                            @Override
+                            public void warning(@NotNull String msg) {
+
+                            }
+
+                            @Override
+                            public void error(@NotNull String msg, @org.jetbrains.annotations.Nullable Throwable throwable) {
+
+                            }
+                        };
+                    }
+
+                    @Override
+                    public void setLoggingEnabled(boolean isLoggingEnabled) {
+
+                    }
+
+                    @Override
+                    public boolean isLoggingEnabled() {
+                        return false;
+                    }
+                })
+                .setAppInfoProvider(new DummyAppInfoProvider())
                 .setStorage(mockStorage)
                 .build();
 
@@ -537,7 +605,7 @@ public class KinClientTest {
         Context ctx = mock(Context.class);
 
         Storage mockStorage = mock(Storage.class);
-        doAnswer( invocation -> Promise.Companion.of(Optional.Companion.empty())).when(mockStorage).getMinApiVersion();
+        doAnswer(invocation -> Promise.Companion.of(Optional.Companion.empty())).when(mockStorage).getMinApiVersion();
 
         kinClient = new KinClient(
                 ctx,
@@ -547,7 +615,7 @@ public class KinClientTest {
                 mock(BackupRestore.class),
                 fakeKeyStore,
                 mockStorage
-                );
+        );
         Environment actualEnvironment = kinClient.getEnvironment();
 
         assertNotNull(actualEnvironment);
@@ -717,9 +785,16 @@ public class KinClientTest {
         mockStorage = mock(Storage.class);
         mockBackupRestore = mock(BackupRestore.class);
         mockKinService = mock(KinService.class);
-        ExecutorServices executors = new ExecutorServices();
-        kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
+
+        when(mockStorage.getMinApiVersion())
+                .thenReturn(Promise.Companion.of(Optional.of(4)));
+
+        when(mockStorage.getAllAccountIds())
+                .thenReturn(new ArrayList<>());
+
+        kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
                 .setKinService(mockKinService)
+                .setAppInfoProvider(new DummyAppInfoProvider())
                 .setStorage(mockStorage)
                 .build();
 

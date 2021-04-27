@@ -3,16 +3,27 @@ package kin.sdk.legacytests;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.kin.sdk.base.KinEnvironment;
+import org.kin.sdk.base.models.AppIdx;
+import org.kin.sdk.base.models.AppInfo;
+import org.kin.sdk.base.models.AppUserCreds;
 import org.kin.sdk.base.models.Key;
+import org.kin.sdk.base.network.services.AppInfoProvider;
 import org.kin.sdk.base.network.services.KinService;
 import org.kin.sdk.base.stellar.models.NetworkEnvironment;
 import org.kin.sdk.base.storage.Storage;
+import org.kin.sdk.base.tools.KinLogger;
+import org.kin.sdk.base.tools.KinLoggerFactory;
+import org.kin.sdk.base.tools.Optional;
 import org.kin.sdk.base.tools.Promise;
 import org.kin.stellarfork.KeyPair;
 
@@ -30,6 +41,7 @@ import kin.sdk.exception.CorruptedDataException;
 import kin.sdk.exception.CryptoException;
 import kin.sdk.internal.BackupRestoreImpl;
 import kin.sdk.internal.KeyStoreImpl;
+import kotlin.jvm.functions.Function0;
 
 import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.assertArrayEquals;
@@ -80,9 +92,68 @@ public class BackupRestoreTest {
         when(mockStorage.deleteAllStorage(any())).thenReturn(Promise.Companion.of(true));
     }
 
+    class DummyAppInfoProvider implements AppInfoProvider {
+        @NotNull
+        @Override
+        public AppInfo getAppInfo() {
+            return new AppInfo(AppIdx.Companion.getTEST_APP_IDX(), new org.kin.sdk.base.models.KinAccount.Id(new byte[0]), "", 123);
+        }
+
+        @NotNull
+        @Override
+        public AppUserCreds getPassthroughAppUserCredentials() {
+            return new AppUserCreds("uid0", "pass123");
+        }
+    }
+
     private KinClient createNewKinClient(KeyStore keyStore) {
-        KinEnvironment kinEnvironment = new KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
+
+        when(mockStorage.getMinApiVersion())
+                .thenReturn(Promise.Companion.of(Optional.of(4)));
+
+        when(mockStorage.getAllAccountIds())
+                .thenReturn(new ArrayList<>());
+
+        KinEnvironment kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
+                .setAppInfoProvider(new DummyAppInfoProvider())
                 .setKinService(mockKinService)
+                .setLogger(new KinLoggerFactory() {
+                    @Override
+                    public boolean isLoggingEnabled() {
+                        return false;
+                    }
+
+                    @Override
+                    public void setLoggingEnabled(boolean isLoggingEnabled) {
+
+                    }
+
+                    @NotNull
+                    @Override
+                    public KinLogger getLogger(@NotNull String name) {
+                        return new KinLogger() {
+                            @Override
+                            public void log(@NotNull Function0<String> msg) {
+
+                            }
+
+                            @Override
+                            public void log(@NotNull String msg) {
+
+                            }
+
+                            @Override
+                            public void warning(@NotNull String msg) {
+
+                            }
+
+                            @Override
+                            public void error(@NotNull String msg, @Nullable Throwable throwable) {
+
+                            }
+                        };
+                    }
+                })
                 .setStorage(mockStorage)
                 .build();
 

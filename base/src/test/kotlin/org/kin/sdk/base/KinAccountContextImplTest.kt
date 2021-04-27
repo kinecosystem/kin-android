@@ -172,7 +172,8 @@ class KinAccountContextImplTest {
     @Test
     fun testNewAccountBuilder() {
         val context = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+                .setAppInfoProvider(KinEnvironmentTest.DummyAppInfoProvider())
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
                 .setStorage(mockStorage)

@@ -63,47 +63,6 @@ val environment: KinEnvironment =
         .build()
 ```
 
-### Horizon Kin Environment
-Horizon access from the SDK has been deprecated. While it's still included in the SDK and can be used, it may become unavailable in a future blockchain migration.
-```kotlin
-// DEPCRECATED - SEE KinEnvironment.Agora
-val environment: KinEnvironment =
-    KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNet)
-        .setStorage(KinFileStorage.Builder("path/to/storage/location"))
-        .build()
-```
-For a given `KinAccount` that you want to operate on, you will need a `KinAccountContext` instance.
-This will be used to both create and access all `KinAccount` and `KinPayment`s.
-
- ```kotlin
-var context: KinAccountContext =
-    KinAccountContext.Builder(environment)
-        .createNewAccount()
-        .build()
-```
-
-### Note on Upcoming Solana Migration
-With the migration to Solana just around the corner, apps that want to continue to function during and post the move to the Solana blockchain are required to upgrade their `kin-android` sdk to 0.4.0 or higher.
-*Any application that does not upgrade will start to receive a `KinService.FatalError.SDKUpgradeRequired` exception on any request made from `KinAccountContext`.*
-
-#### Testing migration within your app
-To enable migration of Kin3 -> Kin4 accounts on testnet, `KinEnvironment.Builder` instances have a
-new option, ``.testMigration()` that will force this sdk into a state where migration will occur on demand.
-
-#### On Migration Day (Dec 8, 2020)
-Apps should expect to see increased transaction times temporarily on the date of migration.
-An on-demand migration will be attempted to trigger a migration, rebuild, and retry transactions that are submitted from an unmigrated account on this day and optimistically will complete successfully but are not guaranteed.
-After all accounts have been migrated to Solana, transaction times should noticeably improve to around ~1s. Additional performance improvements are still possible and will roll out in future sdk releases.
-
-### Kin 2 Support
-*For those apps that are still on Kin 2 and require support for Kin 2 -> Kin 4 migration*
-You should configure your KinEnvironment to use the Kin 2 NetworkEnvironment as follows:
-```kotlin
- KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin2)
-```
-
-*Failure to do this will default your app to start on Kin 3 which will create a new account for your users on Kin3 with a 0 Kin balance. You probably do not want to do this.*
-
 
 ### *As you may notice on the `KinAccountContext.Builder`, there are a few options for configuring a `KinAccountContext`...*
 

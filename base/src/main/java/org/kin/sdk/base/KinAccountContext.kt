@@ -313,8 +313,6 @@ interface KinAccountContextReadOnly : KinAccountReadOperations,
 interface KinAccountContext : KinAccountContextReadOnly, KinPaymentWriteOperations {
     class Builder(private val env: KinEnvironment) {
 
-        constructor(envBuilder: KinEnvironment.Horizon.Builder.CompletedBuilder) : this(envBuilder.build())
-
         constructor(envBuilder: KinEnvironment.Agora.Builder.CompletedBuilder) : this(envBuilder.build())
 
         fun createNewAccount() = NewAccountBuilder(env)

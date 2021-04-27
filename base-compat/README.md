@@ -44,17 +44,3 @@ Otherwise, if you're not using [kin-sdk-android](https://github.com/kinecosystem
 
 ## Documentation
 [kin-sdk-android](https://github.com/kinecosystem/kin-sdk-android) is now **Deprecated** but see the [old documentation](https://github.com/kinecosystem/kin-sdk-android/tree/master/kin-sdk) or [API reference](../docs) for more details on how to use it.
-
-### Note on Upcoming Solana Migration
-With the migration to Solana just around the corner, apps that want to continue to function during and post the move to the Solana blockchain are required to upgrade their `kin-android` sdk to 0.4.0 or higher.
-*Any application that does not upgrade will start to receive a `KinService.FatalError.SDKUpgradeRequired` exception on any request made from `KinAccount`.*
-
-#### Testing migration within your app
-To enable migration of Kin3 -> Kin4 accounts on testnet, `KinClient` has a static function
-`.testMigration()` that will force this sdk into a state where migration will occur on demand if
-called before any KinClient instances have been created.
-
-#### On Migration Day (Dec 8, 2020)
-Apps should expect to see increased transaction times temporarily on the date of migration.
-An on-demand migration will be attempted to trigger a migration, rebuild, and retry transactions that are submitted from an unmigrated account on this day and optimistically will complete successfully but are not guaranteed.
-After all accounts have been migrated to Solana, transaction times should noticeably improve to around ~1s. Additional performance improvements are still possible and will roll out in future sdk releases.

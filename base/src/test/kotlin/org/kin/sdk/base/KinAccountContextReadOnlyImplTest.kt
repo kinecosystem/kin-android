@@ -78,6 +78,7 @@ class KinAccountContextReadOnlyImplTest {
             on { getMinFee() } doReturn Promise.of(Optional.of(fee))
             on { getStoredAccount(eq(registeredAccount.id)) } doReturn
                     Promise.of(Optional.of(registeredAccount))
+            on { getMinApiVersion() } doReturn Promise.of(Optional.of(4))
         }
 
         mockService2 = mock {
@@ -86,17 +87,20 @@ class KinAccountContextReadOnlyImplTest {
         }
         mockStorage2 = mock {
             on { getMinFee() } doReturn Promise.of(Optional.of(fee))
+            on { getMinApiVersion() } doReturn Promise.of(Optional.of(4))
         }
 
         sut = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+                .setAppInfoProvider(KinEnvironmentTest.DummyAppInfoProvider())
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
                 .setStorage(mockStorage)
         ).useExistingAccountReadOnly(registeredAccount.id).build()
 
         sut2 = KinAccountContext.Builder(
-            KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+                .setAppInfoProvider(KinEnvironmentTest.DummyAppInfoProvider())
                 .setKinService(mockService2)
                 .setExecutorServices(excecutors)
                 .setStorage(mockStorage2)
@@ -115,6 +119,8 @@ class KinAccountContextReadOnlyImplTest {
             assertEquals(registeredAccount, value)
 
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockStorage).getMinApiVersion()
+            verify(mockStorage).getAllAccountIds()
             verifyZeroInteractions(mockService)
             verifyNoMoreInteractions(mockStorage)
         }
@@ -140,6 +146,8 @@ class KinAccountContextReadOnlyImplTest {
             assertEquals(registeredAccount, value)
 
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockStorage).getMinApiVersion()
+            verify(mockStorage).getAllAccountIds()
             verify(mockService).getAccount(eq(registeredAccount.id))
             verify(mockStorage).updateAccountInStorage(eq(registeredAccount))
             verifyZeroInteractions(mockService)
@@ -167,6 +175,8 @@ class KinAccountContextReadOnlyImplTest {
             assertEquals(registeredAccount, value)
 
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
+            verify(mockStorage).getAllAccountIds()
+            verify(mockStorage).getMinApiVersion()
             verify(mockService).getAccount(eq(registeredAccount.id))
             verify(mockStorage).updateAccountInStorage(eq(registeredAccount))
             verifyZeroInteractions(mockService)

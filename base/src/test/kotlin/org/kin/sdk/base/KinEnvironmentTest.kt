@@ -63,41 +63,6 @@ class KinEnvironmentTest {
         mockWhitelistingApi = mock {}
     }
 
-
-    @Suppress("UNUSED_VARIABLE")
-    @Test
-    fun testHorizonConstruction() {
-        val logger = KinLoggerFactoryImpl(true)
-        val sutTest = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-            .setStorage(mockStorage).build()
-
-        val sutTest2 = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-            .setOkHttpClient(OkHttpClient())
-            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger= logger))
-            .setLogger(logger)
-            .setKinService(mockService)
-            .setStorage(mockStorage)
-            .build()
-
-        val sutTest3 = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-            .setOkHttpClient(OkHttpClient())
-            .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger = logger))
-            .setLogger(logger)
-            .setKinService(mockService)
-            .setKinAccountCreationApi(mockAccountCreationApi)
-            .setKinTransactionWhitelistingApi(mockWhitelistingApi)
-            .setStorage(
-                KinFileStorage.Builder("storage/files/somwhere/kin")
-                    .setNetworkEnvironment(NetworkEnvironment.KinStellarTestNetKin3)
-                    .setExecutors(ExecutorServices())
-            )
-            .build()
-
-        val sutMain = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarMainNetKin3)
-            .setStorage(mockStorage)
-            .build()
-    }
-
     @Suppress("UNUSED_VARIABLE")
     @Test
     fun testAgoraConstruction() {
@@ -110,7 +75,6 @@ class KinEnvironmentTest {
         val sutTest2 = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
             .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger = logger))
             .setLogger(logger)
-            .setMinApiVersion(3)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setKinService(mockService)
             .setStorage(mockStorage)
@@ -223,7 +187,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_success() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -254,7 +219,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_success_but_fails_to_store() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -285,7 +251,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_success_but_storage_exception() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -316,7 +283,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_does_not_exist() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -338,7 +306,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_does_not_exist_but_fails_to_store() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -360,7 +329,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_does_not_exist_but_storage_exception() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -439,7 +409,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_storage_exception_and_service_exception() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -461,7 +432,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testAllAccountIds() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -479,7 +451,8 @@ class KinEnvironmentTest {
 
     @Test
     fun testAllAccountIds_error() {
-        val sut = KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
@@ -508,52 +481,14 @@ class KinEnvironmentTest {
     @Test
     fun testMinApiVersions_ok() {
         KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-            .setMinApiVersion(3)
             .setKinService(mockService)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
         KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-            .setMinApiVersion(4)
             .setKinService(mockService)
             .setAppInfoProvider(DummyAppInfoProvider())
-            .setStorage(mockStorage)
-            .build()
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun testMinApiVersions_toolow() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-            .setMinApiVersion(2)
-            .setKinService(mockService)
-            .setAppInfoProvider(DummyAppInfoProvider())
-            .setStorage(mockStorage)
-            .build()
-    }
-
-    @Test(expected = IllegalArgumentException::class)
-    fun testMinApiVersions_toohigh() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-            .setMinApiVersion(5)
-            .setKinService(mockService)
-            .setAppInfoProvider(DummyAppInfoProvider())
-            .setStorage(mockStorage)
-            .build()
-    }
-
-    @Test(expected = NotImplementedError::class)
-    fun testHorizoinUnsupportedEnv_1() {
-        KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarTestNetKin2)
-            .setKinService(mockService)
-            .setStorage(mockStorage)
-            .build()
-    }
-
-    @Test(expected = NotImplementedError::class)
-    fun testHorizoinUnsupportedEnv_2() {
-        KinEnvironment.Horizon.Builder(NetworkEnvironment.KinStellarMainNetKin2)
-            .setKinService(mockService)
             .setStorage(mockStorage)
             .build()
     }

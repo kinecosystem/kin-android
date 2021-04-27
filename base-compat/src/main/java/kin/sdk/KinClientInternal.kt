@@ -46,8 +46,6 @@ internal class KinClientInternal {
     companion object {
         private const val STORE_NAME_PREFIX = "KinKeyStore_"
 
-        var testMigration: Boolean = false
-
         private fun initKeyStore(
             context: Context,
             id: String,
@@ -66,11 +64,6 @@ internal class KinClientInternal {
         ): KinEnvironment {
             return KinEnvironment.Agora.Builder(environmentToNetworkEnvironment(environment))
                 .setAppInfoProvider(appInfoProvider)
-                .apply {
-                    if (testMigration) {
-                        testMigration()
-                    }
-                }
                 .setStorage(storage)
                 .build()
         }

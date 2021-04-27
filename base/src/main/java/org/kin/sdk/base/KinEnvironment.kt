@@ -57,128 +57,6 @@ sealed class KinEnvironment {
     internal abstract val executors: ExecutorServices
     internal abstract val networkHandler: NetworkOperationsHandler
 
-    @Deprecated("Please use [KinEnvironment.Agora] instead. Horizon may dissapear in a future blockchain migration.")
-    class Horizon private constructor(
-        internal val okHttpClient: OkHttpClient,
-        override val networkEnvironment: NetworkEnvironment,
-        override val logger: KinLoggerFactory,
-        override val storage: Storage,
-        override val executors: ExecutorServices,
-        override val networkHandler: NetworkOperationsHandler,
-        override val service: KinService,
-    ) : KinEnvironment() {
-        class Builder(private val networkEnvironment: NetworkEnvironment) {
-            private var accountCreationApi: KinAccountCreationApi? = null
-            private var transactionWhitelistingApi: KinTransactionWhitelistingApi? = null
-            private var enableLogging: Boolean = false
-            private var okHttpClient: OkHttpClient? = null
-            private var executors: ExecutorServices? = null
-            private var logger: KinLoggerFactory? = null
-            private var networkHandler: NetworkOperationsHandler? = null
-            private var service: KinService? = null
-
-            private lateinit var storage: Storage
-            private var storageBuilder: KinFileStorage.Builder? = null
-
-            inner class CompletedBuilder internal constructor() {
-                private fun NetworkEnvironment.horizonApiConfig() = when (this) {
-                    NetworkEnvironment.KinStellarTestNetKin3 -> ApiConfig.TestNetHorizon
-                    NetworkEnvironment.KinStellarMainNetKin3 -> ApiConfig.MainNetHorizon
-                    NetworkEnvironment.KinStellarTestNetKin2 -> throw NotImplementedError("Unsupported: please upgrade to Agora")
-                    NetworkEnvironment.KinStellarMainNetKin2 -> throw NotImplementedError("Unsupported: please upgrade to Agora")
-                }
-
-                fun build(): KinEnvironment {
-                    val okHttpClient = okHttpClient ?: OkHttpClient.Builder().build()
-                    val logger = logger ?: KinLoggerFactoryImpl(enableLogging)
-                    val executors = executors ?: ExecutorServices()
-                    val networkHandler = networkHandler ?: NetworkOperationsHandlerImpl(
-                        executors.sequentialScheduled,
-                        executors.parallelIO,
-                        logger,
-                        shouldRetryError = { it is KinService.FatalError.TransientFailure }
-                    )
-                    val api = HorizonKinApi(
-                        networkEnvironment.horizonApiConfig(),
-                        okHttpClient
-                    )
-                    val service = service ?: KinServiceImpl(
-                        networkEnvironment,
-                        networkHandler,
-                        api as KinAccountApi,
-                        api as KinTransactionApi,
-                        api as KinStreamingApi,
-                        accountCreationApi ?: DefaultHorizonKinAccountCreationApi(
-                            networkEnvironment.horizonApiConfig(),
-                            FriendBotApi(okHttpClient)
-                        ),
-                        transactionWhitelistingApi ?: DefaultHorizonKinTransactionWhitelistingApi(),
-                        logger
-                    )
-
-                    val storageBuilder = storageBuilder
-                    if (!this@Builder::storage.isInitialized && storageBuilder != null) {
-                        storage = storageBuilder.setNetworkEnvironment(networkEnvironment).build()
-                    }
-
-                    return Horizon(
-                        okHttpClient = okHttpClient,
-                        networkEnvironment = networkEnvironment,
-                        logger = logger,
-                        storage = storage,
-                        executors = executors,
-                        networkHandler = networkHandler,
-                        service = service
-                    )
-                }
-            }
-
-            internal fun setOkHttpClient(okHttpClient: OkHttpClient): Builder = apply {
-                this.okHttpClient = okHttpClient
-            }
-
-            internal fun setExecutorServices(executors: ExecutorServices): Builder = apply {
-                this.executors = executors
-            }
-
-            internal fun setNetworkOperationsHandler(networkHandler: NetworkOperationsHandler): Builder =
-                apply {
-                    this.networkHandler = networkHandler
-                }
-
-            fun setLogger(logger: KinLoggerFactory): Builder = apply {
-                this.logger = logger
-            }
-
-            fun setKinService(kinService: KinService): Builder = apply {
-                this.service = kinService
-            }
-
-            fun setKinAccountCreationApi(accountCreationApi: KinAccountCreationApi): Builder =
-                apply {
-                    this.accountCreationApi = accountCreationApi
-                }
-
-            fun setKinTransactionWhitelistingApi(transactionWhitelistingApi: KinTransactionWhitelistingApi): Builder =
-                apply {
-                    this.transactionWhitelistingApi = transactionWhitelistingApi
-                }
-
-            fun setEnableLogging(): Builder = apply { this.enableLogging = true }
-
-            fun setStorage(storage: Storage): CompletedBuilder {
-                this.storage = storage
-                return CompletedBuilder()
-            }
-
-            fun setStorage(fileStorageBuilder: KinFileStorage.Builder): CompletedBuilder =
-                with(this) {
-                    this.storageBuilder = fileStorageBuilder
-                    CompletedBuilder()
-                }
-        }
-    }
-
     class Agora private constructor(
         private val managedChannel: ManagedChannel,
         override val networkEnvironment: NetworkEnvironment,
@@ -200,7 +78,6 @@ sealed class KinEnvironment {
             private var appInfoProvider: AppInfoProvider? = null
             private var service: KinService? = null
             private var minApiVersion: Int = 3
-            private var testMigration = false
 
             private lateinit var storage: Storage
             private var storageBuilder: KinFileStorage.Builder? = null
@@ -311,8 +188,7 @@ sealed class KinEnvironment {
                                 AppUserAuthInterceptor(appInfoProvider!!),
                                 UserAgentInterceptor(storage),
                                 LoggingInterceptor(logger),
-                                if (blockchainVersion == 2) KinVersionInterceptor(blockchainVersion) else null,
-                                if (testMigration) UpgradeApiV4Interceptor() else null
+                                if (blockchainVersion == 2) KinVersionInterceptor(blockchainVersion) else null
                             ).toTypedArray()
                         )
                         .build()
@@ -330,27 +206,6 @@ sealed class KinEnvironment {
                 apply {
                     this.networkHandler = networkHandler
                 }
-
-            /**
-             * This option allows developers to force which api version the KinService should use.
-             * v3 - stellar (Kin 2 or Kin 3 blockchains)
-             * v4 - solana
-             * It is *not* required to set this as we default to v3 until migration day to solana.
-             */
-            fun setMinApiVersion(minApiVersion: Int): Builder = apply {
-                if (minApiVersion < 3 || minApiVersion > 4) {
-                    throw IllegalArgumentException("$minApiVersion is not supported, must be 3 or 4")
-                }
-                this.minApiVersion = minApiVersion
-            }
-
-            /**
-             * This option allows developers to force an on-demand migration from the Stellar based
-             * Kin Blockchain to Solana on TestNet only.
-             */
-            fun testMigration(): Builder = apply {
-                this.testMigration = true
-            }
 
             fun setLogger(logger: KinLoggerFactory): Builder = apply {
                 this.logger = logger
