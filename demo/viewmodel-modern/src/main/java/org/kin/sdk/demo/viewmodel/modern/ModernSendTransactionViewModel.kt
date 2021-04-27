@@ -48,6 +48,7 @@ class ModernSendTransactionViewModel(
         }
     }
 
+    private var nonce = 0
     override fun onSendTapped(completed: (error: Throwable?) -> Unit) {
 
         withState {
@@ -56,6 +57,7 @@ class ModernSendTransactionViewModel(
                 KinAccount.Id(destinationAddress),
                 KinBinaryMemo.Builder(DEMO_APP_IDX.value)
                     .setTranferType(KinBinaryMemo.TransferType.P2P)
+                    .setForeignKey(byteArrayOf(nonce++.toByte()))
                     .build()
                     .toKinMemo()
             ).then({
