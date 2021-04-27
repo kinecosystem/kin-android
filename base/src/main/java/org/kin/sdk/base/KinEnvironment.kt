@@ -1,37 +1,20 @@
 package org.kin.sdk.base
 
 import io.grpc.ManagedChannel
-import okhttp3.OkHttpClient
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.asKinAccountId
-import org.kin.sdk.base.models.isKin2
-import org.kin.sdk.base.network.api.FriendBotApi
-import org.kin.sdk.base.network.api.KinAccountApi
-import org.kin.sdk.base.network.api.KinAccountCreationApi
-import org.kin.sdk.base.network.api.KinStreamingApi
-import org.kin.sdk.base.network.api.KinTransactionApi
-import org.kin.sdk.base.network.api.KinTransactionWhitelistingApi
 import org.kin.sdk.base.network.api.agora.AgoraKinAccountApiV4
 import org.kin.sdk.base.network.api.agora.AgoraKinAccountCreationApiV4
-import org.kin.sdk.base.network.api.agora.AgoraKinAccountsApi
-import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApi
 import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApiV4
 import org.kin.sdk.base.network.api.agora.AppUserAuthInterceptor
 import org.kin.sdk.base.network.api.agora.KinVersionInterceptor
 import org.kin.sdk.base.network.api.agora.LoggingInterceptor
 import org.kin.sdk.base.network.api.agora.OkHttpChannelBuilderForcedTls12
-import org.kin.sdk.base.network.api.agora.UpgradeApiV4Interceptor
 import org.kin.sdk.base.network.api.agora.UserAgentInterceptor
-import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinAccountCreationApi
-import org.kin.sdk.base.network.api.horizon.DefaultHorizonKinTransactionWhitelistingApi
-import org.kin.sdk.base.network.api.horizon.HorizonKinApi
 import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
-import org.kin.sdk.base.network.services.KinServiceImpl
 import org.kin.sdk.base.network.services.KinServiceImplV4
-import org.kin.sdk.base.network.services.KinServiceWrapper
-import org.kin.sdk.base.network.services.MetaServiceApiImpl
 import org.kin.sdk.base.repository.AppInfoRepository
 import org.kin.sdk.base.repository.InMemoryAppInfoRepositoryImpl
 import org.kin.sdk.base.repository.InMemoryInvoiceRepositoryImpl
@@ -77,7 +60,7 @@ sealed class KinEnvironment {
             private var networkHandler: NetworkOperationsHandler? = null
             private var appInfoProvider: AppInfoProvider? = null
             private var service: KinService? = null
-            private var minApiVersion: Int = 3
+            private var minApiVersion: Int = 4
 
             private lateinit var storage: Storage
             private var storageBuilder: KinFileStorage.Builder? = null
@@ -98,30 +81,10 @@ sealed class KinEnvironment {
                     if (!this@Builder::storage.isInitialized && storageBuilder != null) {
                         storage = storageBuilder.setNetworkEnvironment(networkEnvironment).build()
                     }
-                    val blockchainVersion = if (networkEnvironment.isKin2()) 2 else minApiVersion
                     val managedChannel =
                         managedChannel ?: networkEnvironment.agoraApiConfig()
-                            .asManagedChannel(logger, blockchainVersion)
+                            .asManagedChannel(logger, minApiVersion)
 
-
-                    fun buildV3ApiService(): KinService {
-                        val accountsApi = AgoraKinAccountsApi(managedChannel, networkEnvironment)
-                        val transactionsApi =
-                            AgoraKinTransactionsApi(
-                                managedChannel,
-                                networkEnvironment
-                            )
-                        return service ?: KinServiceImpl(
-                            networkEnvironment,
-                            networkHandler,
-                            accountsApi,
-                            transactionsApi,
-                            accountsApi,
-                            accountsApi,
-                            transactionsApi,
-                            logger
-                        )
-                    }
 
                     fun buildV4ApiService(): KinService {
                         val accountsApi = AgoraKinAccountApiV4(managedChannel, networkEnvironment)
@@ -142,13 +105,7 @@ sealed class KinEnvironment {
                         )
                     }
 
-                    val metaServiceApi = MetaServiceApiImpl(minApiVersion, networkHandler, AgoraKinTransactionsApiV4(managedChannel, networkEnvironment), storage)
-                    metaServiceApi.postInit()
-                    val service = KinServiceWrapper(
-                        buildV3ApiService(),
-                        buildV4ApiService(),
-                        metaServiceApi
-                    )
+                    val service = buildV4ApiService()
 
                     return Agora(
                         managedChannel,
@@ -188,7 +145,7 @@ sealed class KinEnvironment {
                                 AppUserAuthInterceptor(appInfoProvider!!),
                                 UserAgentInterceptor(storage),
                                 LoggingInterceptor(logger),
-                                if (blockchainVersion == 2) KinVersionInterceptor(blockchainVersion) else null
+                                KinVersionInterceptor(blockchainVersion)
                             ).toTypedArray()
                         )
                         .build()

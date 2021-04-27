@@ -87,8 +87,6 @@ fun TransactionResponse.asKinTransaction(networkEnvironment: NetworkEnvironment)
         networkEnvironment
     )
 
-fun NetworkEnvironment.isKin2() = this == NetworkEnvironment.KinStellarMainNetKin2 || this == NetworkEnvironment.KinStellarTestNetKin2
-
 fun KinTransaction.asKinPayments(): List<KinPayment> {
     var offset = 0
     return paymentOperations.mapIndexed { index, payment ->
@@ -97,7 +95,7 @@ fun KinTransaction.asKinPayments(): List<KinPayment> {
             KinPayment.Status.Success,
             payment.source,
             payment.destination,
-            if (networkEnvironment.isKin2() && (this as? StellarKinTransaction)?.isKinNonNativeAsset() == true) payment.amount.divide(KinAmount(100)) else payment.amount,
+            if ((this as? StellarKinTransaction)?.isKinNonNativeAsset() == true) payment.amount.divide(KinAmount(100)) else payment.amount,
             fee,
             memo,
             recordType.timestamp,

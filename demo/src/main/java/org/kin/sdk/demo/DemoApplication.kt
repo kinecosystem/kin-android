@@ -85,7 +85,6 @@ class DemoApplication : MultiDexApplication(), ResolverProvider, AppInfoProvider
                 }
             })
             .setEnableLogging()
-            .setMinApiVersion(4)
             .setStorage(KinFileStorage.Builder("${applicationContext.filesDir}/kin"))
             .build()
             .apply {

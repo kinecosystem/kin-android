@@ -27,12 +27,9 @@ import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
 import org.kin.sdk.base.network.api.agora.sha224Hash
 import org.kin.sdk.base.network.api.agora.toProto
-import org.kin.sdk.base.network.api.agora.toResultXdr
 import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
-import org.kin.sdk.base.network.services.KinServiceWrapper
 import org.kin.sdk.base.stellar.models.KinTransaction
-import org.kin.sdk.base.stellar.models.SolanaKinTransaction
 import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.storage.Storage
 import org.kin.sdk.base.tools.BackoffStrategy
@@ -55,10 +52,8 @@ import org.kin.sdk.base.tools.onErrorResumeNext
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.codec.Base64
 import org.kin.stellarfork.xdr.DecoratedSignature
-import org.kin.stellarfork.xdr.TransactionResultCode
 import java.math.BigDecimal
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 /**
  * Describes the mode by which updates are
@@ -290,7 +285,7 @@ interface KinPaymentWriteOperations : KinPaymentWriteOperationsAltIdioms {
         destinationAccountSpec: AccountSpec,
         additionalSignatures: List<DecoratedSignature>,
         feeOverride: QuarkAmount? = null
-    ) : Promise<List<KinPayment>>
+    ): Promise<List<KinPayment>>
 
     /**
      * Directly sends a [KinTransaction].
@@ -597,16 +592,18 @@ class KinAccountContextImpl private constructor(
         val FIXED_ATTEMPTS = 2
         var attemptCount = 0
         val invalidAccountErrorRetryStrategy =
-            BackoffStrategy.combine(BackoffStrategy.Fixed(
-                after = 3000,
-                maxAttempts = FIXED_ATTEMPTS
-            ), BackoffStrategy.ExponentialIncrease(
-                initial = 275,
-                multiplier = 2.0,
-                jitter = 1.0,
-                maxAttempts = MAX_ATTEMPTS - FIXED_ATTEMPTS,
-                maximumWaitTime = 60000
-            ))
+            BackoffStrategy.combine(
+                BackoffStrategy.Fixed(
+                    after = 3000,
+                    maxAttempts = FIXED_ATTEMPTS
+                ), BackoffStrategy.ExponentialIncrease(
+                    initial = 275,
+                    multiplier = 2.0,
+                    jitter = 1.0,
+                    maxAttempts = MAX_ATTEMPTS - FIXED_ATTEMPTS,
+                    maximumWaitTime = 60000
+                )
+            )
 
         fun buildAttempt(error: Throwable? = null): Promise<KinTransaction> {
             if (error == null) {
@@ -671,7 +668,10 @@ class KinAccountContextImpl private constructor(
                             feeOverride ?: fee
                         ).map {
                             if (it is StellarKinTransaction) {
-                                val tx = org.kin.stellarfork.Transaction.fromEnvelopeXdr(Base64.encodeBase64String(it.bytesValue), it.networkEnvironment.getNetwork())
+                                val tx = org.kin.stellarfork.Transaction.fromEnvelopeXdr(
+                                    Base64.encodeBase64String(it.bytesValue),
+                                    it.networkEnvironment.getNetwork()
+                                )
                                 if (signaturesOverride.isNotEmpty()) {
                                     tx.signatures = signaturesOverride
                                 }
@@ -695,14 +695,8 @@ class KinAccountContextImpl private constructor(
                     .onErrorResumeNext { error ->
                         when (error) {
                             is KinService.FatalError.BadSequenceNumberInRequest -> {
-                                if ((service as KinServiceWrapper).metaServiceApi.configuredMinApi == 4) {
-                                    service.invalidateBlockhashCache()
-                                    attempt(error)
-                                } else {
-                                    getAccount(true)
-                                        .flatMap { storage.updateAccountInStorage(it) }
-                                        .flatMap { attempt(error) }
-                                }
+                                service.invalidateBlockhashCache()
+                                attempt(error)
                             }
                             is KinService.FatalError.InsufficientFeeInRequest -> {
                                 service.getMinFee()
@@ -839,10 +833,10 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
                         }
                         transactionStream = service.streamNewTransactions(accountId)
                             .apply {
-                            disposedBy(lifecycle)
-                                .flatMapPromise { fetchUpdatedTransactionHistory() }
-                                .resolve()
-                        }
+                                disposedBy(lifecycle)
+                                    .flatMapPromise { fetchUpdatedTransactionHistory() }
+                                    .resolve()
+                            }
 
                         doOnDisposed {
                             lifecycle.dispose()

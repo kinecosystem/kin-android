@@ -165,8 +165,6 @@ class KinAccountContextImplTest {
 
         verify(mockStorage).getAllAccountIds()
         verify(mockStorage2).getAllAccountIds()
-        verify(mockStorage).getMinApiVersion()
-        verify(mockStorage2).getMinApiVersion()
     }
 
     @Test
@@ -995,8 +993,8 @@ class KinAccountContextImplTest {
             assertEquals(responseTransaction.asKinPayments().first(), value)
         }
 
-        verify(mockStorage, times(12)).getStoredAccount(eq(registeredAccount.id))
-        verify(mockService, times(2)).getAccount(eq(registeredAccount.id))
+        verify(mockStorage, times(10)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockService, times(2)).invalidateBlockhashCache()
         verify(mockService, times(5)).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
@@ -1011,7 +1009,7 @@ class KinAccountContextImplTest {
         ).buildSignAndSubmitTransaction(any()) // 5 due to 2 retries
         verify(mockStorage, times(3))
             .advanceSequence(eq(registeredAccount.id))
-        verify(mockStorage, times(4)).updateAccountInStorage(eq(registeredAccount))
+        verify(mockStorage, times(2)).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey()))))
         verify(mockStorage, times(3)).insertNewTransactionInStorage(
             eq(registeredAccount.id),
             eq(responseTransaction)
@@ -1118,8 +1116,8 @@ class KinAccountContextImplTest {
             assertEquals(KinService.FatalError.BadSequenceNumberInRequest, error)
         }
 
-        verify(mockStorage, times(18)).getStoredAccount(eq(registeredAccount.id))
-        verify(mockService, times(6)).getAccount(eq(registeredAccount.id))
+        verify(mockStorage, times(12)).getStoredAccount(eq(registeredAccount.id))
+        verify(mockService, times(6)).invalidateBlockhashCache()
         verify(mockService, times(6)).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
@@ -1134,7 +1132,7 @@ class KinAccountContextImplTest {
         ).buildSignAndSubmitTransaction(any()) // 6 due to 6 retries
         verify(mockStorage, times(0))
             .advanceSequence(eq(registeredAccount.id))
-        verify(mockStorage, times(12)).updateAccountInStorage(eq(registeredAccount))
+        verify(mockStorage, times(5)).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey()))))
         verify(mockStorage, times(0)).insertNewTransactionInStorage(
             eq(registeredAccount.id),
             eq(responseTransaction)
