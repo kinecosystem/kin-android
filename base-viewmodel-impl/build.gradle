@@ -1,7 +1,7 @@
 apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.bintray'
+apply plugin: "signing"
 
 enableJacoco(project, 'debug')
 
@@ -51,9 +51,34 @@ afterEvaluate {
 
                 pom {
                     packaging 'jar'
+
+                    name = 'base-viewmodel-impl'
+                    description = "Kin Android SDK View Model"
+                    url = 'https://github.com/kinecosystem/kin-android/tree/master/base-viewmodel-impl'
+                    licenses {
+                        license {
+                            name = 'MIT License'
+                            url = 'https://github.com/kinecosystem/kin-android/blob/master/LICENSE.md'
+                        }
+                    }
+
+                    scm {
+                        connection = 'scm:git:github.com/kinecosystem/kin-android.git'
+                        developerConnection = 'scm:git:ssh://github.com/kinecosystem/kin-android.git'
+                        url = 'https://github.com/kinecosystem/kin-android/tree/master/base-viewmodel-impl'
+                    }
+
+                    developers {
+                        developer {
+                            id = 'kin-ci'
+                            name = 'Kin CI'
+                            email = 'eng+ci@kin.org'
+                        }
+                    }
+
                     withXml {
                         def root = asNode()
-                        root.children().last() + pomConfig
+                        root.children().last() //+ pomConfig
                         def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
                         def addDep = {
                             if (it.group == null) return // Avoid empty dependency nodes
@@ -74,34 +99,13 @@ afterEvaluate {
                 }
             }
         }
-
-        repositories {
-            maven {
-                url "s3://maven.kin/releases"
-                credentials(AwsCredentials) {
-                    accessKey project.hasProperty('awsAccessKeyId') ? awsAccessKeyId : System.getenv('AWS_ACCESS_KEY_ID')
-                    secretKey project.hasProperty('awsSecretAccessKey') ? awsSecretAccessKey : System.getenv('AWS_SECRET_ACCESS_KEY')
-                }
-            }
-        }
     }
+}
 
-    bintray {
-        user = project.hasProperty('bintrayUser') ? bintrayUser : System.getenv('BINTRAY_USER')
-        key = project.hasProperty('bintrayKey') ? bintrayKey : System.getenv('BINTRAY_API_KEY')
-        publications = ['normal']
-        override = true
+ext["signing.keyId"] = rootProject.ext["signing.keyId"]
+ext["signing.password"] = rootProject.ext["signing.password"]
+ext["signing.secretKeyRingFile"] = rootProject.ext["signing.secretKeyRingFile"]
 
-        pkg {
-            repo = "kin-android"
-            userOrg = "kinecosystem"
-            name = "base-viewmodel-impl"
-            desc = "Kin Android SDK View Model Impl"
-            websiteUrl = "https://github.com/kinecosystem/kin-android"
-            vcsUrl = "https://github.com/kinecosystem/kin-android.git"
-            licenses = ["MIT", "Apache-2.0"]
-            publish = true
-            publicDownloadNumbers = true
-        }
-    }
+signing {
+    sign publishing.publications
 }

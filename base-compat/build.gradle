@@ -9,7 +9,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: "com.github.dcendents.android-maven"
 apply plugin: "maven-publish"
-apply plugin: 'com.jfrog.bintray'
+apply plugin: "signing"
 
 enableJacoco(project, 'normalDebug')
 
@@ -59,6 +59,7 @@ dependencies {
         exclude module: 'libsodium-jni'
     }
     implementation "androidx.annotation:annotation:1.1.0"
+    shadedImplementation "androidx.annotation:annotation:1.1.0"
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
@@ -154,11 +155,36 @@ afterEvaluate {
 
                     pom {
                         packaging 'aar'
+
+                        name = 'base-compat'
+                        description = "Kin Android SDK Base Compatibility Layer"
+                        url = 'https://github.com/kinecosystem/kin-android/tree/master/base-compat'
+                        licenses {
+                            license {
+                                name = 'MIT License'
+                                url = 'https://github.com/kinecosystem/kin-android/blob/master/LICENSE.md'
+                            }
+                        }
+
+                        scm {
+                            connection = 'scm:git:github.com/kinecosystem/kin-android.git'
+                            developerConnection = 'scm:git:ssh://github.com/kinecosystem/kin-android.git'
+                            url = 'https://github.com/kinecosystem/kin-android/tree/master/base-compat'
+                        }
+
+                        developers {
+                            developer {
+                                id = 'kin-ci'
+                                name = 'Kin CI'
+                                email = 'eng+ci@kin.org'
+                            }
+                        }
+
                         withXml {
                             def root = asNode()
-                            root.appendNode("name", 'base-compat')
-                            root.appendNode("url", siteUrl)
-                            root.children().last() + pomConfig
+//                            root.appendNode("name", 'base-compat')
+//                            root.appendNode("url", siteUrl)
+                            root.children().last() //+ pomConfig
                             def depsNode = root["dependencies"][0] ?: root.appendNode("dependencies")
 
                             def addDep = {
@@ -204,35 +230,14 @@ afterEvaluate {
                 }
             }
         }
-        repositories {
-            maven {
-                url "s3://maven.kin/releases"
-                credentials(AwsCredentials) {
-                    accessKey project.hasProperty('awsAccessKeyId') ? awsAccessKeyId : System.getenv('AWS_ACCESS_KEY_ID')
-                    secretKey project.hasProperty('awsSecretAccessKey') ? awsSecretAccessKey : System.getenv('AWS_SECRET_ACCESS_KEY')
-                }
-            }
-        }
-    }
-
-    bintray {
-        user = project.hasProperty('bintrayUser') ? bintrayUser : System.getenv('BINTRAY_USER')
-        key = project.hasProperty('bintrayKey') ? bintrayKey : System.getenv('BINTRAY_API_KEY')
-        publications = publicationNames
-        override = true
-
-        pkg {
-            repo = "kin-android"
-            userOrg = "kinecosystem"
-            name = "base-compat"
-            desc = "Kin Android SDK Base Compatibility Layer"
-            websiteUrl = "https://github.com/kinecosystem/kin-android"
-            vcsUrl = "https://github.com/kinecosystem/kin-android.git"
-            licenses = ["MIT", "Apache-2.0"]
-            publish = true
-            publicDownloadNumbers = true
-        }
     }
 }
 
+ext["signing.keyId"] = rootProject.ext["signing.keyId"]
+ext["signing.password"] = rootProject.ext["signing.password"]
+ext["signing.secretKeyRingFile"] = rootProject.ext["signing.secretKeyRingFile"]
+
+signing {
+    sign publishing.publications
+}
 
