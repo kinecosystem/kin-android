@@ -103,8 +103,10 @@ open class ValueSubject<T>(
 
     override fun listenerCount(): Int = listeners.size
 
-    override fun dispose() = apply {
-        remove(it)
+    override fun dispose() {
+        listeners.forEach {
+            remove(it)
+        }
         onDisposed.forEach { it.invoke() }
         onDisposed.clear()
     }
