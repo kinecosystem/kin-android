@@ -55,7 +55,7 @@ sealed class KinEnvironment {
         class Builder(private val networkEnvironment: NetworkEnvironment) {
             private var managedChannel: ManagedChannel? = null
             private var executors: ExecutorServices? = null
-            private var enableLogging: Boolean = networkEnvironment == NetworkEnvironment.KinStellarTestNetKin3
+            private var enableLogging: Boolean = networkEnvironment == NetworkEnvironment.TestNet
             private var logger: KinLoggerFactory? = null
             private var networkHandler: NetworkOperationsHandler? = null
             private var appInfoProvider: AppInfoProvider? = null
@@ -132,10 +132,8 @@ sealed class KinEnvironment {
                 }
 
                 private fun NetworkEnvironment.agoraApiConfig() = when (this) {
-                    NetworkEnvironment.KinStellarTestNetKin3,
-                    NetworkEnvironment.KinStellarTestNetKin2-> ApiConfig.TestNetAgora
-                    NetworkEnvironment.KinStellarMainNetKin3,
-                    NetworkEnvironment.KinStellarMainNetKin2-> ApiConfig.MainNetAgora
+                    NetworkEnvironment.TestNet -> ApiConfig.TestNetAgora
+                    NetworkEnvironment.MainNet -> ApiConfig.MainNetAgora
                 }
 
                 private fun ApiConfig.asManagedChannel(logger: KinLoggerFactory, blockchainVersion: Int) =

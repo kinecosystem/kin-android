@@ -104,7 +104,7 @@ class AgoraKinAccountApiV4(
                                                     event.transactionEvent.transaction.value.toByteArray(),
                                                     recordType = KinTransaction.RecordType.Acknowledged(
                                                         System.currentTimeMillis(),
-                                                        TransactionResultCode.txSUCCESS.toResultXdr()
+                                                        KinTransaction.ResultCode.Success
                                                     ),
                                                     networkEnvironment = networkEnvironment
                                                 ),

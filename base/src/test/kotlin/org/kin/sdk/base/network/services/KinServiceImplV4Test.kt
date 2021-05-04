@@ -114,7 +114,7 @@ class KinServiceImplV4Test {
                 "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=",
                 KinTransaction.RecordType.Historical(
                     KinDateFormat("2019-12-12T21:32:43Z").timestamp,
-                    Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                    KinTransaction.ResultCode.Success,
                     pagingToken
                 )
             )
@@ -124,7 +124,7 @@ class KinServiceImplV4Test {
                 "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjTKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=",
                 KinTransaction.RecordType.Historical(
                     KinDateFormat("2019-12-12T21:32:43Z").timestamp,
-                    Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                    KinTransaction.ResultCode.Success,
                     pagingToken
                 )
             )
@@ -204,7 +204,7 @@ class KinServiceImplV4Test {
         val logger = KinLoggerFactoryImpl(true)
 
         sut = KinServiceImplV4(
-            ApiConfig.TestNetHorizon.networkEnv,
+            ApiConfig.TestNetAgora.networkEnv,
             NetworkOperationsHandlerImpl(logger = logger),
             mockAccountApi,
             mockTransactionApi,
@@ -1248,7 +1248,7 @@ class KinServiceImplV4Test {
             signedTransactionBase64String,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             )
         )
 
@@ -1303,7 +1303,7 @@ class KinServiceImplV4Test {
             signedTransactionBase64String,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             invoiceList = invoiceList
         )
@@ -1351,7 +1351,7 @@ class KinServiceImplV4Test {
             signedTransactionBase64String,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             )
         )
 
@@ -1411,7 +1411,7 @@ class KinServiceImplV4Test {
             signedTransactionBase64String,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             )
         )
 

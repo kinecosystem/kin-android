@@ -1,13 +1,10 @@
 package org.kin.sdk.base.network.api.agora
 
 import com.google.protobuf.ByteString
-import io.grpc.Status
-import io.grpc.StatusRuntimeException
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.kin.agora.gen.account.v3.AccountService
 import org.kin.agora.gen.common.v3.Model
-import org.kin.agora.gen.common.v3.Model.InvoiceError
 import org.kin.agora.gen.transaction.v3.TransactionService
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
@@ -21,7 +18,6 @@ import org.kin.stellarfork.xdr.TransactionResult
 import org.kin.stellarfork.xdr.TransactionResultCode
 import org.kin.stellarfork.xdr.XdrDataOutputStream
 import java.io.ByteArrayOutputStream
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ProtoToModelKtTest {
@@ -57,47 +53,6 @@ class ProtoToModelKtTest {
             .toPublicKey()
 
         assertEquals(expectedPublicKey, resultPublicKey)
-    }
-
-    @Test
-    fun HistoryItem_toAcknowledgedKinTransaction() {
-        val expectedKinTransaction = TestUtils.kinTransactionFromXdr(
-            "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=",
-            KinTransaction.RecordType.Acknowledged(
-                System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
-            )
-        )
-
-        val resultKinTransaction = TransactionService.HistoryItem.newBuilder()
-            .setResultXdr(ByteString.copyFrom(Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")))
-            .setEnvelopeXdr(ByteString.copyFrom(Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")))
-            .build()
-            .toAcknowledgedKinTransaction(NetworkEnvironment.KinStellarTestNetKin3)
-
-        assertTrue { expectedKinTransaction.bytesValue.contentEquals(resultKinTransaction!!.bytesValue) }
-        assertTrue { resultKinTransaction?.recordType is KinTransaction.RecordType.Acknowledged }
-    }
-
-    @Test
-    fun HistoryItem_toHistoricalKinTransaction() {
-        val expectedKinTransaction = TestUtils.kinTransactionFromXdr(
-            "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=",
-            KinTransaction.RecordType.Historical(
-                System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
-                KinTransaction.PagingToken("12312312323123123")
-            )
-        )
-
-        val resultKinTransaction = TransactionService.HistoryItem.newBuilder()
-            .setResultXdr(ByteString.copyFrom(Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")))
-            .setEnvelopeXdr(ByteString.copyFrom(Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")))
-            .build()
-            .toHistoricalKinTransaction(NetworkEnvironment.KinStellarTestNetKin3)
-
-        assertTrue { expectedKinTransaction.bytesValue.contentEquals(resultKinTransaction!!.bytesValue) }
-        assertTrue { resultKinTransaction?.recordType is KinTransaction.RecordType.Historical }
     }
 
     // Utils

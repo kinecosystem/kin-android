@@ -15,17 +15,11 @@ sealed class ApiConfig(
         const val MainNetAgoraEndpoint = "api.agorainfra.net"
     }
 
-    object TestNetHorizon :
-        ApiConfig(TestNetHorizonEndpoint, NetworkEnvironment.KinStellarTestNetKin3, TLS_PORT)
-
-    object MainNetHorizon :
-        ApiConfig(MainNetHorizonEndpoint, NetworkEnvironment.KinStellarMainNetKin3, TLS_PORT)
-
     object TestNetAgora :
-        ApiConfig(TestNetAgoraEndpoint, NetworkEnvironment.KinStellarTestNetKin3, TLS_PORT)
+        ApiConfig(TestNetAgoraEndpoint, NetworkEnvironment.TestNet, TLS_PORT)
 
     object MainNetAgora :
-        ApiConfig(MainNetAgoraEndpoint, NetworkEnvironment.KinStellarMainNetKin3, TLS_PORT)
+        ApiConfig(MainNetAgoraEndpoint, NetworkEnvironment.MainNet, TLS_PORT)
 
     class CustomConfig(
         networkEndpoint: String,

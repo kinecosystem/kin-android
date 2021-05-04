@@ -60,12 +60,12 @@ class KinEnvironmentTest {
     @Test
     fun testAgoraConstruction() {
         val logger = KinLoggerFactoryImpl(true)
-        val sutTest = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sutTest = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
-        val sutTest2 = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sutTest2 = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger = logger))
             .setLogger(logger)
             .setAppInfoProvider(DummyAppInfoProvider())
@@ -73,7 +73,7 @@ class KinEnvironmentTest {
             .setStorage(mockStorage)
             .build()
 
-        val sutTest3 = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sutTest3 = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setNetworkOperationsHandler(NetworkOperationsHandlerImpl(logger = logger))
             .setLogger(logger)
@@ -84,12 +84,12 @@ class KinEnvironmentTest {
             )
             .setStorage(
                 KinFileStorage.Builder("storage/files/somwhere/kin")
-                    .setNetworkEnvironment(NetworkEnvironment.KinStellarTestNetKin3)
+                    .setNetworkEnvironment(NetworkEnvironment.TestNet)
                     .setExecutors(ExecutorServices())
             )
             .build()
 
-        val sutMain = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarMainNetKin3)
+        val sutMain = KinEnvironment.Agora.Builder(NetworkEnvironment.MainNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -97,7 +97,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_new_success() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setKinService(mockService)
             .setStorage(mockStorage)
@@ -129,7 +129,7 @@ class KinEnvironmentTest {
 
     @Test(expected = KinEnvironment.KinEnvironmentBuilderException::class)
     fun testImportPrivateKey_no_appInfoProvider() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setKinService(mockService)
             .setStorage(mockStorage)
             .build()
@@ -160,7 +160,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_storage_success() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -180,7 +180,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_success() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -212,7 +212,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_success_but_fails_to_store() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -244,7 +244,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_success_but_storage_exception() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -276,7 +276,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_does_not_exist() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -299,7 +299,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_does_not_exist_but_fails_to_store() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -322,7 +322,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_existing_from_network_does_not_exist_but_storage_exception() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -345,7 +345,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_storage_failed() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setKinService(mockService)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
@@ -369,7 +369,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_storage_exception() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setKinService(mockService)
             .setStorage(mockStorage)
@@ -402,7 +402,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testImportPrivateKey_storage_exception_and_service_exception() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -425,7 +425,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testAllAccountIds() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -444,7 +444,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testAllAccountIds_error() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -461,7 +461,7 @@ class KinEnvironmentTest {
 
     @Test
     fun testAppUserCreds() {
-        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val sut = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
@@ -473,13 +473,13 @@ class KinEnvironmentTest {
 
     @Test
     fun testMinApiVersions_ok() {
-        KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setKinService(mockService)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)
             .build()
 
-        KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setKinService(mockService)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(mockStorage)

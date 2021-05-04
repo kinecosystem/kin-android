@@ -1,5 +1,6 @@
 package org.kin.sdk.base.stellar.models
 
+import org.kin.agora.gen.transaction.v4.TransactionService
 import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
@@ -7,30 +8,19 @@ import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinAccountId
-import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.getAgoraMemo
-import org.kin.sdk.base.models.getNetwork
 import org.kin.sdk.base.models.solana.MemoProgram
 import org.kin.sdk.base.models.solana.SystemProgram
 import org.kin.sdk.base.models.solana.TokenProgram
 import org.kin.sdk.base.models.solana.unmarshal
 import org.kin.sdk.base.models.toKin
+import org.kin.sdk.base.network.api.agora.toPublicKey
 import org.kin.sdk.base.stellar.models.KinTransaction.RecordType
 import org.kin.sdk.base.tools.byteArrayToLong
 import org.kin.sdk.base.tools.subByteArray
 import org.kin.sdk.base.tools.toHexString
-import org.kin.stellarfork.AssetTypeCreditAlphaNum4
-import org.kin.stellarfork.KeyPair
-import org.kin.stellarfork.PaymentOperation
-import org.kin.stellarfork.Transaction
 import org.kin.stellarfork.codec.Base64
-import org.kin.stellarfork.xdr.MemoType
-import org.kin.stellarfork.xdr.OperationType
-import org.kin.stellarfork.xdr.TransactionEnvelope
-import org.kin.stellarfork.xdr.TransactionResult
 import org.kin.stellarfork.xdr.TransactionResultCode
-import org.kin.stellarfork.xdr.XdrDataInputStream
-import java.io.ByteArrayInputStream
 
 val org.kin.sdk.base.models.solana.Transaction.totalAmount: KinAmount
     get() = paymentOperations.map { it.amount }.reduce { acc, kinAmount -> acc + kinAmount }
@@ -62,7 +52,8 @@ val org.kin.sdk.base.models.solana.Transaction.paymentOperations: List<KinOperat
                 && programKey != SystemProgram.PROGRAM_KEY
                 && it.data.first().toInt() == TokenProgram.Command.Transfer.value
     }.map {
-        val amount = QuarkAmount(it.data.subByteArray(1, it.data.size - 1).byteArrayToLong()).toKin()
+        val amount =
+            QuarkAmount(it.data.subByteArray(1, it.data.size - 1).byteArrayToLong()).toKin()
         val source = message.accounts[it.accounts[0].toInt()].asKinAccountId()
         val destination = message.accounts[it.accounts[1].toInt()].asKinAccountId()
         KinOperation.Payment(amount, source, destination)
@@ -131,99 +122,18 @@ interface KinTransaction {
 
         data class InFlight(
             override val timestamp: Long
-        ) : RecordType(0) {
-            override fun equals(other: Any?): Boolean {
-                if (this === other) return true
-                if (javaClass != other?.javaClass) return false
-
-                other as RecordType.InFlight
-
-                return this.timestamp == other.timestamp
-            }
-
-            override fun hashCode(): Int {
-                return timestamp.hashCode()
-            }
-        }
+        ) : RecordType(0)
 
         data class Acknowledged(
             override val timestamp: Long,
-            val resultXdrBytes: ByteArray
-        ) : RecordType(1) {
-            val resultCode: ResultCode by lazy {
-                RecordType.Companion.parseResultCode(
-                    resultXdrBytes
-                )
-            }
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) return true
-                if (other !is RecordType.Acknowledged) return false
-
-                if (timestamp != other.timestamp) return false
-                if (!resultXdrBytes.contentEquals(other.resultXdrBytes)) return false
-
-                return true
-            }
-
-            override fun hashCode(): Int {
-                var result = timestamp.hashCode()
-                result = 31 * result + resultXdrBytes.contentHashCode()
-                return result
-            }
-        }
+            val resultCode: ResultCode,
+        ) : RecordType(1)
 
         data class Historical(
             override val timestamp: Long,
-            val resultXdrBytes: ByteArray,
+            val resultCode: ResultCode,
             val pagingToken: PagingToken
-        ) : RecordType(2) {
-            val resultCode: ResultCode by lazy {
-                RecordType.Companion.parseResultCode(
-                    resultXdrBytes
-                )
-            }
-
-            override fun equals(other: Any?): Boolean {
-                if (this === other) return true
-                if (other !is RecordType.Historical) return false
-
-                if (timestamp != other.timestamp) return false
-                if (!resultXdrBytes.contentEquals(other.resultXdrBytes)) return false
-                if (pagingToken != other.pagingToken) return false
-
-                return true
-            }
-
-            override fun hashCode(): Int {
-                var result = timestamp.hashCode()
-                result = 31 * result + resultXdrBytes.contentHashCode()
-                result = 31 * result + pagingToken.hashCode()
-                return result
-            }
-        }
-
-        companion object {
-            fun parseResultCode(resultXdrBytes: ByteArray): ResultCode {
-                val transactionResult =
-                    TransactionResult.decode(XdrDataInputStream((ByteArrayInputStream(resultXdrBytes))))
-                return when (transactionResult.result?.discriminant) {
-                    TransactionResultCode.txSUCCESS -> ResultCode.Success
-                    TransactionResultCode.txFAILED -> ResultCode.Failed
-                    TransactionResultCode.txTOO_EARLY -> ResultCode.TooEarly
-                    TransactionResultCode.txTOO_LATE -> ResultCode.TooLate
-                    TransactionResultCode.txMISSING_OPERATION -> ResultCode.MissingOperation
-                    TransactionResultCode.txBAD_SEQ -> ResultCode.BadSequenceNumber
-                    TransactionResultCode.txBAD_AUTH -> ResultCode.BadAuth
-                    TransactionResultCode.txINSUFFICIENT_BALANCE -> ResultCode.InsufficientBalance
-                    TransactionResultCode.txNO_ACCOUNT -> ResultCode.NoAccount
-                    TransactionResultCode.txINSUFFICIENT_FEE -> ResultCode.InsufficientFee
-                    TransactionResultCode.txBAD_AUTH_EXTRA -> ResultCode.BadAuthExtra
-                    TransactionResultCode.txINTERNAL_ERROR,
-                    null -> ResultCode.InternalError
-                }
-            }
-        }
+        ) : RecordType(2)
     }
 
     sealed class ResultCode(val value: Int) {
@@ -250,65 +160,33 @@ data class StellarKinTransaction @JvmOverloads constructor(
     override val bytesValue: ByteArray,
     override val recordType: RecordType = RecordType.InFlight(System.currentTimeMillis()),
     override val networkEnvironment: NetworkEnvironment,
-    override val invoiceList: InvoiceList? = null
+    override val invoiceList: InvoiceList? = null,
+    internal val historyItem: TransactionService.HistoryItem
 ) : KinTransaction {
+    override val transactionHash: TransactionHash
+        get() = TransactionHash(historyItem.transactionId.value.toByteArray())
+    override val signingSource: KinAccount.Id
+        get() = historyItem.paymentsList.first().source.toPublicKey().asKinAccountId()
+    override val fee: QuarkAmount
+        get() = QuarkAmount(0)
+    override val memo: KinMemo
+        get() = KinMemo.NONE // We don't have the memo for stellar based transactions parsed in HistoryItems
+    override val paymentOperations: List<KinOperation.Payment>
+        get() = historyItem.paymentsList.map {
+            KinOperation.Payment(
+                QuarkAmount(it.amount).toKin(),
+                it.source.toPublicKey().asKinAccountId(),
+                it.destination.toPublicKey().asKinAccountId()
+            )
+        }
 
-    fun isKinNonNativeAsset(): Boolean {
-        return transactionEnvelope.tx!!.operations.filter { operation ->
-            operation!!.body!!.discriminant == OperationType.PAYMENT
-        }.map { PaymentOperation.Builder(it!!.body!!.paymentOp!!).build() }
-            .map { (it.asset as? AssetTypeCreditAlphaNum4)?.code == "KIN" }.reduce { acc, b -> acc && b }
-    }
-
-    internal val transactionEnvelope: TransactionEnvelope by lazy {
-        TransactionEnvelope.decode(XdrDataInputStream(ByteArrayInputStream(bytesValue)))
-    }
-
-    override val transactionHash: TransactionHash by lazy {
-        TransactionHash(
-            Transaction.fromEnvelopeXdr(
-                transactionEnvelope,
-                networkEnvironment.getNetwork()
-            ).hash()
-        )
-    }
-
-    override val signingSource: KinAccount.Id by lazy {
-        KinAccount.Id(
-            KeyPair.fromXdrPublicKey(transactionEnvelope.tx!!.sourceAccount!!.accountID!!)
-                .asPublicKey().value
-        )
-    }
-
-    override val fee: QuarkAmount by lazy {
-        QuarkAmount(transactionEnvelope.tx!!.fee!!.uint32!!.toLong())
-    }
-
-    override val memo: KinMemo by lazy {
-        transactionEnvelope.tx!!.memo?.let { memo ->
-            if (memo.discriminant == MemoType.MEMO_HASH) {
-                KinMemo(memo.hash!!.hash!!)
-            } else {
-                memo.text?.let { KinMemo(it, Charsets.UTF_8) } ?: KinMemo.NONE
-            }
-        } ?: KinMemo.NONE
-    }
-
-    override val paymentOperations: List<KinOperation.Payment> by lazy {
-        transactionEnvelope.tx!!.operations.filter { operation ->
-            operation!!.body!!.discriminant == OperationType.PAYMENT
-        }.map { PaymentOperation.Builder(it!!.body!!.paymentOp!!).build() }
-            .map { payOp: PaymentOperation ->
-                KinOperation.Payment(
-                    KinAmount(payOp.amount),
-                    when {
-                        payOp.sourceAccount != null -> KinAccount.Id(payOp.sourceAccount!!.publicKey)
-                        else -> signingSource
-                    },
-                    KinAccount.Id(payOp.destination.publicKey)
-                )
-            }
-    }
+//    fun isKinNonNativeAsset(): Boolean {
+//        TODO("Not yet implemented")
+//    }
+//
+//    internal val transactionEnvelope: TransactionEnvelope by lazy {
+//        TODO("Not yet implemented")
+//    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -330,3 +208,89 @@ data class StellarKinTransaction @JvmOverloads constructor(
         return "StellarKinTransaction(bytesValue=${bytesValue.toHexString()}, recordType=$recordType, networkEnvironment=$networkEnvironment, invoiceList=$invoiceList)"
     }
 }
+
+//data class StellarKinTransaction @JvmOverloads constructor(
+//    override val bytesValue: ByteArray,
+//    override val recordType: RecordType = RecordType.InFlight(System.currentTimeMillis()),
+//    override val networkEnvironment: NetworkEnvironment,
+//    override val invoiceList: InvoiceList? = null
+//) : KinTransaction {
+//
+//    fun isKinNonNativeAsset(): Boolean {
+//        return transactionEnvelope.tx!!.operations.filter { operation ->
+//            operation!!.body!!.discriminant == OperationType.PAYMENT
+//        }.map { PaymentOperation.Builder(it!!.body!!.paymentOp!!).build() }
+//            .map { (it.asset as? AssetTypeCreditAlphaNum4)?.code == "KIN" }
+//            .reduce { acc, b -> acc && b }
+//    }
+//
+//    internal val transactionEnvelope: TransactionEnvelope by lazy {
+//        TransactionEnvelope.decode(XdrDataInputStream(ByteArrayInputStream(bytesValue)))
+//    }
+//
+//    override val transactionHash: TransactionHash by lazy {
+//        TransactionHash(
+//            Transaction.fromEnvelopeXdr(
+//                transactionEnvelope,
+//                networkEnvironment.getNetwork()
+//            ).hash()
+//        )
+//    }
+//
+//    override val signingSource: KinAccount.Id by lazy {
+//        KinAccount.Id(
+//            KeyPair.fromXdrPublicKey(transactionEnvelope.tx!!.sourceAccount!!.accountID!!)
+//                .asPublicKey().value
+//        )
+//    }
+//
+//    override val fee: QuarkAmount by lazy {
+//        QuarkAmount(transactionEnvelope.tx!!.fee!!.uint32!!.toLong())
+//    }
+//
+//    override val memo: KinMemo by lazy {
+//        transactionEnvelope.tx!!.memo?.let { memo ->
+//            if (memo.discriminant == MemoType.MEMO_HASH) {
+//                KinMemo(memo.hash!!.hash!!)
+//            } else {
+//                memo.text?.let { KinMemo(it, Charsets.UTF_8) } ?: KinMemo.NONE
+//            }
+//        } ?: KinMemo.NONE
+//    }
+//
+//    override val paymentOperations: List<KinOperation.Payment> by lazy {
+//        transactionEnvelope.tx!!.operations.filter { operation ->
+//            operation!!.body!!.discriminant == OperationType.PAYMENT
+//        }.map { PaymentOperation.Builder(it!!.body!!.paymentOp!!).build() }
+//            .map { payOp: PaymentOperation ->
+//                KinOperation.Payment(
+//                    KinAmount(payOp.amount),
+//                    when {
+//                        payOp.sourceAccount != null -> KinAccount.Id(payOp.sourceAccount!!.publicKey)
+//                        else -> signingSource
+//                    },
+//                    KinAccount.Id(payOp.destination.publicKey)
+//                )
+//            }
+//    }
+//
+//    override fun equals(other: Any?): Boolean {
+//        if (this === other) return true
+//        if (other !is KinTransaction) return false
+//
+//        if (!bytesValue.contentEquals(other.bytesValue)) return false
+//        if (recordType != other.recordType) return false
+//        if (networkEnvironment != other.networkEnvironment) return false
+//        if (invoiceList != other.invoiceList) return false
+//
+//        return true
+//    }
+//
+//    override fun hashCode(): Int {
+//        return transactionHash.hashCode()
+//    }
+//
+//    override fun toString(): String {
+//        return "StellarKinTransaction(bytesValue=${bytesValue.toHexString()}, recordType=$recordType, networkEnvironment=$networkEnvironment, invoiceList=$invoiceList)"
+//    }
+//}

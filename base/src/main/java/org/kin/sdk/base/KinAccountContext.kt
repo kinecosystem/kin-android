@@ -21,7 +21,6 @@ import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
-import org.kin.sdk.base.models.getNetwork
 import org.kin.sdk.base.models.merge
 import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.models.toQuarks
@@ -666,19 +665,7 @@ class KinAccountContextImpl private constructor(
                             it,
                             memo,
                             feeOverride ?: fee
-                        ).map {
-                            if (it is StellarKinTransaction) {
-                                val tx = org.kin.stellarfork.Transaction.fromEnvelopeXdr(
-                                    Base64.encodeBase64String(it.bytesValue),
-                                    it.networkEnvironment.getNetwork()
-                                )
-                                if (signaturesOverride.isNotEmpty()) {
-                                    tx.signatures = signaturesOverride
-                                }
-
-                                it.copy(bytesValue = Base64.decodeBase64(tx.toEnvelopeXdrBase64())!!)
-                            } else it
-                        }
+                        )
                     }
                 }
             }

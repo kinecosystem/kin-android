@@ -39,7 +39,7 @@ import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.KinTransactions
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
-import org.kin.sdk.base.stellar.models.StellarKinTransaction
+import org.kin.sdk.base.stellar.models.SolanaKinTransaction
 import org.kin.sdk.base.storage.Storage
 import org.kin.sdk.base.tools.DisposeBag
 import org.kin.sdk.base.tools.ExecutorServices
@@ -74,15 +74,11 @@ class KinAccountContextImplTest {
         val fee = QuarkAmount(100)
 
         val pagingToken = KinTransaction.PagingToken("16576645322248192")
-        val historicalKinTransaction = TestUtils.kinTransactionFromXdr(
-            "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=",
-            KinTransaction.RecordType.Historical(
-                KinDateFormat("2019-12-12T21:32:43Z").timestamp,
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
-                pagingToken
-            )
+        val networkEnvironment = NetworkEnvironment.TestNet
+        val historicalKinTransaction =  SolanaKinTransaction(
+            Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
+            networkEnvironment = networkEnvironment
         )
-        val networkEnvironment = NetworkEnvironment.KinStellarTestNetKin3
     }
 
     private lateinit var sut: KinAccountContext
@@ -117,7 +113,7 @@ class KinAccountContextImplTest {
         }
 
         sut = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
                 .setAppInfoProvider(object : AppInfoProvider {
                     override val appInfo: AppInfo by lazy {
                         AppInfo(
@@ -138,7 +134,7 @@ class KinAccountContextImplTest {
         ).useExistingAccount(registeredAccount.id).build()
 
         sut2 = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
                 .setAppInfoProvider(object : AppInfoProvider {
                     override val appInfo: AppInfo by lazy {
                         AppInfo(
@@ -170,7 +166,7 @@ class KinAccountContextImplTest {
     @Test
     fun testNewAccountBuilder() {
         val context = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
                 .setAppInfoProvider(KinEnvironmentTest.DummyAppInfoProvider())
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
@@ -567,16 +563,16 @@ class KinAccountContextImplTest {
     @Test
     fun sendKinPayment_success() {
         val destination = TestUtils.newKinAccount()
-        val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+        val transactionToBeSent = 
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
-            )
-        val responseTransaction = StellarKinTransaction(
+            )           
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success, 
             ),
             networkEnvironment
         )
@@ -668,15 +664,15 @@ class KinAccountContextImplTest {
     fun payInvoice_success() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
@@ -779,15 +775,15 @@ class KinAccountContextImplTest {
     fun sendMultipleKinPayments_success() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
@@ -894,15 +890,15 @@ class KinAccountContextImplTest {
     fun sendThreeKinPayments_with_bad_sequence_number_for_first_two() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
@@ -1032,15 +1028,15 @@ class KinAccountContextImplTest {
     fun sendKinPayment_with_bad_sequence_number_max_tries() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
@@ -1155,15 +1151,15 @@ class KinAccountContextImplTest {
     fun sendKinPayment_with_unknown_error() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
@@ -1271,15 +1267,15 @@ class KinAccountContextImplTest {
     fun sendThreeKinPayments_with_insufficient_fee_for_first_two() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
@@ -1413,59 +1409,59 @@ class KinAccountContextImplTest {
     fun sendMultipleKinPayments_receiveMultiplePayments_requestNextPage_success() {
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("\"AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACkPkcGwNdqhA/6R+ZuA0wcDK9Dlf/2uoJKlIUD58nNl7Ki6cZSUxX6NyQp7Ieh7maV7R5hVgzKxqgVTGOQ9Y8FAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA6CGAQAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
-        val historicalTransaction1 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAABhqAAAAAAAAAAATVwrhgAAABAf3uEfHbs4JpaOWthX9wTq0PetHyX8WexBA4nx8cQDljAkcW/9n+4DWyAGoHQKebIRg1M6zWWg0RTqhuQ4hyfAQ==")!!,
+        val historicalTransaction1 = SolanaKinTransaction(
+            Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACkPkcGwNdqhA/6R+ZuA0wcDK9Dlf/2uoJKlIUD58nNl7Ki6cZSUxX6NyQp7Ieh7maV7R5hVgzKxqgVTGOQ9Y8FAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA6CGAQAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
         )
-        val historicalTransaction2 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAADDUAAAAAAAAAAATVwrhgAAABAGeunbexebrTLt7dEdXeFFlig7dWVNVYJyXa/W7TB/thjE67fTkmhZbW12fmTvvuPg6sCNqnVfNDdL79UdlIdDg==")!!,
+        val historicalTransaction2 = SolanaKinTransaction(
+            Base64.decodeBase64(" AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABJ/7uglDgA+Guf9/TlKIydsbNVKow3IMxNGJkXFEgYQjRBeWrUFxzbcTZ/Qm9Byd0g5Bg3L5llEB4ddDP9CgMAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA0ANAwAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
         )
-        val historicalTransaction3 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAADAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAAEk+AAAAAAAAAAATVwrhgAAABAVfNN1H1DykJlsRsBYXo+6MQEuLSVRiw6scxe4fEsUnYjaAPYv6vajfThorq+xMtrd1ZIsR6lkidKJ7ZFe8FFBw==\n")!!,
+        val historicalTransaction3 = SolanaKinTransaction(
+            Base64.decodeBase64(" AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADOYWAeT5yvPjE7XndVVObPE8sZTA2pE3uzDGMzLqATXzxy/BFV/5NMwTSuanQ3obq2mIV3q0U1xI5CV7n2Ab4DAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA+CTBAAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
         )
-        val historicalTransaction4 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAAB31EZCHw5EX1YTCqquo6lPyqLnZw4oKNmFwaSlq3MUEAAAAZABYP0QAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAO8BR2Aqchj3Jk2d2qmfg6dE6Z3m9ooNDiPW3FTVwrhgAAAAAAAAAAAAGGoAAAAAAAAAAAWrcxQQAAABAVlo9avGN5377ziEKULCDYJARlDTFrY8wKXbl3NJNGjcm8gH8Gdn1LGGD0RCd/sHpam29l8g/xlBnb+/zMrVqDg==")!!,
+        val historicalTransaction4 = SolanaKinTransaction(
+            Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACnqf21k4NHre9V/YFu8ezrzoiPq+l4JpJDxDpl3Xj1dVFwpf7+MGRZoixbwFM7DleQccAWJ8Nj3ruL3rhuLdUPAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA4AaBgAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
         )
-        val historicalTransaction5 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAAB31EZCHw5EX1YTCqquo6lPyqLnZw4oKNmFwaSlq3MUEAAAAZABYP0QAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAO8BR2Aqchj3Jk2d2qmfg6dE6Z3m9ooNDiPW3FTVwrhgAAAAAAAAAAAAHoSAAAAAAAAAAAWrcxQQAAABAznP+g/Hot6I5o37RMBC4tTIApC4IcWNQcGODzv6Gr9NuLpea8Xy3DhA8KMLyEJ0Bdt21ri2ec5NztYV4bQ6YAA==")!!,
+        val historicalTransaction5 = SolanaKinTransaction(
+            Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUW7tRJEwBNyDeZHPK6nz6EgkpP0hSnWNk4DwCBCLWlrgmjIern9Afwk4AYIZ3qe5do6a6PdjVZTxZVkqRT84IAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJAyChBwAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
@@ -1648,59 +1644,59 @@ class KinAccountContextImplTest {
 
         val destination = TestUtils.newKinAccount()
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACkPkcGwNdqhA/6R+ZuA0wcDK9Dlf/2uoJKlIUD58nNl7Ki6cZSUxX6NyQp7Ieh7maV7R5hVgzKxqgVTGOQ9Y8FAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA6CGAQAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
-        val historicalTransaction1 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAABhqAAAAAAAAAAATVwrhgAAABAf3uEfHbs4JpaOWthX9wTq0PetHyX8WexBA4nx8cQDljAkcW/9n+4DWyAGoHQKebIRg1M6zWWg0RTqhuQ4hyfAQ==")!!,
+        val historicalTransaction1 = SolanaKinTransaction(
+            Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACkPkcGwNdqhA/6R+ZuA0wcDK9Dlf/2uoJKlIUD58nNl7Ki6cZSUxX6NyQp7Ieh7maV7R5hVgzKxqgVTGOQ9Y8FAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA6CGAQAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
         )
-        val historicalTransaction2 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAADDUAAAAAAAAAAATVwrhgAAABAGeunbexebrTLt7dEdXeFFlig7dWVNVYJyXa/W7TB/thjE67fTkmhZbW12fmTvvuPg6sCNqnVfNDdL79UdlIdDg==")!!,
+        val historicalTransaction2 = SolanaKinTransaction(
+            Base64.decodeBase64(" AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABJ/7uglDgA+Guf9/TlKIydsbNVKow3IMxNGJkXFEgYQjRBeWrUFxzbcTZ/Qm9Byd0g5Bg3L5llEB4ddDP9CgMAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA0ANAwAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
         )
-        val historicalTransaction3 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAADvAUdgKnIY9yZNndqpn4OnROmd5vaKDQ4j1txU1cK4YAAAAZABYP0MAAAADAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAHfURkIfDkRfVhMKqq6jqU/KoudnDigo2YXBpKWrcxQQAAAAAAAAAAAAEk+AAAAAAAAAAATVwrhgAAABAVfNN1H1DykJlsRsBYXo+6MQEuLSVRiw6scxe4fEsUnYjaAPYv6vajfThorq+xMtrd1ZIsR6lkidKJ7ZFe8FFBw==\n")!!,
+        val historicalTransaction3 = SolanaKinTransaction(
+            Base64.decodeBase64(" AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADOYWAeT5yvPjE7XndVVObPE8sZTA2pE3uzDGMzLqATXzxy/BFV/5NMwTSuanQ3obq2mIV3q0U1xI5CV7n2Ab4DAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA+CTBAAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
         )
-        val historicalTransaction4 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAAB31EZCHw5EX1YTCqquo6lPyqLnZw4oKNmFwaSlq3MUEAAAAZABYP0QAAAABAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAO8BR2Aqchj3Jk2d2qmfg6dE6Z3m9ooNDiPW3FTVwrhgAAAAAAAAAAAAGGoAAAAAAAAAAAWrcxQQAAABAVlo9avGN5377ziEKULCDYJARlDTFrY8wKXbl3NJNGjcm8gH8Gdn1LGGD0RCd/sHpam29l8g/xlBnb+/zMrVqDg==")!!,
+        val historicalTransaction4 = SolanaKinTransaction(
+            Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACnqf21k4NHre9V/YFu8ezrzoiPq+l4JpJDxDpl3Xj1dVFwpf7+MGRZoixbwFM7DleQccAWJ8Nj3ruL3rhuLdUPAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJA4AaBgAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
         )
-        val historicalTransaction5 = StellarKinTransaction(
-            Base64.decodeBase64("AAAAAB31EZCHw5EX1YTCqquo6lPyqLnZw4oKNmFwaSlq3MUEAAAAZABYP0QAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAO8BR2Aqchj3Jk2d2qmfg6dE6Z3m9ooNDiPW3FTVwrhgAAAAAAAAAAAAHoSAAAAAAAAAAAWrcxQQAAABAznP+g/Hot6I5o37RMBC4tTIApC4IcWNQcGODzv6Gr9NuLpea8Xy3DhA8KMLyEJ0Bdt21ri2ec5NztYV4bQ6YAA==")!!,
+        val historicalTransaction5 = SolanaKinTransaction(
+            Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUW7tRJEwBNyDeZHPK6nz6EgkpP0hSnWNk4DwCBCLWlrgmjIern9Afwk4AYIZ3qe5do6a6PdjVZTxZVkqRT84IAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW9XfCd1GR52OfreEYpI0+El+wlY/bIiBBO48k81/+47PBXOdIQ9PhPKO/g0xviztNdJriWX40Gi+LNZoEgxD3s0gbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCpNJwYNsvTYodJyw+tKWxTwIzLleQf2SwAj02FZb4ES9EBAwMBAgEJAyChBwAAAAAA")!!,
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("1231412342453245")
             ),
             networkEnvironment
@@ -1825,15 +1821,15 @@ class KinAccountContextImplTest {
     @Test
     fun observePayments_actively_success() {
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
@@ -1882,15 +1878,15 @@ class KinAccountContextImplTest {
     @Test
     fun observePayments_newActiveOnly_success() {
         val transactionToBeSent =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
-        val responseTransaction = StellarKinTransaction(
+        val responseTransaction = SolanaKinTransaction(
             transactionToBeSent.bytesValue,
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             ),
             networkEnvironment
         )
@@ -1913,8 +1909,8 @@ class KinAccountContextImplTest {
     fun test_getPaymentsForTransactionHash() {
 
         val transaction =
-            StellarKinTransaction(
-                Base64.decodeBase64("AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=")!!,
+            SolanaKinTransaction(
+                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
                 networkEnvironment = networkEnvironment
             )
 

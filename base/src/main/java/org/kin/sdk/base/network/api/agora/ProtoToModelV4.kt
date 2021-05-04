@@ -266,8 +266,7 @@ internal fun ((SubmitTransactionResponse) -> Unit).submitTransactionResponse(
                 SubmitTransactionResponse.Result.Ok
             }
             TransactionService.SubmitTransactionResponse.Result.FAILED -> {
-                val result = KinTransaction.RecordType.parseResultCode(response.transactionError.toResultXdr())
-                    .toSubmitTransactionResultV4()
+                val result = response.transactionError.toResultCode().toSubmitTransactionResultV4()
 
                 if (result == SubmitTransactionResponse.Result.Ok) {
                     SubmitTransactionResponse.Result.UndefinedError(Exception("no transaction_error provided"))
@@ -349,17 +348,16 @@ internal fun TransactionResultCode.toResultXdr(): ByteArray {
 }
 
 @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
-internal fun Model.TransactionError.toResultXdr(): ByteArray {
+internal fun Model.TransactionError.toResultCode(): KinTransaction.ResultCode {
     return when (reason) {
-        Model.TransactionError.Reason.NONE -> TransactionResultCode.txSUCCESS
-        Model.TransactionError.Reason.UNAUTHORIZED -> TransactionResultCode.txBAD_AUTH
-        Model.TransactionError.Reason.BAD_NONCE -> TransactionResultCode.txBAD_SEQ
-        Model.TransactionError.Reason.INSUFFICIENT_FUNDS -> TransactionResultCode.txINSUFFICIENT_BALANCE
-        Model.TransactionError.Reason.INVALID_ACCOUNT -> TransactionResultCode.txNO_ACCOUNT
-        Model.TransactionError.Reason.UNKNOWN -> TransactionResultCode.txFAILED
-        Model.TransactionError.Reason.UNRECOGNIZED -> TransactionResultCode.txINTERNAL_ERROR
-    }.toResultXdr()
-
+        Model.TransactionError.Reason.NONE -> KinTransaction.ResultCode.Success
+        Model.TransactionError.Reason.UNAUTHORIZED -> KinTransaction.ResultCode.BadAuth
+        Model.TransactionError.Reason.BAD_NONCE -> KinTransaction.ResultCode.BadSequenceNumber
+        Model.TransactionError.Reason.INSUFFICIENT_FUNDS -> KinTransaction.ResultCode.InsufficientBalance
+        Model.TransactionError.Reason.INVALID_ACCOUNT -> KinTransaction.ResultCode.NoAccount
+        Model.TransactionError.Reason.UNKNOWN -> KinTransaction.ResultCode.Failed
+        Model.TransactionError.Reason.UNRECOGNIZED -> KinTransaction.ResultCode.InternalError
+    }
 }
 
 internal fun TransactionService.HistoryItem.toAcknowledgedKinTransaction(networkEnvironment: NetworkEnvironment): KinTransaction {
@@ -368,7 +366,7 @@ internal fun TransactionService.HistoryItem.toAcknowledgedKinTransaction(network
             solanaTransaction.value.toByteArray(),
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                transactionError.toResultXdr()
+                transactionError.toResultCode()
             ),
             networkEnvironment,
             if (hasInvoiceList()) invoiceList.toInvoiceList() else null
@@ -378,10 +376,11 @@ internal fun TransactionService.HistoryItem.toAcknowledgedKinTransaction(network
             stellarTransaction.envelopeXdr.toByteArray(),
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                stellarTransaction.resultXdr.toByteArray()
+                transactionError.toResultCode()
             ),
             networkEnvironment,
-            if (hasInvoiceList()) invoiceList.toInvoiceList() else null
+            if (hasInvoiceList()) invoiceList.toInvoiceList() else null,
+            this
         )
     }
 }
@@ -392,7 +391,7 @@ internal fun TransactionService.HistoryItem.toHistoricalKinTransaction(networkEn
             solanaTransaction.value.toByteArray(),
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                transactionError.toResultXdr(),
+                transactionError.toResultCode(),
                 KinTransaction.PagingToken(Base64.encodeBase64String(cursor.value.toByteArray())!!)
             ),
             networkEnvironment,
@@ -403,11 +402,12 @@ internal fun TransactionService.HistoryItem.toHistoricalKinTransaction(networkEn
             stellarTransaction.envelopeXdr.toByteArray(),
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                stellarTransaction.resultXdr.toByteArray(),
+                transactionError.toResultCode(),
                 KinTransaction.PagingToken(Base64.encodeBase64String(cursor.value.toByteArray())!!)
             ),
             networkEnvironment,
-            if (hasInvoiceList()) invoiceList.toInvoiceList() else null
+            if (hasInvoiceList()) invoiceList.toInvoiceList() else null,
+            this
         )
     }
 }

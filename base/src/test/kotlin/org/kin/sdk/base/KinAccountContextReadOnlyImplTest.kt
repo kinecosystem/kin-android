@@ -45,15 +45,6 @@ class KinAccountContextReadOnlyImplTest {
         val fee = QuarkAmount(100)
 
         val pagingToken = KinTransaction.PagingToken("16576645322248192")
-        val historicalKinTransaction = TestUtils.kinTransactionFromXdr(
-            "AAAAAF3F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7AAAAZAA65AMAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAACEHLqkO+hRTLAROj/XYWiX22Llwa7F/EN/FPca3iiAvAAAAAAAAAAAAu67gAAAAAAAAAAHCGO/7AAAAQBPhVdcWukxwTHvqvvCUB159IPIfT4DypiKWsXSeT92SNskltFanXy0fTF7kCtjGpOQ7uIKrdhK8ImYQdGSowgI=",
-            KinTransaction.RecordType.Historical(
-                KinDateFormat("2019-12-12T21:32:43Z").timestamp,
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
-                pagingToken
-            )
-        )
-        val networkEnvironment = NetworkEnvironment.KinStellarTestNetKin3
     }
 
     private lateinit var sut: KinAccountContextReadOnly
@@ -91,7 +82,7 @@ class KinAccountContextReadOnlyImplTest {
         }
 
         sut = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
                 .setAppInfoProvider(KinEnvironmentTest.DummyAppInfoProvider())
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
@@ -99,7 +90,7 @@ class KinAccountContextReadOnlyImplTest {
         ).useExistingAccountReadOnly(registeredAccount.id).build()
 
         sut2 = KinAccountContext.Builder(
-            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
                 .setAppInfoProvider(KinEnvironmentTest.DummyAppInfoProvider())
                 .setKinService(mockService2)
                 .setExecutorServices(excecutors)

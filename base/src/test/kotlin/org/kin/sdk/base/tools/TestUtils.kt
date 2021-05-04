@@ -1,5 +1,6 @@
 package org.kin.sdk.base.tools
 
+import org.kin.agora.gen.transaction.v4.TransactionService
 import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
@@ -126,17 +127,19 @@ class TestUtils {
         fun fromAccountId(accountId: String) =
             KinAccount(KeyPair.fromAccountId(accountId).asPublicKey())
 
+        // TODO: xdrs are toast, kill this
         fun kinTransactionFromXdr(
             base64StringXdr: String,
             recordType: KinTransaction.RecordType,
-            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNetKin3,
-            invoiceList: InvoiceList? = null
-        ) = StellarKinTransaction(Base64.decodeBase64(base64StringXdr)!!, recordType, networkEnvironment, invoiceList)
+            networkEnvironment: NetworkEnvironment = NetworkEnvironment.TestNet,
+            invoiceList: InvoiceList? = null,
+            historyItem: TransactionService.HistoryItem = TransactionService.HistoryItem.getDefaultInstance()
+        ) = StellarKinTransaction(Base64.decodeBase64(base64StringXdr)!!, recordType, networkEnvironment, invoiceList, historyItem)
 
         fun kinTransactionFromSolanaTransaction(
             base64StringBytes: String,
             recordType: KinTransaction.RecordType,
-            networkEnvironment: NetworkEnvironment = NetworkEnvironment.KinStellarTestNetKin3,
+            networkEnvironment: NetworkEnvironment = NetworkEnvironment.TestNet,
             invoiceList: InvoiceList? = null
         ) = SolanaKinTransaction(Base64.decodeBase64(base64StringBytes)!!, recordType, networkEnvironment, invoiceList)
     }

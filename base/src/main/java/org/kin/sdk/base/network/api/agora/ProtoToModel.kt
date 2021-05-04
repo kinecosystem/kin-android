@@ -30,35 +30,6 @@ internal fun AccountInfo.toKinAccount(): KinAccount =
 internal fun Model.StellarAccountId.toPublicKey(): Key.PublicKey =
     KeyPair.fromAccountId(value).asPublicKey()
 
-internal fun HistoryItem.toAcknowledgedKinTransaction(networkEnvironment: NetworkEnvironment) =
-    resultXdr?.let {
-        val recordType = KinTransaction.RecordType.Acknowledged(
-            System.currentTimeMillis(),
-            it.toByteArray()
-        )
-        StellarKinTransaction(
-            envelopeXdr.toByteArray(),
-            recordType,
-            networkEnvironment,
-            if (hasInvoiceList()) invoiceList.toInvoiceList() else null
-        )
-    }
-
-internal fun HistoryItem.toHistoricalKinTransaction(networkEnvironment: NetworkEnvironment) =
-    resultXdr?.let {
-        val recordType = KinTransaction.RecordType.Historical(
-            System.currentTimeMillis(),
-            it.toByteArray(),
-            KinTransaction.PagingToken(Base64.encodeBase64String(cursor.value.toByteArray())!!)
-        )
-        StellarKinTransaction(
-            envelopeXdr.toByteArray(),
-            recordType,
-            networkEnvironment,
-            if (hasInvoiceList()) invoiceList.toInvoiceList() else null
-        )
-    }
-
 internal fun Model.InvoiceList.toInvoiceList(): InvoiceList = InvoiceList(
     InvoiceList.Id(sha224Hash()),
     invoicesList.map { it.toInvoice() }

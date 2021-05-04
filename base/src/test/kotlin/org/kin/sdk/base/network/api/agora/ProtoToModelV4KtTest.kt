@@ -69,7 +69,7 @@ class ProtoToModelV4KtTest {
             "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=",
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             )
         )
 
@@ -79,7 +79,7 @@ class ProtoToModelV4KtTest {
                     .setValue(ByteString.copyFrom(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")))
             )
             .build()
-            .toAcknowledgedKinTransaction(NetworkEnvironment.KinStellarTestNetKin3)
+            .toAcknowledgedKinTransaction(NetworkEnvironment.TestNet)
 
         assertTrue { expectedKinTransaction.bytesValue.contentEquals(resultKinTransaction.bytesValue) }
         assertTrue { resultKinTransaction.recordType is KinTransaction.RecordType.Acknowledged }
@@ -91,7 +91,7 @@ class ProtoToModelV4KtTest {
             "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=",
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("12312312323123123")
             )
         )
@@ -102,7 +102,7 @@ class ProtoToModelV4KtTest {
                     .setValue(ByteString.copyFrom(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")))
             )
             .build()
-            .toHistoricalKinTransaction(NetworkEnvironment.KinStellarTestNetKin3)
+            .toHistoricalKinTransaction(NetworkEnvironment.TestNet)
 
         assertTrue { expectedKinTransaction.bytesValue.contentEquals(resultKinTransaction.bytesValue) }
         assertTrue { resultKinTransaction.recordType is KinTransaction.RecordType.Historical }
@@ -276,7 +276,7 @@ class ProtoToModelV4KtTest {
             "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=",
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("12312312323123123")
             )
         )
@@ -286,7 +286,7 @@ class ProtoToModelV4KtTest {
             assertTrue { it.transactions?.first()?.recordType is KinTransaction.RecordType.Historical }
         }
 
-        onCompleted.getTransactionHistoryResponse(NetworkEnvironment.KinStellarTestNetKin3).onSuccess(
+        onCompleted.getTransactionHistoryResponse(NetworkEnvironment.TestNet).onSuccess(
             TransactionService.GetHistoryResponse.newBuilder()
                 .setResult(TransactionService.GetHistoryResponse.Result.OK)
                 .addItems(
@@ -306,7 +306,7 @@ class ProtoToModelV4KtTest {
         { it: KinTransactionApiV4.GetTransactionHistoryResponse ->
             assertTrue(it.result is KinTransactionApiV4.GetTransactionHistoryResponse.Result.NotFound)
             assertNull(it.transactions)
-        }.getTransactionHistoryResponse(NetworkEnvironment.KinStellarTestNetKin3)
+        }.getTransactionHistoryResponse(NetworkEnvironment.TestNet)
             .onSuccess(
                 TransactionService.GetHistoryResponse.newBuilder()
                     .setResult(TransactionService.GetHistoryResponse.Result.NOT_FOUND)
@@ -319,7 +319,7 @@ class ProtoToModelV4KtTest {
         { it: KinTransactionApiV4.GetTransactionHistoryResponse ->
             assertTrue(it.result is KinTransactionApiV4.GetTransactionHistoryResponse.Result.UndefinedError)
             assertNull(it.transactions)
-        }.getTransactionHistoryResponse(NetworkEnvironment.KinStellarTestNetKin3)
+        }.getTransactionHistoryResponse(NetworkEnvironment.TestNet)
             .onSuccess(
                 TransactionService.GetHistoryResponse.newBuilder()
                     .setResultValue(9000)
@@ -332,7 +332,7 @@ class ProtoToModelV4KtTest {
         { it: KinTransactionApiV4.GetTransactionHistoryResponse ->
             assertTrue(it.result is KinTransactionApiV4.GetTransactionHistoryResponse.Result.TransientFailure)
             assertNull(it.transactions)
-        }.getTransactionHistoryResponse(NetworkEnvironment.KinStellarTestNetKin3)
+        }.getTransactionHistoryResponse(NetworkEnvironment.TestNet)
             .onError?.invoke(StatusRuntimeException(Status.CANCELLED))
     }
 
@@ -341,7 +341,7 @@ class ProtoToModelV4KtTest {
         { it: KinTransactionApiV4.GetTransactionHistoryResponse ->
             assertTrue(it.result is KinTransactionApiV4.GetTransactionHistoryResponse.Result.NotFound)
             assertNull(it.transactions)
-        }.getTransactionHistoryResponse(NetworkEnvironment.KinStellarTestNetKin3)
+        }.getTransactionHistoryResponse(NetworkEnvironment.TestNet)
             .onError?.invoke(StatusRuntimeException(Status.NOT_FOUND))
     }
 
@@ -350,7 +350,7 @@ class ProtoToModelV4KtTest {
         { it: KinTransactionApiV4.GetTransactionHistoryResponse ->
             assertTrue(it.result is KinTransactionApiV4.GetTransactionHistoryResponse.Result.UndefinedError)
             assertNull(it.transactions)
-        }.getTransactionHistoryResponse(NetworkEnvironment.KinStellarTestNetKin3)
+        }.getTransactionHistoryResponse(NetworkEnvironment.TestNet)
             .onError?.invoke(GrpcApi.UnrecognizedResultException(Exception()))
     }
 
@@ -360,7 +360,7 @@ class ProtoToModelV4KtTest {
             "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=",
             KinTransaction.RecordType.Historical(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!,
+                KinTransaction.ResultCode.Success,
                 KinTransaction.PagingToken("12312312323123123")
             )
         )
@@ -370,7 +370,7 @@ class ProtoToModelV4KtTest {
             assertTrue { it.transaction?.recordType is KinTransaction.RecordType.Historical }
         }
 
-        onCompleted.getTransactionResponse(NetworkEnvironment.KinStellarTestNetKin3).onSuccess(
+        onCompleted.getTransactionResponse(NetworkEnvironment.TestNet).onSuccess(
             TransactionService.GetTransactionResponse.newBuilder()
                 .setState(TransactionService.GetTransactionResponse.State.SUCCESS)
                 .setItem(
@@ -389,7 +389,7 @@ class ProtoToModelV4KtTest {
         { it: KinTransactionApiV4.GetTransactionResponse ->
             assertTrue(it.result is KinTransactionApiV4.GetTransactionResponse.Result.NotFound)
             assertNull(it.transaction)
-        }.getTransactionResponse(NetworkEnvironment.KinStellarTestNetKin3)
+        }.getTransactionResponse(NetworkEnvironment.TestNet)
             .onSuccess(
                 TransactionService.GetTransactionResponse.newBuilder()
                     .setState(TransactionService.GetTransactionResponse.State.UNKNOWN)
@@ -402,7 +402,7 @@ class ProtoToModelV4KtTest {
         { it: KinTransactionApiV4.GetTransactionResponse ->
             assertTrue(it.result is KinTransactionApiV4.GetTransactionResponse.Result.TransientFailure)
             assertNull(it.transaction)
-        }.getTransactionResponse(NetworkEnvironment.KinStellarTestNetKin3)
+        }.getTransactionResponse(NetworkEnvironment.TestNet)
             .onError?.invoke(StatusRuntimeException(Status.CANCELLED))
     }
 
@@ -411,7 +411,7 @@ class ProtoToModelV4KtTest {
         { it: KinTransactionApiV4.GetTransactionResponse ->
             assertTrue(it.result is KinTransactionApiV4.GetTransactionResponse.Result.UndefinedError)
             assertNull(it.transaction)
-        }.getTransactionResponse(NetworkEnvironment.KinStellarTestNetKin3)
+        }.getTransactionResponse(NetworkEnvironment.TestNet)
             .onError?.invoke(GrpcApi.UnrecognizedResultException(Exception()))
     }
 
@@ -421,7 +421,7 @@ class ProtoToModelV4KtTest {
             "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=",
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             )
         )
 
@@ -434,7 +434,7 @@ class ProtoToModelV4KtTest {
             Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
         )
 
-        onCompleted.submitTransactionResponse(request, NetworkEnvironment.KinStellarTestNetKin3)
+        onCompleted.submitTransactionResponse(request, NetworkEnvironment.TestNet)
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
                     .setResult(TransactionService.SubmitTransactionResponse.Result.OK)
@@ -456,7 +456,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
@@ -480,7 +480,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
@@ -504,7 +504,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
@@ -523,7 +523,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
@@ -542,7 +542,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
@@ -561,7 +561,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
@@ -580,7 +580,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
@@ -602,7 +602,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onSuccess(
                 TransactionService.SubmitTransactionResponse.newBuilder()
@@ -621,7 +621,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onError?.invoke(
                 StatusRuntimeException(Status.CANCELLED)
@@ -638,7 +638,7 @@ class ProtoToModelV4KtTest {
                 KinTransactionApiV4.SubmitTransactionRequest(
                     Transaction.unmarshal(Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=")!!)
                 ),
-                NetworkEnvironment.KinStellarTestNetKin3
+                NetworkEnvironment.TestNet
             )
             .onError?.invoke(
                 Exception("unknown")

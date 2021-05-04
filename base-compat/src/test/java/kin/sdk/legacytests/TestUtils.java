@@ -2,6 +2,7 @@ package kin.sdk.legacytests;
 
 import androidx.annotation.NonNull;
 
+import org.kin.agora.gen.transaction.v4.TransactionService;
 import org.kin.sdk.base.stellar.models.KinTransaction;
 import org.kin.sdk.base.stellar.models.NetworkEnvironment;
 import org.kin.sdk.base.stellar.models.StellarKinTransaction;
@@ -41,6 +42,11 @@ final class TestUtils {
         mockWebServer.enqueue(new MockResponse().setBodyDelay(1, TimeUnit.SECONDS));
     }
     static KinTransaction kinTransactionFromXDR(String xdr) {
-        return new StellarKinTransaction(Objects.requireNonNull(Base64.decodeBase64(xdr)), new KinTransaction.RecordType.InFlight(System.currentTimeMillis()), NetworkEnvironment.KinStellarTestNetKin3.INSTANCE);
+        return new StellarKinTransaction(
+                Objects.requireNonNull(Base64.decodeBase64(xdr)),
+                new KinTransaction.RecordType.InFlight(System.currentTimeMillis()),
+                NetworkEnvironment.TestNet.INSTANCE,
+                TransactionService.HistoryItem.getDefaultInstance()
+        );
     }
 }

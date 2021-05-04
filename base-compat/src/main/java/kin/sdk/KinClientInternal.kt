@@ -70,8 +70,8 @@ internal class KinClientInternal {
 
         private fun environmentToNetworkEnvironment(environment: Environment?): NetworkEnvironment {
             return when {
-                environment != null && environment.isMainNet -> NetworkEnvironment.KinStellarMainNetKin3
-                else -> NetworkEnvironment.KinStellarTestNetKin3
+                environment != null && environment.isMainNet -> NetworkEnvironment.MainNet
+                else -> NetworkEnvironment.TestNet
             }
         }
     }

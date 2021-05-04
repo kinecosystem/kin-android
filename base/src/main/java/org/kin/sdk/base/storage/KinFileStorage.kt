@@ -3,6 +3,8 @@ package org.kin.sdk.base.storage
 import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import org.kin.agora.gen.common.v3.Model
+import org.kin.agora.gen.transaction.v4.TransactionService
+import org.kin.gen.storage.v1.Storage.KinTransaction.BlockchainType
 import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
@@ -40,7 +42,7 @@ import org.kin.gen.storage.v1.Storage.PublicKey as StoragePublicKey
 class KinFileStorage @JvmOverloads internal constructor(
     private val filesDir: String,
     private val networkEnvironment: NetworkEnvironment,
-    private val executors: ExecutorServices = ExecutorServices()
+    private val executors: ExecutorServices = ExecutorServices(),
 ) : Storage {
     class Builder(private val filesDir: String) {
         private var networkEnvironment: NetworkEnvironment? = null
@@ -71,6 +73,26 @@ class KinFileStorage @JvmOverloads internal constructor(
         const val fileNameForAccountInfo = "account_info"
         const val directoryNameForAllAccounts = "kin_accounts"
         const val fileNameForConfig = "config"
+    }
+
+    init {
+        val config = getKinConfig()
+
+        config.map { kinConfig ->
+            when (kinConfig.storageVersion) {
+                0 -> {
+                    getAllAccountIds().forEach {
+                        removeAllTransactions(it)
+                        removeAllInvoices(it)
+                    }
+
+                    setKinConfig(kinConfig.toBuilder().setStorageVersion(1).build())
+                }
+                else -> {
+                    // Nothing to update.
+                }
+            }
+        }
     }
 
     override fun addAccount(account: KinAccount): Boolean {
@@ -264,7 +286,7 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun storeTransactions(
         accountId: KinAccount.Id,
-        transactions: List<KinTransaction>
+        transactions: List<KinTransaction>,
     ): Promise<List<KinTransaction>> {
         if (transactions.isEmpty()) {
             return Promise.of(transactions)
@@ -286,7 +308,7 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun upsertNewTransactionsInStorage(
         accountId: KinAccount.Id,
-        newTransactions: List<KinTransaction>
+        newTransactions: List<KinTransaction>,
     ): Promise<List<KinTransaction>> {
         return getStoredTransactions(accountId)
             .map { storedTransactions ->
@@ -301,7 +323,7 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun upsertOldTransactionsInStorage(
         accountId: KinAccount.Id,
-        oldTransactions: List<KinTransaction>
+        oldTransactions: List<KinTransaction>,
     ): Promise<List<KinTransaction>> {
         return getStoredTransactions(accountId)
             .map { storedTransactions ->
@@ -316,7 +338,7 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun insertNewTransactionInStorage(
         accountId: KinAccount.Id,
-        newTransaction: KinTransaction
+        newTransaction: KinTransaction,
     ): Promise<List<KinTransaction>> {
         return getStoredTransactions(accountId)
             .map { it?.items ?: emptyList() }
@@ -357,12 +379,12 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun addInvoiceLists(
         accountId: KinAccount.Id,
-        invoiceLists: List<InvoiceList>
+        invoiceLists: List<InvoiceList>,
     ): Promise<List<InvoiceList>> {
 
         fun putInvoiceListsForAccountId(
             account: KinAccount.Id,
-            invoiceLists: Map<InvoiceList.Id, InvoiceList>
+            invoiceLists: Map<InvoiceList.Id, InvoiceList>,
         ): Boolean = writeToFile(
             directoryForInvoices(account),
             fileNameForInvoices(account),
@@ -407,7 +429,7 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     override fun updateAccountBalance(
         accountId: KinAccount.Id,
-        balance: KinBalance
+        balance: KinBalance,
     ): Promise<Optional<KinAccount>> {
         return getStoredAccount(accountId)
             .map { storedAccount ->
@@ -680,9 +702,10 @@ class KinFileStorage @JvmOverloads internal constructor(
             .setPendingQuarkAmount(pendingAmount.toQuarks().value.toLong())
             .build()
 
-    private fun KinTransaction.toStorageKinTransaction(): StorageKinTransaction =
-        StorageKinTransaction.newBuilder()
-            .setEnvelopeXdr(ByteString.copyFrom(this.bytesValue))
+    private fun KinTransaction.toStorageKinTransaction(): StorageKinTransaction {
+
+        return StorageKinTransaction.newBuilder()
+            .setTransactionBlob(ByteString.copyFrom(this.bytesValue))
             .apply {
                 when (this@toStorageKinTransaction.recordType) {
                     is KinTransaction.RecordType.InFlight -> {
@@ -692,17 +715,27 @@ class KinFileStorage @JvmOverloads internal constructor(
                     is KinTransaction.RecordType.Acknowledged -> {
                         this.setStatus(StorageKinTransaction.Status.ACKNOWLEDGED)
                         this.setTimestamp(this@toStorageKinTransaction.recordType.timestamp)
-                        this.setResultXdr(ByteString.copyFrom((this@toStorageKinTransaction.recordType as KinTransaction.RecordType.Acknowledged).resultXdrBytes))
+                        this.setResultCode(org.kin.gen.storage.v1.Storage.KinTransaction.ResultCode.forNumber(
+                            (this@toStorageKinTransaction.recordType as KinTransaction.RecordType.Acknowledged).resultCode.value))
                     }
                     is KinTransaction.RecordType.Historical -> {
                         this.setStatus(StorageKinTransaction.Status.HISTORICAL)
                         this.setTimestamp(this@toStorageKinTransaction.recordType.timestamp)
-                        this.setResultXdr(ByteString.copyFrom((this@toStorageKinTransaction.recordType as KinTransaction.RecordType.Historical).resultXdrBytes))
+                        this.setResultCode(org.kin.gen.storage.v1.Storage.KinTransaction.ResultCode.forNumber(
+                            (this@toStorageKinTransaction.recordType as KinTransaction.RecordType.Historical).resultCode.value))
                         this.setPagingToken((this@toStorageKinTransaction.recordType as KinTransaction.RecordType.Historical).pagingToken.value)
                     }
                 }
+
+                if (this@toStorageKinTransaction is StellarKinTransaction) {
+                    this.setBlockchainType(BlockchainType.STELLAR)
+                    this.setHistoryItem(ByteString.copyFrom(this@toStorageKinTransaction.historyItem.toByteArray()))
+                } else {
+                    this.setBlockchainType(BlockchainType.SOLANA)
+                }
             }
             .build()
+    }
 
     private fun KinTransactions.toKinTransactions(): StorageKinTransactions {
         return StorageKinTransactions.newBuilder()
@@ -753,7 +786,8 @@ class KinFileStorage @JvmOverloads internal constructor(
             StorageKinAccount.Status.REGISTERED -> KinAccount.Status.Registered(sequence)
             StorageKinAccount.Status.UNREGISTERED -> KinAccount.Status.Unregistered
             StorageKinAccount.Status.UNRECOGNIZED,
-            null -> throw InvalidProtocolBufferException("Unrecognized account status.")
+            null,
+            -> throw InvalidProtocolBufferException("Unrecognized account status.")
         }
         val accounts = mutableListOf<Key.PublicKey>()
         if (accountsList.isNotEmpty()) {
@@ -783,35 +817,34 @@ class KinFileStorage @JvmOverloads internal constructor(
             )
             StorageKinTransaction.Status.ACKNOWLEDGED -> KinTransaction.RecordType.Acknowledged(
                 this.timestamp,
-                this.resultXdr.toByteArray()
+                this.resultCode.toResultCode()
             )
             StorageKinTransaction.Status.HISTORICAL -> KinTransaction.RecordType.Historical(
                 this.timestamp,
-                this.resultXdr.toByteArray(),
+                this.resultCode.toResultCode(),
                 KinTransaction.PagingToken(this.pagingToken)
             )
             else -> throw InvalidProtocolBufferException("Unrecognized record type.")
         }
-        var transaction: KinTransaction
-        with(
-            StellarKinTransaction(
-                this.envelopeXdr.toByteArray(),
-                recordType,
-                networkEnvironment
-            )
-        ) {
-            try {
-                transactionEnvelope // Will explode if not a StellarKinTransaction TODO find a better test
-                transaction = this
-            } catch (t: Throwable) {
-                transaction = SolanaKinTransaction(
-                    this@toKinTransaction.envelopeXdr.toByteArray(),
+        return when(this.blockchainType) {
+            BlockchainType.STELLAR -> {
+                StellarKinTransaction(
+                    this.transactionBlob.toByteArray(),
+                    recordType,
+                    networkEnvironment,
+                    historyItem = TransactionService.HistoryItem.parseFrom(this.historyItem.toByteArray())!!
+                )
+            }
+            BlockchainType.SOLANA -> {
+                SolanaKinTransaction(
+                    this@toKinTransaction.transactionBlob.toByteArray(),
                     recordType,
                     networkEnvironment
                 )
             }
+
+            else -> throw Exception("Unrecognized Transaction Type")
         }
-        return transaction
     }
 
     @Throws(InvalidProtocolBufferException::class)
@@ -825,4 +858,22 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     // ------------------------------------------------------------------------
     // endregion
+}
+
+private fun org.kin.gen.storage.v1.Storage.KinTransaction.ResultCode.toResultCode(): KinTransaction.ResultCode {
+    return when (number) {
+        KinTransaction.ResultCode.Success.value -> KinTransaction.ResultCode.Success
+        KinTransaction.ResultCode.Failed.value -> KinTransaction.ResultCode.Failed
+        KinTransaction.ResultCode.TooEarly.value -> KinTransaction.ResultCode.TooEarly
+        KinTransaction.ResultCode.TooLate.value -> KinTransaction.ResultCode.TooLate
+        KinTransaction.ResultCode.MissingOperation.value -> KinTransaction.ResultCode.MissingOperation
+        KinTransaction.ResultCode.BadSequenceNumber.value -> KinTransaction.ResultCode.BadSequenceNumber
+        KinTransaction.ResultCode.BadAuth.value -> KinTransaction.ResultCode.BadAuth
+        KinTransaction.ResultCode.InsufficientBalance.value -> KinTransaction.ResultCode.InsufficientBalance
+        KinTransaction.ResultCode.NoAccount.value -> KinTransaction.ResultCode.NoAccount
+        KinTransaction.ResultCode.InsufficientFee.value -> KinTransaction.ResultCode.InsufficientFee
+        KinTransaction.ResultCode.BadAuthExtra.value -> KinTransaction.ResultCode.BadAuthExtra
+        KinTransaction.ResultCode.InternalError.value -> KinTransaction.ResultCode.InternalError
+        else -> KinTransaction.ResultCode.Failed
+    }
 }

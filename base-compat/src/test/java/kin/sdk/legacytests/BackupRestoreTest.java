@@ -3,8 +3,6 @@ package kin.sdk.legacytests;
 
 import android.content.Context;
 
-import androidx.annotation.NonNull;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
@@ -114,7 +112,7 @@ public class BackupRestoreTest {
         when(mockStorage.getAllAccountIds())
                 .thenReturn(new ArrayList<>());
 
-        KinEnvironment kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
+        KinEnvironment kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet.INSTANCE)
                 .setAppInfoProvider(new DummyAppInfoProvider())
                 .setKinService(mockKinService)
                 .setLogger(new KinLoggerFactory() {

@@ -1,9 +1,9 @@
 package org.kin.sdk.base.models
 
+import org.kin.agora.gen.transaction.v4.TransactionService
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.stellar.models.StellarKinTransaction
-import org.kin.stellarfork.Account
 import org.kin.stellarfork.AssetTypeNative
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.Network
@@ -76,17 +76,6 @@ fun SubmitTransactionResponse.bytesValue(): ByteArray =
 fun SubmitTransactionResponse.resultXdrBytes(): ByteArray =
     Base64().decode(getResultXdr().toUTF8Bytes())!!
 
-fun TransactionResponse.asKinTransaction(networkEnvironment: NetworkEnvironment): KinTransaction =
-    StellarKinTransaction(
-        bytesValue(),
-        KinTransaction.RecordType.Historical(
-            KinDateFormat(createdAt).timestamp,
-            resultXdrBytes(),
-            KinTransaction.PagingToken(pagingToken)
-        ),
-        networkEnvironment
-    )
-
 fun KinTransaction.asKinPayments(): List<KinPayment> {
     var offset = 0
     return paymentOperations.mapIndexed { index, payment ->
@@ -95,7 +84,7 @@ fun KinTransaction.asKinPayments(): List<KinPayment> {
             KinPayment.Status.Success,
             payment.source,
             payment.destination,
-            if ((this as? StellarKinTransaction)?.isKinNonNativeAsset() == true) payment.amount.divide(KinAmount(100)) else payment.amount,
+            payment.amount,
             fee,
             memo,
             recordType.timestamp,
@@ -124,28 +113,11 @@ fun Transaction.toEnvelopeXdrBytes(): ByteArray {
     }
 }
 
-fun KinAccount.toAccount(): Account =
-    (status as? KinAccount.Status.Registered)?.let {
-        try {
-            val keyPair = toSigningKeyPair()
-            if (keyPair.canSign()) Account(keyPair, it.sequence)
-            else null
-        } catch (e: Exception) {
-            null
-        }
-    } ?: throw Exception("Cannot convert to Stellar Account, signing key invalid!")
-
-fun createStellarSigningAccount(privateKey: Key.PrivateKey, sequence: Long): Account {
-    return  try {
-        val keyPair =  privateKey.toSigningKeyPair()
-        if (keyPair.canSign()) Account(keyPair, sequence)
-        else null
-    } catch (e: Exception) {
-        null
-    } ?: throw Exception("Cannot convert to Stellar Account, signing key invalid!")
-}
-
-fun Transaction.toKinTransaction(networkEnvironment: NetworkEnvironment, invoiceList: InvoiceList? = null): KinTransaction = StellarKinTransaction(toEnvelopeXdrBytes(), networkEnvironment = networkEnvironment, invoiceList = invoiceList)
+// TODO: HistoryItem is not finished here....
+fun Transaction.toKinTransaction(
+    networkEnvironment: NetworkEnvironment,
+    invoiceList: InvoiceList? = null
+): KinTransaction = StellarKinTransaction(toEnvelopeXdrBytes(), networkEnvironment = networkEnvironment, invoiceList = invoiceList, historyItem = TransactionService.HistoryItem.newBuilder().build())
 
 fun NetworkEnvironment.getNetwork() = Network(networkPassphrase)
 

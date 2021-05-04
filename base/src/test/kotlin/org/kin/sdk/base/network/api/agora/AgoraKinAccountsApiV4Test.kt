@@ -111,7 +111,7 @@ class AgoraKinAccountsApiV4Test {
         )
 
         sut =
-            AgoraKinAccountApiV4(channel, networkEnvironment = NetworkEnvironment.KinStellarTestNetKin3)
+            AgoraKinAccountApiV4(channel, networkEnvironment = NetworkEnvironment.TestNet)
         sut2 = AgoraKinAccountCreationApiV4(channel)
     }
 
@@ -346,7 +346,7 @@ class AgoraKinAccountsApiV4Test {
             "AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADB4OsvLL0IBYszd/Y15PRQ7SE2CRaokCmoJKhjSKmoPPHdDX2aQGSweWQTrwoKavFczm0x10JRj2taeJHVa68BAgABBbgJqwXwveHKzfQDcDY4IGTDDwJq/FurrMjSxSC00aVVEnE1mqibexZ5drQRlPTvQJHcjDl+2/PYmqKSiKnPBTwhBy6pDvoUUywETo/12Fol9ti5cGuxfxDfxT3Gt4ogL13F+luUcf1MXVhQNVM5hmYFAGO8h2DL5wv4rCHCGO/7Bt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEEAwMCAQkD4K67AAAAAAA=",
             KinTransaction.RecordType.Acknowledged(
                 System.currentTimeMillis(),
-                Base64.decodeBase64("AAAAAAAAAGQAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAA=")!!
+                KinTransaction.ResultCode.Success
             )
         )
 

@@ -1,240 +1,296 @@
-//package org.kin.sdk.base.network.services
-//
-//import io.grpc.ManagedChannel
-//import io.grpc.netty.NettyChannelBuilder
-//import okhttp3.OkHttpClient
-//import okhttp3.Request
-//import org.conscrypt.Conscrypt
-//import org.junit.After
-//import org.junit.Before
-//import org.junit.Test
-//import org.kin.agora.gen.airdrop.v4.AirdropGrpc
-//import org.kin.agora.gen.airdrop.v4.AirdropService
-//import org.kin.agora.gen.common.v4.Model
-//import org.kin.sdk.base.KinAccountContext
-//import org.kin.sdk.base.KinEnvironment
-//import org.kin.sdk.base.models.AccountSpec
-//import org.kin.sdk.base.models.AppIdx
-//import org.kin.sdk.base.models.AppInfo
-//import org.kin.sdk.base.models.AppUserCreds
-//import org.kin.sdk.base.models.Key
-//import org.kin.sdk.base.models.KinAccount
-//import org.kin.sdk.base.models.KinAmount
-//import org.kin.sdk.base.models.KinPaymentItem
-//import org.kin.sdk.base.models.QuarkAmount
-//import org.kin.sdk.base.models.asKinAccountId
-//import org.kin.sdk.base.models.toKin
-//import org.kin.sdk.base.models.toQuarks
-//import org.kin.sdk.base.network.api.KinAccountApiV4
-//import org.kin.sdk.base.network.api.KinAccountCreationApiV4
-//import org.kin.sdk.base.network.api.KinStreamingApiV4
-//import org.kin.sdk.base.network.api.KinTransactionApiV4
-//import org.kin.sdk.base.network.api.agora.AgoraKinAccountApiV4
-//import org.kin.sdk.base.network.api.agora.AgoraKinAccountCreationApiV4
-//import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApiV4
-//import org.kin.sdk.base.network.api.agora.AppUserAuthInterceptor
-//import org.kin.sdk.base.network.api.agora.GrpcApi
-//import org.kin.sdk.base.network.api.agora.KinVersionInterceptor
-//import org.kin.sdk.base.network.api.agora.LoggingInterceptor
-//import org.kin.sdk.base.network.api.agora.UpgradeApiV4Interceptor
-//import org.kin.sdk.base.network.api.agora.UserAgentInterceptor
-//import org.kin.sdk.base.network.api.agora.toProtoSolanaAccountId
-//import org.kin.sdk.base.stellar.models.ApiConfig
-//import org.kin.sdk.base.stellar.models.NetworkEnvironment
-//import org.kin.sdk.base.storage.KinFileStorage
-//import org.kin.sdk.base.storage.Storage
-//import org.kin.sdk.base.tools.Base58
-//import org.kin.sdk.base.tools.KinLoggerFactory
-//import org.kin.sdk.base.tools.KinTestLoggerFactoryImpl
-//import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
-//import org.kin.sdk.base.tools.Promise
-//import org.kin.sdk.base.tools.PromisedCallback
-//import org.kin.sdk.base.tools.latchOperation
-//import org.kin.sdk.base.tools.test
-//import java.net.URL
-//import java.security.Security
-//import kotlin.math.abs
-//import kotlin.math.floor
-//import kotlin.random.Random
-//
-//class KinServiceImplV4IntegrationTest {
-//
-//    val airdropAccount =
-////        Key.PublicKey(Base58.decode(  "DemXVWQ9DXYsGFpmjFXxki3PE1i3VoHQtqxXQFx38pmU")) // testnet
-//    Key.PublicKey(Base58.decode(  "Gd1wVb3ioFZgWGadq5sEoLPQnRNFcpcprNeazY3QsTRf")) // localnet
-//
-//    lateinit var logger: KinLoggerFactory
-//    lateinit var storage: Storage
-//    lateinit var channel: ManagedChannel
-//
-//    lateinit var accountCreationApi: KinAccountCreationApiV4
-//    lateinit var accountApi: KinAccountApiV4
-//    lateinit var transactionApi: KinTransactionApiV4
-//    lateinit var streamingApi: KinStreamingApiV4
-//
-////    lateinit var sut: KinService
-//
-//    @Before
-//    fun setUp() {
-//
-//        Security.insertProviderAt(Conscrypt.newProvider(), 0);
-//
-//        val networkEnvironment = ApiConfig.TestNetAgora.networkEnv
-//        logger = KinTestLoggerFactoryImpl(true)
-//        storage = KinFileStorage("temp", networkEnvironment)
-//        channel = ApiConfig.TestNetAgora.asManagedChannel()
-//
-//        with(AgoraKinAccountApiV4(channel, networkEnvironment)) {
-//            accountApi = this
-//            streamingApi = this
-//        }
-//        transactionApi = AgoraKinTransactionsApiV4(channel, networkEnvironment)
-//        accountCreationApi = AgoraKinAccountCreationApiV4(channel)
-//
-//        storage.deleteAllStorage().resolve()
-//
-////        sut = KinServiceImplV4(
-////            networkEnvironment,
-////            NetworkOperationsHandlerImpl(logger = logger),
-////            accountApi,
-////            transactionApi,
-////            streamingApi,
-////            accountCreationApi,
-////            logger
-////        )
+package org.kin.sdk.base.network.services
+
+import com.nhaarman.mockitokotlin2.eq
+import io.grpc.ManagedChannel
+import io.grpc.netty.NettyChannelBuilder
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.conscrypt.Conscrypt
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+import org.kin.agora.gen.airdrop.v4.AirdropGrpc
+import org.kin.agora.gen.airdrop.v4.AirdropService
+import org.kin.agora.gen.common.v4.Model
+import org.kin.sdk.base.KinAccountContext
+import org.kin.sdk.base.KinEnvironment
+import org.kin.sdk.base.models.AccountSpec
+import org.kin.sdk.base.models.AppIdx
+import org.kin.sdk.base.models.AppInfo
+import org.kin.sdk.base.models.AppUserCreds
+import org.kin.sdk.base.models.Invoice
+import org.kin.sdk.base.models.Key
+import org.kin.sdk.base.models.KinAccount
+import org.kin.sdk.base.models.KinAmount
+import org.kin.sdk.base.models.KinBalance
+import org.kin.sdk.base.models.KinBinaryMemo
+import org.kin.sdk.base.models.KinMemo
+import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.LineItem
+import org.kin.sdk.base.models.QuarkAmount
+import org.kin.sdk.base.models.asKinAccountId
+import org.kin.sdk.base.models.asPublicKey
+import org.kin.sdk.base.models.getNetwork
+import org.kin.sdk.base.models.toKin
+import org.kin.sdk.base.models.toQuarks
+import org.kin.sdk.base.network.api.KinAccountApiV4
+import org.kin.sdk.base.network.api.KinAccountCreationApiV4
+import org.kin.sdk.base.network.api.KinStreamingApiV4
+import org.kin.sdk.base.network.api.KinTransactionApiV4
+import org.kin.sdk.base.network.api.agora.AgoraKinAccountApiV4
+import org.kin.sdk.base.network.api.agora.AgoraKinAccountCreationApiV4
+import org.kin.sdk.base.network.api.agora.AgoraKinTransactionsApiV4
+import org.kin.sdk.base.network.api.agora.GrpcApi
+import org.kin.sdk.base.network.api.agora.KinVersionInterceptor
+import org.kin.sdk.base.network.api.agora.LoggingInterceptor
+import org.kin.sdk.base.network.api.agora.UserAgentInterceptor
+import org.kin.sdk.base.network.api.agora.sha224Hash
+import org.kin.sdk.base.network.api.agora.toProto
+import org.kin.sdk.base.network.api.agora.toProtoSolanaAccountId
+import org.kin.sdk.base.stellar.models.ApiConfig
+import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.SolanaKinTransaction
+import org.kin.sdk.base.storage.KinFileStorage
+import org.kin.sdk.base.storage.Storage
+import org.kin.sdk.base.tools.Base58
+import org.kin.sdk.base.tools.KinLoggerFactory
+import org.kin.sdk.base.tools.KinTestLoggerFactoryImpl
+import org.kin.sdk.base.tools.Promise
+import org.kin.sdk.base.tools.PromisedCallback
+import org.kin.sdk.base.tools.TestUtils
+import org.kin.sdk.base.tools.latchOperation
+import org.kin.sdk.base.tools.test
+import org.kin.sdk.base.tools.updateStatus
+import org.kin.stellarfork.Transaction
+import org.kin.stellarfork.codec.Base64
+import java.security.Security
+import kotlin.math.abs
+import kotlin.math.floor
+import kotlin.random.Random
+
+class KinServiceImplV4IntegrationTest {
+
+    val airdropAccount =
+//        Key.PublicKey(Base58.decode(  "DemXVWQ9DXYsGFpmjFXxki3PE1i3VoHQtqxXQFx38pmU")) // testnet
+        Key.PublicKey(Base58.decode("Gd1wVb3ioFZgWGadq5sEoLPQnRNFcpcprNeazY3QsTRf")) // localnet
+
+    lateinit var logger: KinLoggerFactory
+    lateinit var storage: Storage
+    lateinit var channel: ManagedChannel
+
+    lateinit var accountCreationApi: KinAccountCreationApiV4
+    lateinit var accountApi: KinAccountApiV4
+    lateinit var transactionApi: KinTransactionApiV4
+    lateinit var streamingApi: KinStreamingApiV4
+
+//    lateinit var sut: KinService
+
+    @Before
+    fun setUp() {
+
+        Security.insertProviderAt(Conscrypt.newProvider(), 0);
+
+        val networkEnvironment = ApiConfig.TestNetAgora.networkEnv
+        logger = KinTestLoggerFactoryImpl(true)
+        storage = KinFileStorage("temp", networkEnvironment)
+        channel = ApiConfig.TestNetAgora.asManagedChannel()
+
+        with(AgoraKinAccountApiV4(channel, networkEnvironment)) {
+            accountApi = this
+            streamingApi = this
+        }
+        transactionApi = AgoraKinTransactionsApiV4(channel, networkEnvironment)
+        accountCreationApi = AgoraKinAccountCreationApiV4(channel)
+
+        storage.deleteAllStorage().resolve()
+
+//        sut = KinServiceImplV4(
+//            networkEnvironment,
+//            NetworkOperationsHandlerImpl(logger = logger),
+//            accountApi,
+//            transactionApi,
+//            streamingApi,
+//            accountCreationApi,
+//            logger
+//        )
+    }
+
+    private fun ApiConfig.asManagedChannel(blockchainVersion: Int = 3): ManagedChannel =
+        NettyChannelBuilder.forAddress(networkEndpoint, tlsPort)
+            .intercept(
+                *listOf(
+                    UserAgentInterceptor(storage),
+                    LoggingInterceptor(logger),
+                    if (blockchainVersion == 2) KinVersionInterceptor(blockchainVersion) else null,
+                ).filterNotNull().toTypedArray()
+            )
+            .useTransportSecurity()
+            .build()
+
+    private fun ApiConfig.asManagedChannelStartUpgrade(): ManagedChannel =
+        NettyChannelBuilder.forAddress(networkEndpoint, tlsPort)
+            .intercept(
+                *listOf(
+                    UserAgentInterceptor(storage),
+                    LoggingInterceptor(logger)
+                ).toTypedArray()
+            )
+            .useTransportSecurity()
+            .build()
+
+    data class TestTimes(val p50: Float, val p95: Float, val p99: Float)
+
+    fun runTest(
+        times: Int,
+        test: (onCompleted: (value: Any?) -> Unit) -> Unit,
+    ): Promise<TestTimes> {
+        return Promise.create { resolve, reject ->
+            val runs = mutableListOf<Float>()
+
+            for (i in 0 until times) {
+                val startTime = System.nanoTime()
+
+                latchOperation(timeoutSeconds = 9000) { latch ->
+                    test {
+                        latch.countDown()
+
+                        if (it != null) {
+                            val endTime = System.nanoTime()
+                            val totalTime = endTime - startTime
+
+                            runs.add(totalTime / 1000000000.0f)
+
+                            println("Test[$i] ${runs.last()}")
+                        } else {
+                            println("Test[$i] failed! $it")
+                        }
+                    }
+                }
+            }
+
+            val p50 = runs.sortedDescending()
+                .asReversed()[floor(0.50f * runs.count()).toInt()]
+            val p95 = runs.sortedDescending()
+                .asReversed()[floor(0.95f * runs.count()).toInt()]
+            val p99 = runs.sortedDescending()
+                .asReversed()[floor(0.99f * runs.count()).toInt()]
+
+            println("runs: $runs")
+            resolve(TestTimes(p50, p95, p99))
+        }
+    }
+
+    @Test
+    fun generateSolanaTransaction() {
+        val context = KinAccountContext.Builder(
+            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
+                .setLogger(logger)
+                .setManagedChannel(ApiConfig.TestNetAgora.asManagedChannelStartUpgrade())
+                .setAppInfoProvider(object : AppInfoProvider {
+                    override val appInfo: AppInfo by lazy {
+                        AppInfo(
+                            AppIdx(0),
+                            airdropAccount.asKinAccountId(),
+                            "TestApp",
+                            0
+                        )
+                    }
+
+                    override fun getPassthroughAppUserCredentials(): AppUserCreds {
+                        return AppUserCreds("abcd", "1212")
+                    }
+                })
+                .setStorage(storage)
+        ).createNewAccount()
+            .build()
+
+        val destination = TestUtils.newKinAccount()
+        val registeredAccount = TestUtils.newSigningKinAccount()
+            .updateStatus(KinAccount.Status.Registered(1234)).copy(
+                balance = KinBalance(KinAmount(1000))
+            )
+        val fee = QuarkAmount(100)
+        val invoice = Invoice.Builder().addLineItem(LineItem("title", "desc", KinAmount(12))).build()
+        context.service.buildAndSignTransaction(
+            registeredAccount.key as Key.PrivateKey,
+            registeredAccount.key.asPublicKey(),
+            (registeredAccount.status as KinAccount.Status.Registered).sequence,
+            listOf(KinPaymentItem(KinAmount(1), destination.id)),
+            KinBinaryMemo.Builder(0)
+                .setForeignKey(listOf(invoice).toProto().sha224Hash().decode())
+                .setTranferType(KinBinaryMemo.TransferType.Spend)
+                .build()
+                .toKinMemo(),
+            fee
+        ).test {
+            println("1: " + Base64.encodeBase64String((value as SolanaKinTransaction).bytesValue))
+        }
+    }
+
+//    @Test
+//    fun speedTest() {
+//        speedTestInternal_kinAccountContext()
 //    }
 //
-//    private fun ApiConfig.asManagedChannel(blockchainVersion: Int = 3): ManagedChannel =
-//        NettyChannelBuilder.forAddress(networkEndpoint, tlsPort)
-//            .intercept(
-//                *listOf(
-//                    UserAgentInterceptor(storage),
-//                    LoggingInterceptor(logger),
-//                    if (blockchainVersion == 2) KinVersionInterceptor(blockchainVersion) else null,
-//                ).filterNotNull().toTypedArray()
-//            )
-//            .useTransportSecurity()
-//            .build()
-//
-//    private fun ApiConfig.asManagedChannelStartUpgrade(): ManagedChannel =
-//        NettyChannelBuilder.forAddress(networkEndpoint, tlsPort)
-//            .intercept(
-//                *listOf(
-//                    UpgradeApiV4Interceptor(),
-//                    UserAgentInterceptor(storage),
-//                    LoggingInterceptor(logger)
-//                ).toTypedArray()
-//            )
-//            .useTransportSecurity()
-//            .build()
-//
-//    data class TestTimes(val p50: Float, val p95: Float, val p99: Float)
-//
-//    fun runTest(
-//        times: Int,
-//        test: (onCompleted: (value: Any?) -> Unit) -> Unit
-//    ): Promise<TestTimes> {
-//        return Promise.create { resolve, reject ->
-//            val runs = mutableListOf<Float>()
-//
-//            for (i in 0 until times) {
-//                val startTime = System.nanoTime()
-//
-//                latchOperation(timeoutSeconds = 9000) { latch ->
-//                    test {
-//                        latch.countDown()
-//
-//                        if (it != null) {
-//                            val endTime = System.nanoTime()
-//                            val totalTime = endTime - startTime
-//
-//                            runs.add(totalTime / 1000000000.0f)
-//
-//                            println("Test[$i] ${runs.last()}")
-//                        } else {
-//                            println("Test[$i] failed! $it")
-//                        }
+//    fun speedTestInternal_kinAccountContext() {
+//        val context = KinAccountContext.Builder(
+//            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
+//                .setMinApiVersion(4)
+//                .setManagedChannel(ApiConfig.TestNetAgora.asManagedChannel())
+//                .setAppInfoProvider(object : AppInfoProvider {
+//                    override val appInfo: AppInfo by lazy {
+//                        AppInfo(
+//                            AppIdx(0),
+//                            airdropAccount.asKinAccountId(),
+//                            "TestApp",
+//                            0
+//                        )
 //                    }
-//                }
+//
+//                    override fun getPassthroughAppUserCredentials(): AppUserCreds {
+//                        return AppUserCreds("abcd", "1212")
+//                    }
+//                })
+//                .setStorage(storage)
+//        ).createNewAccount()
+//            .build()
+//
+//        println("Creating Account...")
+//        val signer = context.getAccount()
+//            .map { it.key as Key.PrivateKey }
+//            .test(60) {
+//                println("Account Created ${value?.asKinAccountId()}")
 //            }
 //
-//            val p50 = runs.sortedDescending()
-//                .asReversed()[floor(0.50f * runs.count()).toInt()]
-//            val p95 = runs.sortedDescending()
-//                .asReversed()[floor(0.95f * runs.count()).toInt()]
-//            val p99 = runs.sortedDescending()
-//                .asReversed()[floor(0.99f * runs.count()).toInt()]
+//        println("Airdropping 1Kin...")
+//        context.service.testService.fundAccount(context.accountId).test(timeout = 60) {
+//            println("Airdrop Complete")
+////            sleepFor(5)
+//        }
 //
-//            println("runs: $runs")
-//            resolve(TestTimes(p50, p95, p99))
+//        runTest(10) { onCompleted ->
+//            context.sendKinPayments(
+//                payments = listOf(
+//                    KinPaymentItem(
+//                        randomQuarkAmount(1000).toKin(),
+//                        airdropAccount.asKinAccountId()
+//                    )
+//                )
+//            ).then({ onCompleted(it) }, { onCompleted(it) })
+//        }.test(60) {
+//            println("$value")
 //        }
 //    }
-//
-////    @Test
-////    fun speedTest() {
-////        speedTestInternal_kinAccountContext()
-////    }
-////
-////    fun speedTestInternal_kinAccountContext() {
-////        val context = KinAccountContext.Builder(
-////            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNet)
-////                .setMinApiVersion(4)
-////                .setManagedChannel(ApiConfig.TestNetAgora.asManagedChannel())
-////                .setAppInfoProvider(object : AppInfoProvider {
-////                    override val appInfo: AppInfo by lazy {
-////                        AppInfo(
-////                            AppIdx(0),
-////                            airdropAccount.asKinAccountId(),
-////                            "TestApp",
-////                            0
-////                        )
-////                    }
-////
-////                    override fun getPassthroughAppUserCredentials(): AppUserCreds {
-////                        return AppUserCreds("abcd", "1212")
-////                    }
-////                })
-////                .setStorage(storage)
-////        ).createNewAccount()
-////            .build()
-////
-////        println("Creating Account...")
-////        val signer = context.getAccount()
-////            .map { it.key as Key.PrivateKey }
-////            .test(60) {
-////                println("Account Created ${value?.asKinAccountId()}")
-////            }
-////
-////        println("Airdropping 1Kin...")
-////        context.service.testService.fundAccount(context.accountId).test(timeout = 60) {
-////            println("Airdrop Complete")
-//////            sleepFor(5)
-////        }
-////
-////        runTest(10) { onCompleted ->
-////            context.sendKinPayments(
-////                payments = listOf(
-////                    KinPaymentItem(
-////                        randomQuarkAmount(1000).toKin(),
-////                        airdropAccount.asKinAccountId()
-////                    )
-////                )
-////            ).then({ onCompleted(it) }, { onCompleted(it) })
-////        }.test(60) {
-////            println("$value")
-////        }
-////    }
-//
-//    @After
-//    fun cleanup() {
-//        storage.deleteAllStorage().resolve()
-//    }
+
+    @After
+    fun cleanup() {
+        storage.deleteAllStorage().resolve()
+    }
 //
 //    @Test
 //    fun testMigration() {
 //        val contextV3 = KinAccountContext.Builder(
-//            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-//                .setMinApiVersion(3)
+//            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
 //                .setLogger(logger)
 //                .setManagedChannel(ApiConfig.TestNetAgora.asManagedChannel())
 //                .setAppInfoProvider(object : AppInfoProvider {
@@ -272,8 +328,7 @@
 //        }
 //
 //        val contextV4Upgrade = KinAccountContext.Builder(
-//            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-//                .setMinApiVersion(3)
+//            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
 //                .setLogger(logger)
 //                .setManagedChannel(ApiConfig.TestNetAgora.asManagedChannelStartUpgrade())
 //                .setAppInfoProvider(object : AppInfoProvider {
@@ -334,16 +389,18 @@
 //    }
 //
 //    fun airdropV2(account: KinAccount.Id) {
-//        val faucetURL = "http://faucet-playground.kininfrastructure.com/fund?account=${account.stellarBase32Encode()}&amount=10000"
+//        val faucetURL =
+//            "http://faucet-playground.kininfrastructure.com/fund?account=${account.stellarBase32Encode()}&amount=10000"
 //        val response = OkHttpClient().newCall(Request.Builder().url(faucetURL).build()).execute()
 //        println("$response")
 //    }
 //
 //    @Test
 //    fun testMigration_v2_to_v4() {
-//        val someValidKin2Account = KinAccount.Id("GACRUQTOKOD5353APTOQERTGH3EGAZWAJR7CBWIIO5BGE5YBT6IZPZVV")
+//        val someValidKin2Account =
+//            KinAccount.Id("GACRUQTOKOD5353APTOQERTGH3EGAZWAJR7CBWIIO5BGE5YBT6IZPZVV")
 //        val contextV2 = KinAccountContext.Builder(
-//            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin2)
+//            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
 //                .setManagedChannel(ApiConfig.TestNetAgora.asManagedChannel(2))
 //                .setLogger(logger)
 //                .setAppInfoProvider(object : AppInfoProvider {
@@ -394,8 +451,7 @@
 //        }
 //
 //        val contextV4Upgrade = KinAccountContext.Builder(
-//            KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
-//                .setMinApiVersion(3)
+//            KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
 //                .setLogger(logger)
 //                .setManagedChannel(ApiConfig.TestNetAgora.asManagedChannelStartUpgrade())
 //                .setAppInfoProvider(object : AppInfoProvider {
@@ -564,94 +620,94 @@
 //            }
 //        }
 //    }
+
+//    @Test
+//    fun integrationTest() {
 //
-////    @Test
-////    fun integrationTest() {
+//        val signer = Key.PrivateKey.random()
+//        val airdropAccount =
+//            Key.PublicKey(Base58.decode("DemXVWQ9DXYsGFpmjFXxki3PE1i3VoHQtqxXQFx38pmU"))
+//
+//        println("Account Private Seed: ${signer.encode()}")
+//
+//        println("Creating Account...")
+//        sut.createAccount(signer.asKinAccountId(), signer).test(timeout = 15) {
+//            println("Created $value Successfully!")
+//        }
+//
+//        // Airdrop
+//        Promise.create<KinAmount> { resolve, reject ->
+//            object : GrpcApi(channel) {
+//                init {
+//                    with(AirdropGrpc.newStub(channel)) {
+//                        val request = AirdropService.RequestAirdropRequest.newBuilder()
+//                            .setAccountId(signer.asKinAccountId().toProtoSolanaAccountId())
+//                            .setQuarks(KinAmount(1).toQuarks().value)
+//                            .setCommitment(Model.Commitment.SINGLE)
+//                            .build()
+//                        this::requestAirdrop.callAsPromisedCallback(request, PromisedCallback({
+//                            resolve(QuarkAmount(request.quarks).toKin())
+//                        }, {
+//                            reject(it)
+//                        }))
+//                    }
+//                }
+//            }
+//        }.test(timeout = 15) {
+//            println(
+//                "Airdrop Successful! ${value} Kin Airdropped into ${
+//                    signer.asPublicKey().encode()
+//                }"
+//            )
+//        }
+//
+//
+////        Thread.sleep(30000)
 ////
-////        val signer = Key.PrivateKey.random()
-////        val airdropAccount =
-////            Key.PublicKey(Base58.decode("DemXVWQ9DXYsGFpmjFXxki3PE1i3VoHQtqxXQFx38pmU"))
-////
-////        println("Account Private Seed: ${signer.encode()}")
-////
-////        println("Creating Account...")
-////        sut.createAccount(signer.asKinAccountId(), signer).test(timeout = 15) {
-////            println("Created $value Successfully!")
-////        }
-////
-////        // Airdrop
-////        Promise.create<KinAmount> { resolve, reject ->
-////            object : GrpcApi(channel) {
-////                init {
-////                    with(AirdropGrpc.newStub(channel)) {
-////                        val request = AirdropService.RequestAirdropRequest.newBuilder()
-////                            .setAccountId(signer.asKinAccountId().toProtoSolanaAccountId())
-////                            .setQuarks(KinAmount(1).toQuarks().value)
-////                            .setCommitment(Model.Commitment.SINGLE)
-////                            .build()
-////                        this::requestAirdrop.callAsPromisedCallback(request, PromisedCallback({
-////                            resolve(QuarkAmount(request.quarks).toKin())
-////                        }, {
-////                            reject(it)
-////                        }))
-////                    }
-////                }
-////            }
-////        }.test(timeout = 15) {
-////            println(
-////                "Airdrop Successful! ${value} Kin Airdropped into ${
-////                    signer.asPublicKey().encode()
-////                }"
-////            )
-////        }
-////
-////
-//////        Thread.sleep(30000)
-//////
-////        println("Fetching Updated Account Info...")
-////        sut.getAccount(signer.asKinAccountId()).test(timeout = 15) {
-////            println("Got Account ${value}")
-////        }
-////
-////        println("Building & Signing...")
-////        sut.buildAndSignTransaction(
-////            signer,
-////            signer.asPublicKey(),
-////            0,
-////            listOf(KinPaymentItem(QuarkAmount(1).toKin(), airdropAccount.asKinAccountId())),
-////            KinMemo.NONE,
-////            QuarkAmount(0)
-////        )
-////            .doOnResolved { println("Sending Transaction... ${it.bytesValue.toHexString()}") }
-////            .flatMap { sut.submitTransaction(it) }
-////            .test(timeout = 20) {
-////                if (error != null) {
-////                    println("Transaction Failed: $error")
-////                } else {
-////                    println("Completed Transaction! $value")
-////
-////                    println("Fetching Transaction...")
-////                    val txnHash = value?.transactionHash
-////                    sut.getTransaction(value!!.transactionHash).test {
-////                        if (error != null) {
-////                            println("Failed to get Transaction: $txnHash")
-////                        } else {
-////                            println("Got Transaction: $value")
-////                        }
-////                    }
-////                }
-////            }
-////
-////        println("waiting 35s...")
-////        Thread.sleep(35000)
-////
-////        println("Fetching History...")
-////        sut.getLatestTransactions(signer.asKinAccountId()).test(timeout = 200) {
-////            if (error != null) {
-////                println("History Failed: $error")
-////            } else {
-////                println("Transactions: ${value}")
-////            }
-////        }
-////    }
-//}
+//        println("Fetching Updated Account Info...")
+//        sut.getAccount(signer.asKinAccountId()).test(timeout = 15) {
+//            println("Got Account ${value}")
+//        }
+//
+//        println("Building & Signing...")
+//        sut.buildAndSignTransaction(
+//            signer,
+//            signer.asPublicKey(),
+//            0,
+//            listOf(KinPaymentItem(QuarkAmount(1).toKin(), airdropAccount.asKinAccountId())),
+//            KinMemo.NONE,
+//            QuarkAmount(0)
+//        )
+//            .doOnResolved { println("Sending Transaction... ${it.bytesValue.toHexString()}") }
+//            .flatMap { sut.submitTransaction(it) }
+//            .test(timeout = 20) {
+//                if (error != null) {
+//                    println("Transaction Failed: $error")
+//                } else {
+//                    println("Completed Transaction! $value")
+//
+//                    println("Fetching Transaction...")
+//                    val txnHash = value?.transactionHash
+//                    sut.getTransaction(value!!.transactionHash).test {
+//                        if (error != null) {
+//                            println("Failed to get Transaction: $txnHash")
+//                        } else {
+//                            println("Got Transaction: $value")
+//                        }
+//                    }
+//                }
+//            }
+//
+//        println("waiting 35s...")
+//        Thread.sleep(35000)
+//
+//        println("Fetching History...")
+//        sut.getLatestTransactions(signer.asKinAccountId()).test(timeout = 200) {
+//            if (error != null) {
+//                println("History Failed: $error")
+//            } else {
+//                println("Transactions: ${value}")
+//            }
+//        }
+//    }
+}

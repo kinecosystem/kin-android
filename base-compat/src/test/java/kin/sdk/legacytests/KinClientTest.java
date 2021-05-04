@@ -23,15 +23,12 @@ import org.kin.sdk.base.network.services.AppInfoProvider;
 import org.kin.sdk.base.network.services.KinService;
 import org.kin.sdk.base.stellar.models.NetworkEnvironment;
 import org.kin.sdk.base.storage.Storage;
-import org.kin.sdk.base.tools.ExecutorServices;
 import org.kin.sdk.base.tools.KinLogger;
 import org.kin.sdk.base.tools.KinLoggerFactory;
 import org.kin.sdk.base.tools.Optional;
 import org.kin.sdk.base.tools.Promise;
 import org.kin.stellarfork.KeyPair;
 import org.mockito.MockitoAnnotations;
-import org.slf4j.ILoggerFactory;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,7 +45,6 @@ import kin.sdk.KinClient;
 import kin.sdk.exception.OperationFailedException;
 import kin.sdk.internal.KinAccountImpl;
 import kin.sdk.internal.UtilsKt;
-import kin.sdk.legacytests.KinClientTest.DummyAppInfoProvider;
 import kin.utils.Request;
 import kin.utils.ResultCallback;
 import kotlin.jvm.functions.Function0;
@@ -136,7 +132,7 @@ public class KinClientTest {
         when(mockStorage.getAllAccountIds())
                 .thenReturn(new ArrayList<>());
 
-        kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
+        kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet.INSTANCE)
                 .setKinService(mockKinService)
                 .setLogger(new KinLoggerFactory() {
 
@@ -792,7 +788,7 @@ public class KinClientTest {
         when(mockStorage.getAllAccountIds())
                 .thenReturn(new ArrayList<>());
 
-        kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3.INSTANCE)
+        kinEnvironment = new KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet.INSTANCE)
                 .setKinService(mockKinService)
                 .setAppInfoProvider(new DummyAppInfoProvider())
                 .setStorage(mockStorage)
@@ -830,7 +826,7 @@ public class KinClientTest {
                         mockBackupRestore,
                         new KinAccountContext.Builder(kinEnvironment).useExistingAccount(new org.kin.sdk.base.models.KinAccount.Id(account1.getPublicKey())).build(),
                         mockKinService,
-                        NetworkEnvironment.KinStellarTestNetKin3.INSTANCE,
+                        NetworkEnvironment.TestNet.INSTANCE,
                         new AppId(APP_ID)
                 ),
                 kinAccount1

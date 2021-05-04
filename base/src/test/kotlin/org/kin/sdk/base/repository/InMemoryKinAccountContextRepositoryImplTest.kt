@@ -44,11 +44,11 @@ class InMemoryKinAccountContextRepositoryImplTest {
 
     @Before
     fun setUp() {
-        env = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        env = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(
                 KinFileStorage.Builder(tempFolder.root.invariantSeparatorsPath)
-                    .setNetworkEnvironment(NetworkEnvironment.KinStellarTestNetKin3)
+                    .setNetworkEnvironment(NetworkEnvironment.TestNet)
             )
             .build()
 

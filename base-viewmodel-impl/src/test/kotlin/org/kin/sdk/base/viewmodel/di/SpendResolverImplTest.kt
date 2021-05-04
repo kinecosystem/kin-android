@@ -68,11 +68,11 @@ class SpendResolverImplTest {
 
         }
 
-        val env = KinEnvironment.Agora.Builder(NetworkEnvironment.KinStellarTestNetKin3)
+        val env = KinEnvironment.Agora.Builder(NetworkEnvironment.TestNet)
             .setAppInfoProvider(DummyAppInfoProvider())
             .setStorage(
                 KinFileStorage.Builder("local")
-                    .setNetworkEnvironment(NetworkEnvironment.KinStellarTestNetKin3)
+                    .setNetworkEnvironment(NetworkEnvironment.TestNet)
             )
             .build()
         sut = SpendResolverImpl(

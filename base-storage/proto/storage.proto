@@ -36,7 +36,8 @@ message KinAccount {
 }
 
 message KinTransaction {
-    bytes envelope_xdr = 1;
+
+    bytes transaction_blob = 1;
 
     Status status = 2;
     enum Status {
@@ -49,10 +50,37 @@ message KinTransaction {
     int64 timestamp = 3;
 
     // result_xdr should exist in `ACKNOWLEDGED` and `HISTORICAL` states
+    // DEPRECATED
     bytes result_xdr = 4;
 
     // paging_token should exist only in `HISTORICAL` state
     string paging_token = 5;
+
+    BlockchainType blockchain_type = 6;
+    enum BlockchainType {
+        STELLAR = 0;
+        SOLANA = 1;
+    }
+
+    ResultCode result_code = 7;
+    enum ResultCode {
+        Success = 0;
+        Failed = -1;
+        TooEarly = -2;
+        TooLate = -3;
+        MissingOperation = -4;
+        BadSequenceNumber = -5;
+        BadAuth = -6;
+        InsufficientBalance= -7;
+        NoAccount = -8;
+        InsufficientFee  = -9;
+        BadAuthExtra = -10;
+        InternalError = -11;
+    }
+
+    // Optional - This is only expected be populated for stellar type transactions
+    // since we can't parse the transaction_blob for those anymore without the xdr parsing
+    bytes history_item = 8;
 }
 
 message KinTransactions {
@@ -77,4 +105,5 @@ message KinConfig {
     int64 min_fee = 1;
     string cid = 2;
     int64 minApiVersion = 3;
+    int32 storage_version = 4;
 }
