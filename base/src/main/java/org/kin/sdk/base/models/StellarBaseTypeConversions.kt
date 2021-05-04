@@ -1,21 +1,7 @@
 package org.kin.sdk.base.models
 
-import org.kin.agora.gen.transaction.v4.TransactionService
 import org.kin.sdk.base.stellar.models.KinTransaction
-import org.kin.sdk.base.stellar.models.NetworkEnvironment
-import org.kin.sdk.base.stellar.models.StellarKinTransaction
-import org.kin.stellarfork.AssetTypeNative
 import org.kin.stellarfork.KeyPair
-import org.kin.stellarfork.Network
-import org.kin.stellarfork.Transaction
-import org.kin.stellarfork.codec.Base64
-import org.kin.stellarfork.responses.AccountResponse
-import org.kin.stellarfork.responses.SubmitTransactionResponse
-import org.kin.stellarfork.responses.TransactionResponse
-import org.kin.stellarfork.xdr.TransactionEnvelope
-import org.kin.stellarfork.xdr.XdrDataOutputStream
-import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -51,31 +37,6 @@ fun String.toUTF8Bytes(): ByteArray = toByteArray(Charsets.UTF_8)
 
 fun ByteArray.toUTF8String(): String = String(this, Charsets.UTF_8)
 
-fun AccountResponse.kinBalance(): KinBalance {
-    val currentBalanceAmount = balances.filter { it.asset is AssetTypeNative }
-        .map { KinAmount(it.balance) }
-        .firstOrNull() ?: KinAmount.ZERO
-    return KinBalance(currentBalanceAmount)
-}
-
-fun AccountResponse.kinAccount(): KinAccount {
-    return KinAccount(
-        keypair.asPublicKey(),
-        balance = kinBalance(),
-        status = KinAccount.Status.Registered(sequenceNumber)
-    )
-}
-
-fun TransactionResponse.bytesValue(): ByteArray = Base64().decode(envelopeXdr.toUTF8Bytes())!!
-
-fun TransactionResponse.resultXdrBytes(): ByteArray = Base64().decode(resultXdr.toUTF8Bytes())!!
-
-fun SubmitTransactionResponse.bytesValue(): ByteArray =
-    Base64().decode(getEnvelopeXdr().toUTF8Bytes())!!
-
-fun SubmitTransactionResponse.resultXdrBytes(): ByteArray =
-    Base64().decode(getResultXdr().toUTF8Bytes())!!
-
 fun KinTransaction.asKinPayments(): List<KinPayment> {
     var offset = 0
     return paymentOperations.mapIndexed { index, payment ->
@@ -100,26 +61,6 @@ fun List<KinTransaction>.asKinPayments(reversed: Boolean = false): List<KinPayme
         else payments
     }
 }
-
-fun Transaction.toEnvelopeXdrBytes(): ByteArray {
-    return try {
-        val envelope: TransactionEnvelope = this.toEnvelopeXdr()
-        val outputStream = ByteArrayOutputStream()
-        val xdrOutputStream = XdrDataOutputStream(outputStream)
-        TransactionEnvelope.encode(xdrOutputStream, envelope)
-        outputStream.toByteArray()
-    } catch (e: IOException) {
-        throw AssertionError(e)
-    }
-}
-
-// TODO: HistoryItem is not finished here....
-fun Transaction.toKinTransaction(
-    networkEnvironment: NetworkEnvironment,
-    invoiceList: InvoiceList? = null
-): KinTransaction = StellarKinTransaction(toEnvelopeXdrBytes(), networkEnvironment = networkEnvironment, invoiceList = invoiceList, historyItem = TransactionService.HistoryItem.newBuilder().build())
-
-fun NetworkEnvironment.getNetwork() = Network(networkPassphrase)
 
 class KinDateFormat(dateString: String) {
     companion object {

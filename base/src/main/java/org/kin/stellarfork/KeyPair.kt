@@ -1,11 +1,7 @@
 package org.kin.stellarfork
 
-import org.kin.stellarfork.xdr.DecoratedSignature
-import org.kin.stellarfork.xdr.SignatureHint
-import org.kin.stellarfork.xdr.SignerKey
 import org.libsodium.jni.NaCl
 import kotlin.properties.Delegates
-import org.kin.stellarfork.xdr.PublicKey as XDRPublicKey
 
 interface IKeyPair {
     /**
@@ -23,10 +19,6 @@ interface IKeyPair {
      */
     val rawSecretSeed: ByteArray?
     val publicKey: ByteArray
-    val signatureHint: SignatureHint
-    val xdrPublicKey: org.kin.stellarfork.xdr.PublicKey
-
-    val xdrSignerKey: SignerKey
 
     /**
      * Returns true if this Keypair is capable of signing
@@ -41,12 +33,6 @@ interface IKeyPair {
      */
     fun sign(data: ByteArray?): ByteArray?
 
-    /**
-     * Sign the provided data with the keypair's private key and returns [DecoratedSignature].
-     *
-     * @param data
-     */
-    fun signDecorated(data: ByteArray?): DecoratedSignature
     /**
      * Verify the provided data and signature match this keypair's public key.
      *
@@ -103,15 +89,6 @@ constructor(
     override val publicKey: ByteArray
         get() = impl.publicKey
 
-    override val signatureHint: SignatureHint
-        get() = impl.signatureHint
-
-    override val xdrPublicKey: XDRPublicKey
-        get() = impl.xdrPublicKey
-
-    override val xdrSignerKey: SignerKey
-        get() = impl.xdrSignerKey
-
     /**
      * Sign the provided data with the keypair's private key.
      *
@@ -119,13 +96,6 @@ constructor(
      * @return signed bytes, null if the private key for this keypair is null.
      */
     override fun sign(data: ByteArray?): ByteArray? = impl.sign(data)
-
-    /**
-     * Sign the provided data with the keypair's private key and returns [DecoratedSignature].
-     *
-     * @param data
-     */
-    override fun signDecorated(data: ByteArray?): DecoratedSignature = impl.signDecorated(data)
 
     /**
      * Verify the provided data and signature match this keypair's public key.
@@ -222,11 +192,5 @@ constructor(
             if (canUseNativeJNI) KeyPairNativeJNIImpl.random()
             else KeyPairJvmImpl.random()
         )
-
-        @JvmStatic
-        fun fromXdrPublicKey(key: XDRPublicKey): KeyPair = fromPublicKey(key.ed25519!!.uint256!!)
-
-        @JvmStatic
-        fun fromXdrSignerKey(key: SignerKey): KeyPair = fromPublicKey(key.ed25519!!.uint256!!)
     }
 }

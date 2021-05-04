@@ -1,14 +1,8 @@
 package org.kin.stellarfork
 
-import org.kin.stellarfork.codec.Base64
-import org.kin.stellarfork.codec.Hex
-import org.kin.stellarfork.xdr.XdrDataInputStream
-import java.io.ByteArrayInputStream
-import java.io.UnsupportedEncodingException
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.Arrays
-import kotlin.experimental.and
 
 object Util {
     const val CHARSET_UTF8 = "UTF-8"
@@ -68,10 +62,4 @@ object Util {
     fun checkArgument(expression: Boolean, errorMessage: Any) =
         require(expression) { errorMessage.toString() }
 
-    @JvmStatic
-    @Throws(UnsupportedEncodingException::class)
-    fun createXdrDataInputStream(envelopeXdr: String): XdrDataInputStream =
-        XdrDataInputStream(
-            ByteArrayInputStream(Base64().decode(envelopeXdr.toByteArray(charset(CHARSET_UTF8))))
-        )
 }

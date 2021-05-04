@@ -6,24 +6,14 @@ import org.kin.stellarfork.StrKey.decodeStellarAccountId
 import org.kin.stellarfork.StrKey.decodeStellarSecretSeed
 import org.kin.stellarfork.StrKey.encodeStellarAccountId
 import org.kin.stellarfork.StrKey.encodeStellarSecretSeed
-import org.kin.stellarfork.xdr.DecoratedSignature
-import org.kin.stellarfork.xdr.PublicKeyType
-import org.kin.stellarfork.xdr.SignatureHint
-import org.kin.stellarfork.xdr.SignerKey
-import org.kin.stellarfork.xdr.SignerKeyType
-import org.kin.stellarfork.xdr.Uint256
-import org.kin.stellarfork.xdr.XdrDataOutputStream
 import org.libsodium.jni.NaCl
 import org.libsodium.jni.Sodium
 import org.libsodium.jni.SodiumConstants
 import org.libsodium.jni.SodiumConstants.PUBLICKEY_BYTES
 import org.libsodium.jni.SodiumConstants.SECRETKEY_BYTES
 import org.libsodium.jni.crypto.Util
-import java.io.ByteArrayOutputStream
-import java.io.IOException
 import java.security.GeneralSecurityException
 import java.util.Arrays
-import org.kin.stellarfork.xdr.PublicKey as XDRPublicKey
 
 /**
  * Holds a Stellar keypair.
@@ -73,38 +63,6 @@ constructor(
     override val publicKey: ByteArray
         get() = mPublicKey.bytes
 
-    override val signatureHint: SignatureHint
-        get() = try {
-            val publicKeyBytesStream = ByteArrayOutputStream()
-            val xdrOutputStream = XdrDataOutputStream(publicKeyBytesStream)
-            XDRPublicKey.encode(xdrOutputStream, xdrPublicKey)
-            val publicKeyBytes = publicKeyBytesStream.toByteArray()
-            val signatureHintBytes = Arrays.copyOfRange(
-                publicKeyBytes,
-                publicKeyBytes.size - 4,
-                publicKeyBytes.size
-            )
-            SignatureHint().apply { signatureHint = signatureHintBytes }
-        } catch (e: IOException) {
-            throw AssertionError(e)
-        }
-
-    override val xdrPublicKey: XDRPublicKey
-        get() {
-            return XDRPublicKey().apply {
-                discriminant = PublicKeyType.PUBLIC_KEY_TYPE_ED25519
-                ed25519 = Uint256().apply { uint256 = publicKey }
-            }
-        }
-
-    override val xdrSignerKey: SignerKey
-        get() {
-            return SignerKey().apply {
-                discriminant = SignerKeyType.SIGNER_KEY_TYPE_ED25519
-                ed25519 = Uint256().apply { uint256 = publicKey }
-            }
-        }
-
     /**
      * Sign the provided data with the keypair's private key.
      *
@@ -139,18 +97,6 @@ constructor(
             )
         } catch (e: GeneralSecurityException) {
             throw RuntimeException(e)
-        }
-    }
-
-    /**
-     * Sign the provided data with the keypair's private key and returns [DecoratedSignature].
-     *
-     * @param data
-     */
-    override fun signDecorated(data: ByteArray?): DecoratedSignature {
-        return DecoratedSignature().apply {
-            hint = signatureHint
-            signature = org.kin.stellarfork.xdr.Signature().apply { signature = sign(data) }
         }
     }
 

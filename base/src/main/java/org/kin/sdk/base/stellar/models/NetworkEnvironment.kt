@@ -1,8 +1,5 @@
 package org.kin.sdk.base.stellar.models
 
-import org.kin.stellarfork.KeyPair
-import org.kin.stellarfork.Network
-
 sealed class NetworkEnvironment(val networkPassphrase: String) {
 
     private companion object {

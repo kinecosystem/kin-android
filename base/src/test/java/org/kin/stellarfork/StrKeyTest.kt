@@ -8,7 +8,7 @@ import java.io.IOException
 
 class StrKeyTest {
     @Test
-    @Throws(IOException::class, FormatException::class)
+    @Throws(IOException::class, Exception::class)
     fun testDecodeEncode() {
         val seed = "SDJHRQF4GCMIIKAAAQ6IHY42X73FQFLHUULAPSKKD4DFDM7UXWWCRHBE"
         val secret = decodeCheck(StrKey.VersionByte.SEED, seed.toCharArray())
@@ -22,7 +22,7 @@ class StrKeyTest {
         try {
             decodeCheck(StrKey.VersionByte.SEED, address.toCharArray())
             Assert.fail()
-        } catch (e: FormatException) {
+        } catch (e: Exception) {
         }
     }
 
@@ -32,7 +32,7 @@ class StrKeyTest {
         try {
             decodeCheck(StrKey.VersionByte.SEED, seed.toCharArray())
             Assert.fail()
-        } catch (e: FormatException) {
+        } catch (e: Exception) {
         }
     } // TODO more tests
 }

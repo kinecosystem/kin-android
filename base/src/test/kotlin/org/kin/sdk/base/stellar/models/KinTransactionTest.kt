@@ -3,12 +3,6 @@ package org.kin.sdk.base.stellar.models
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
-import org.kin.sdk.base.stellar.models.KinTransaction.ResultCode
-import org.kin.stellarfork.xdr.Int64
-import org.kin.stellarfork.xdr.TransactionResult
-import org.kin.stellarfork.xdr.TransactionResultCode
-import org.kin.stellarfork.xdr.XdrDataOutputStream
-import java.io.ByteArrayOutputStream
 
 class KinTransactionTest {
     @Test
@@ -56,70 +50,4 @@ class KinTransactionTest {
         assertNotEquals(inFlightRecord, acknowledgedRecord)
         assertNotEquals(historicalRecord, acknowledgedRecord)
     }
-
-    private fun createDummyResult(resultCode: TransactionResultCode): ByteArray {
-        val transactionResult = TransactionResult().apply {
-            result = TransactionResult.TransactionResultResult().apply {
-                discriminant = resultCode
-            }
-            feeCharged = Int64().apply {
-                int64 = 100
-            }
-            ext = TransactionResult.TransactionResultExt().apply {
-                discriminant = 0
-            }
-        }
-        val os = ByteArrayOutputStream()
-        val outputStream = XdrDataOutputStream(os)
-        TransactionResult.encode(outputStream, transactionResult)
-        return os.toByteArray()
-    }
-
-//    @Test
-//    fun testResultCodes() {
-//        assertEquals(
-//            ResultCode.Failed,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txFAILED))
-//        )
-//        assertEquals(
-//            ResultCode.TooEarly,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txTOO_EARLY))
-//        )
-//        assertEquals(
-//            ResultCode.TooLate,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txTOO_LATE))
-//        )
-//        assertEquals(
-//            ResultCode.MissingOperation,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txMISSING_OPERATION))
-//        )
-//        assertEquals(
-//            ResultCode.BadSequenceNumber,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txBAD_SEQ))
-//        )
-//        assertEquals(
-//            ResultCode.BadAuth,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txBAD_AUTH))
-//        )
-//        assertEquals(
-//            ResultCode.InsufficientBalance,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txINSUFFICIENT_BALANCE))
-//        )
-//        assertEquals(
-//            ResultCode.NoAccount,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txNO_ACCOUNT))
-//        )
-//        assertEquals(
-//            ResultCode.InsufficientFee,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txINSUFFICIENT_FEE))
-//        )
-//        assertEquals(
-//            ResultCode.BadAuthExtra,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txBAD_AUTH_EXTRA))
-//        )
-//        assertEquals(
-//            ResultCode.InternalError,
-//            KinTransaction.RecordType.parseResultCode(createDummyResult(TransactionResultCode.txINTERNAL_ERROR))
-//        )
-//    }
 }

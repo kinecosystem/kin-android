@@ -23,7 +23,6 @@ import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.network.api.KinAccountApiV4
 import org.kin.sdk.base.network.api.KinAccountApiV4.GetAccountResponse
 import org.kin.sdk.base.network.api.KinAccountCreationApiV4.CreateAccountResponse
-import org.kin.sdk.base.network.api.KinTransactionApiV4
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetMinimumBalanceForRentExemptionResponse
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetMiniumumKinVersionResponse
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetRecentBlockHashResponse
@@ -44,11 +43,6 @@ import org.kin.sdk.base.stellar.models.StellarKinTransaction
 import org.kin.sdk.base.tools.PromisedCallback
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.codec.Base64
-import org.kin.stellarfork.xdr.Int64
-import org.kin.stellarfork.xdr.TransactionResult
-import org.kin.stellarfork.xdr.TransactionResultCode
-import org.kin.stellarfork.xdr.XdrDataOutputStream
-import java.io.ByteArrayOutputStream
 
 internal fun AccountInfo.toKinAccount(): KinAccount =
     KinAccount(
@@ -327,24 +321,6 @@ internal fun ((GetTransactionHistoryResponse) -> Unit).getTransactionHistoryResp
         }
         this(GetTransactionHistoryResponse(result))
     })
-}
-
-internal fun TransactionResultCode.toResultXdr(): ByteArray {
-    val transactionResult = TransactionResult().apply {
-        result = TransactionResult.TransactionResultResult().apply {
-            discriminant = this@toResultXdr
-        }
-        feeCharged = Int64().apply {
-            int64 = 0
-        }
-        ext = TransactionResult.TransactionResultExt().apply {
-            discriminant = 0
-        }
-    }
-    return with(ByteArrayOutputStream()) {
-        TransactionResult.encode(XdrDataOutputStream(this), transactionResult)
-        toByteArray()
-    }
 }
 
 @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")

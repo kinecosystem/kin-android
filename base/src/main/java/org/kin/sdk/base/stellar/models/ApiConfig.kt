@@ -8,9 +8,6 @@ sealed class ApiConfig(
     private companion object {
         private const val TLS_PORT = 443
 
-        const val TestNetHorizonEndpoint = "https://horizon-testnet.kininfrastructure.com/"
-        const val MainNetHorizonEndpoint = "https://horizon.kinfederation.com"
-
         const val TestNetAgoraEndpoint = "api.agorainfra.dev"
         const val MainNetAgoraEndpoint = "api.agorainfra.net"
     }

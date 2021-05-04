@@ -15,7 +15,6 @@ import org.kin.sdk.base.stellar.models.SolanaKinTransaction
 import org.kin.sdk.base.tools.ObservableCallback
 import org.kin.sdk.base.tools.Observer
 import org.kin.sdk.base.tools.ValueSubject
-import org.kin.stellarfork.xdr.TransactionResultCode
 
 class AgoraKinAccountCreationApiV4(
     managedChannel: ManagedChannel

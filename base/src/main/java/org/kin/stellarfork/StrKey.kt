@@ -81,11 +81,11 @@ object StrKey {
             val data = payload.copyOfRange(1, payload.size)
             val checksum = decoded.copyOfRange(decoded.size - 2, decoded.size)
             if (decodedVersionByte.toInt() != versionByte.getValue()) {
-                throw FormatException("Version byte is invalid")
+                throw Exception("Version byte is invalid")
             }
             val expectedChecksum = calculateChecksum(payload)
             if (!expectedChecksum.contentEquals(checksum)) {
-                throw FormatException("Checksum invalid")
+                throw Exception("Checksum invalid")
             }
             if (VersionByte.SEED.getValue() == decodedVersionByte.toInt()) {
                 Arrays.fill(bytes, 0.toByte())

@@ -20,7 +20,6 @@ import org.kin.sdk.base.tools.byteArrayToLong
 import org.kin.sdk.base.tools.subByteArray
 import org.kin.sdk.base.tools.toHexString
 import org.kin.stellarfork.codec.Base64
-import org.kin.stellarfork.xdr.TransactionResultCode
 
 val org.kin.sdk.base.models.solana.Transaction.totalAmount: KinAmount
     get() = paymentOperations.map { it.amount }.reduce { acc, kinAmount -> acc + kinAmount }
