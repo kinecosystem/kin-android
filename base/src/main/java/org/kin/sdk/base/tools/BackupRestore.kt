@@ -1,7 +1,5 @@
-package kin.sdk
+package org.kin.sdk.base.tools
 
-import kin.sdk.exception.CorruptedDataException
-import kin.sdk.exception.CryptoException
 import org.kin.stellarfork.KeyPair
 
 interface BackupRestore {

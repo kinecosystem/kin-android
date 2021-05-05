@@ -5,6 +5,7 @@ import org.kin.sdk.base.KinEnvironment
 import org.kin.sdk.demo.viewmodel.HomeViewModel
 import org.kin.sdk.demo.viewmodel.InvoicesViewModel
 import org.kin.sdk.demo.viewmodel.DemoNavigator
+import org.kin.sdk.demo.viewmodel.RestoreViewModel
 import org.kin.sdk.demo.viewmodel.WalletViewModel
 import org.kin.sdk.design.viewmodel.tools.BaseViewModel
 
@@ -54,6 +55,12 @@ class ModernHomeViewModel(
         }
     }
 
+    private inner class ImportTestNetWalletItemViewModel : HomeViewModel.ImportWalletItemViewModel {
+        override fun onItemTapped(activity: Any) {
+            navigator.navigateTo(RestoreViewModel.NavigationArgs())
+        }
+    }
+
     private data class InvoiceItemViewModel(val navigator: DemoNavigator) : HomeViewModel.InvoiceItemViewModel {
         override fun onItemTapped() = navigator.navigateTo(InvoicesViewModel.NavigationArgs())
     }
@@ -66,7 +73,7 @@ class ModernHomeViewModel(
                         /*mainNetWallets = listOf(AddMainNetWalletItemViewModel()) , */
                         testNetWallets = accountIds.mapIndexed { index, accountId ->
                             WalletItemViewModel(index, accountId.stellarBase32Encode(), navigator)
-                        } + AddTestNetWalletItemViewModel()
+                        }  + ImportTestNetWalletItemViewModel() + AddTestNetWalletItemViewModel()
                     )
                 }
             }

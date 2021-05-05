@@ -3,8 +3,6 @@ package kin.backupandrestore.backup.view;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -14,18 +12,16 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import kin.backupandrestore.AccountExtractor;
-import kin.backupandrestore.BackupAndRestoreManager;
 import org.kin.base.compat.R;
+import org.kin.sdk.base.models.Key;
+
+import kin.backupandrestore.BackupAndRestoreManager;
 import kin.backupandrestore.backup.presenter.BackupPresenter;
 import kin.backupandrestore.backup.presenter.BackupPresenterImpl;
 import kin.backupandrestore.base.BaseToolbarActivity;
 import kin.backupandrestore.events.BroadcastManagerImpl;
 import kin.backupandrestore.events.CallbackManager;
 import kin.backupandrestore.events.EventDispatcherImpl;
-import kin.sdk.Environment;
-import kin.sdk.KinAccount;
-import kin.sdk.KinClient;
 
 public class BackupActivity extends BaseToolbarActivity implements BackupView {
 
@@ -44,39 +40,24 @@ public class BackupActivity extends BaseToolbarActivity implements BackupView {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        KinAccount kinAccount = getKinAccountFromClient();
+        Key.PrivateKey kinAccount = getKinAccountFromClient();
         backupPresenter = new BackupPresenterImpl(
-                new CallbackManager(new EventDispatcherImpl(new BroadcastManagerImpl(this))), kinAccount,
+                new CallbackManager(new EventDispatcherImpl(new BroadcastManagerImpl(this))),
+                kinAccount,
                 savedInstanceState);
         backupPresenter.onAttach(this);
-        setNavigationClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                backupPresenter.onBackClicked();
-            }
-        });
+        setNavigationClickListener(v -> backupPresenter.onBackClicked());
     }
 
     @Nullable
-    private KinAccount getKinAccountFromClient() {
-        KinAccount kinAccount = null;
+    private Key.PrivateKey getKinAccountFromClient() {
+        Key.PrivateKey kinAccount = null;
         Intent intent = getIntent();
         if (intent != null) {
-            KinClient kinClient = getKinClientFromIntent(intent);
-            String publicAddress = intent.getStringExtra(BackupAndRestoreManager.PUBLIC_ADDRESS_EXTRA);
-            kinAccount = AccountExtractor.getKinAccount(kinClient, publicAddress);
+            String privateKey = intent.getStringExtra(BackupAndRestoreManager.PRIVATE_KEY_EXTRA);
+            kinAccount = new Key.PrivateKey(privateKey);
         }
         return kinAccount;
-    }
-
-    @NonNull
-    private KinClient getKinClientFromIntent(Intent intent) {
-        String networkUrl = intent.getStringExtra(BackupAndRestoreManager.NETWORK_URL_EXTRA);
-        String networkPassphrase = intent.getStringExtra(BackupAndRestoreManager.NETWORK_PASSPHRASE_EXTRA);
-        String appId = intent.getStringExtra(BackupAndRestoreManager.APP_ID_EXTRA);
-        String storeKey = intent.getStringExtra(BackupAndRestoreManager.STORE_KEY_EXTRA);
-        return new KinClient(getApplicationContext(), new Environment(networkUrl,
-                networkPassphrase), appId, storeKey);
     }
 
     @Override
@@ -115,7 +96,7 @@ public class BackupActivity extends BaseToolbarActivity implements BackupView {
 
         if (createPasswordFragment == null) {
             createPasswordFragment = CreatePasswordFragment
-                    .newInstance(backupPresenter, this, backupPresenter.getKinAccount());
+                    .newInstance(backupPresenter, this, backupPresenter.getPrivateKey());
         } else {
             setCreatePasswordFragmentAttributes(createPasswordFragment);
         }
@@ -220,7 +201,7 @@ public class BackupActivity extends BaseToolbarActivity implements BackupView {
     private void setCreatePasswordFragmentAttributes(CreatePasswordFragment createPasswordFragment) {
         createPasswordFragment.setNextStepListener(backupPresenter);
         createPasswordFragment.setKeyboardHandler(this);
-        createPasswordFragment.setKinAccount(backupPresenter.getKinAccount());
+        createPasswordFragment.setKinAccount(backupPresenter.getPrivateKey());
     }
 
     private CreatePasswordFragment getSavedCreatePasswordFragment() {

@@ -1,7 +1,6 @@
 include ':spend'
 include ':demo'
 include ':demo:viewmodel'
-include ':demo:viewmodel-compat'
 include ':demo:viewmodel-modern'
 include ':design'
 include ':design:viewmodel-tools'

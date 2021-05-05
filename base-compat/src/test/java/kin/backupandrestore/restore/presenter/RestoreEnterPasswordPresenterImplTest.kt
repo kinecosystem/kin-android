@@ -1,6 +1,5 @@
 package kin.backupandrestore.restore.presenter
 
-import android.os.Bundle
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
@@ -10,15 +9,14 @@ import kin.backupandrestore.events.CallbackManager
 import kin.backupandrestore.events.RestoreEventCode.RESTORE_PASSWORD_DONE_TAPPED
 import kin.backupandrestore.events.RestoreEventCode.RESTORE_PASSWORD_ENTRY_PAGE_BACK_TAPPED
 import kin.backupandrestore.events.RestoreEventCode.RESTORE_PASSWORD_ENTRY_PAGE_VIEWED
-import kin.backupandrestore.restore.presenter.RestorePresenterImpl.KEY_ACCOUNT_KEY
 import kin.backupandrestore.restore.view.RestoreEnterPasswordView
-import kin.sdk.KinAccount
-import kin.sdk.KinClient
 import kin.sdk.exception.CorruptedDataException
 import kin.sdk.exception.CryptoException
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import org.kin.sdk.base.models.Key
+import org.kin.sdk.base.tools.BackupRestore
+import org.kin.stellarfork.KeyPair
 
 class RestoreEnterPasswordPresenterImplTest {
     companion object {
@@ -27,10 +25,10 @@ class RestoreEnterPasswordPresenterImplTest {
     }
 
     private val callbackManager: CallbackManager = mock()
-    private val kinAccount: KinAccount = mock()
-    private val kinClient: KinClient = mock()
+    private val kinAccount: KeyPair  = KeyPair.random()
     private val view: RestoreEnterPasswordView = mock()
     private val parentPresenter: RestorePresenter = mock()
+    private val backupRestore: BackupRestore = mock()
 
     private lateinit var presenter: RestoreEnterPasswordPresenterImpl
 
@@ -58,16 +56,16 @@ class RestoreEnterPasswordPresenterImplTest {
 
     @Test
     fun `restore clicked, send event password done tapped`() {
-        whenever(kinClient.importAccount(any(), any())).thenReturn(kinAccount)
-        whenever(parentPresenter.kinClient) doReturn (kinClient)
+        whenever(backupRestore.importWallet(any(), any())).thenReturn(kinAccount)
+//        whenever(parentPresenter.kinClient) doReturn (kinClient)
         presenter.restoreClicked(PASS)
         verify(callbackManager).sendRestoreEvent(RESTORE_PASSWORD_DONE_TAPPED)
     }
 
     @Test
     fun `restore clicked import account succeed, navigate to complete page`() {
-        whenever(kinClient.importAccount(any(), any())).thenReturn(kinAccount)
-        whenever(parentPresenter.kinClient) doReturn (kinClient)
+        whenever(backupRestore.importWallet(any(), any())).thenReturn(kinAccount)
+//        whenever(parentPresenter.kinClient) doReturn (kinClient)
         presenter.restoreClicked(PASS)
         verify(parentPresenter).navigateToRestoreCompletedPage(kinAccount)
     }
@@ -75,20 +73,20 @@ class RestoreEnterPasswordPresenterImplTest {
     @Test
     fun `restore clicked, exception with error code CODE_RESTORE_INVALID_KEYSTORE_FORMAT, show invalid qr error`() {
         whenever(
-            kinClient.importAccount(
+            backupRestore.importWallet(
                 any(),
                 any()
             )
-        ).thenThrow(CorruptedDataException("some msg"))
-        whenever(parentPresenter.kinClient) doReturn (kinClient)
+        ).thenThrow(org.kin.sdk.base.tools.CorruptedDataException("some msg"))
+//        whenever(parentPresenter.kinClient) doReturn (kinClient)
         presenter.restoreClicked(PASS)
         verify(view).invalidQrError()
     }
 
     @Test
     fun `restore clicked, exception with decode error , show decode error`() {
-        whenever(kinClient.importAccount(any(), any())).thenThrow(CryptoException::class.java)
-        whenever(parentPresenter.kinClient) doReturn (kinClient)
+        whenever(backupRestore.importWallet(any(), any())).thenThrow(org.kin.sdk.base.tools.CryptoException::class.java)
+//        whenever(parentPresenter.kinClient) doReturn (kinClient)
         presenter.restoreClicked(PASS)
         verify(view).decodeError()
     }
@@ -108,7 +106,7 @@ class RestoreEnterPasswordPresenterImplTest {
     }
 
     private fun createPresenter() {
-        presenter = RestoreEnterPasswordPresenterImpl(callbackManager, keyStoreData)
+        presenter = RestoreEnterPasswordPresenterImpl(callbackManager, keyStoreData, backupRestore)
         presenter.onAttach(view, parentPresenter)
     }
 }

@@ -5,13 +5,17 @@ import android.content.Intent;
 
 import androidx.annotation.NonNull;
 
+import org.kin.sdk.base.KinAccountContext;
+import org.kin.sdk.base.KinEnvironment;
+import org.kin.sdk.base.models.Key;
+import org.kin.sdk.base.models.KinAccount;
+import org.kin.sdk.base.storage.Storage;
+
 import kin.backupandrestore.events.BroadcastManagerImpl;
 import kin.backupandrestore.events.CallbackManager;
 import kin.backupandrestore.events.EventDispatcherImpl;
 import kin.backupandrestore.events.InternalRestoreCallback;
 import kin.backupandrestore.exception.BackupAndRestoreException;
-import kin.sdk.KinAccount;
-import kin.sdk.KinClient;
 
 public final class BackupAndRestoreManager {
 
@@ -19,13 +23,19 @@ public final class BackupAndRestoreManager {
     public static final String NETWORK_PASSPHRASE_EXTRA = "networkPassphraseExtra";
     public static final String APP_ID_EXTRA = "appIdExtra";
     public static final String STORE_KEY_EXTRA = "storeKeyExtra";
-    public static final String PUBLIC_ADDRESS_EXTRA = "publicAddressExtra";
+    public static final String PRIVATE_KEY_EXTRA = "publicAddressExtra";
+
+    private static BackupAndRestoreManager __instance__;
+
+    public static BackupAndRestoreManager instance()  {
+        return __instance__;
+    }
 
     private final CallbackManager callbackManager;
     private final int reqCodeBackup;
     private final int reqCodeRestore;
-    private KinClient kinClient;
     private Activity activity;
+    private KinEnvironment environment;
 
     public BackupAndRestoreManager(@NonNull final Activity activity, int reqCodeBackup, int reqCodeRestore) {
         Validator.checkNotNull(activity, "activity");
@@ -34,16 +44,18 @@ public final class BackupAndRestoreManager {
                 new EventDispatcherImpl(new BroadcastManagerImpl(activity)), reqCodeBackup, reqCodeRestore);
         this.reqCodeBackup = reqCodeBackup;
         this.reqCodeRestore = reqCodeRestore;
+
+        __instance__ = this;
     }
 
-    public void backup(KinClient kinClient, KinAccount kinAccount) {
-        this.kinClient = kinClient;
-        new Launcher(activity, kinClient).backupFlow(kinAccount, reqCodeBackup);
+    public void backup(KinEnvironment environment, KinAccount.Id kinAccountId) {
+        Key.PrivateKey privateKey = ((Key.PrivateKey) environment.getStorage().getAccount(kinAccountId).getKey());
+        new Launcher(activity, environment).backupFlow(privateKey, reqCodeBackup);
     }
 
-    public void restore(KinClient kinClient) {
-        this.kinClient = kinClient;
-        new Launcher(activity, kinClient).restoreFlow(reqCodeRestore);
+    public void restore(KinEnvironment environment) {
+        this.environment = environment;
+        new Launcher(activity, environment).restoreFlow(reqCodeRestore);
     }
 
     public void registerBackupCallback(@NonNull final BackupCallback backupCallback) {
@@ -57,10 +69,7 @@ public final class BackupAndRestoreManager {
 
             @Override
             public void onSuccess(String publicAddress) {
-                // Because we recovered a new account then we need to refresh the kinClient so we create a new one.
-                kinClient = new KinClient(activity, kinClient.getEnvironment(), kinClient.getAppId(),
-                        kinClient.getStoreKey());
-                restoreCallback.onSuccess(kinClient, AccountExtractor.getKinAccount(kinClient, publicAddress));
+                restoreCallback.onSuccess(new KinAccountContext.Builder(environment).useExistingAccount(new KinAccount.Id(publicAddress)).build());
             }
 
             @Override
@@ -73,6 +82,10 @@ public final class BackupAndRestoreManager {
                 restoreCallback.onFailure(throwable);
             }
         });
+    }
+
+    public KinEnvironment getEnvironment() {
+        return environment;
     }
 
 //	public void registerBackupEvents(@NonNull final BackupEvents backupEvents) {

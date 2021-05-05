@@ -18,6 +18,10 @@ interface DemoNavigator : Navigator {
 
     fun navigateTo(args: FullInvoiceViewModel.NavigationArgs)
 
+    fun navigateTo(navigationArgs: BackupViewModel.NavigationArgs)
+
+    fun navigateTo(navigationArgs: RestoreViewModel.NavigationArgs)
+
     fun navigateToForResult(
         args: PaymentFlowViewModel.NavigationArgs,
         onResult: (PaymentFlowViewModel.Result) -> Unit

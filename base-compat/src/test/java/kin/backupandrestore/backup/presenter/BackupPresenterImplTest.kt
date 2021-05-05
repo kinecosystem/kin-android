@@ -17,15 +17,13 @@ import kin.backupandrestore.events.BackupEventCode.BACKUP_CREATE_PASSWORD_PAGE_B
 import kin.backupandrestore.events.BackupEventCode.BACKUP_QR_PAGE_BACK_TAPPED
 import kin.backupandrestore.events.BackupEventCode.BACKUP_WELCOME_PAGE_BACK_TAPPED
 import kin.backupandrestore.events.CallbackManager
-import kin.sdk.KinAccount
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
+import org.kin.sdk.base.models.Key
 
 class BackupPresenterImplTest {
 
     private val callbackManager: CallbackManager = mock()
-    private val kinAccount: KinAccount = mock()
+    private val kinAccount: Key.PrivateKey  = Key.PrivateKey.random()
     private val savedInstanceState: Bundle = mock()
     private val view: BackupView = mock()
 

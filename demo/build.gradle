@@ -51,7 +51,6 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':demo:viewmodel')
-    implementation project(':demo:viewmodel-compat')
     implementation project(':demo:viewmodel-modern')
     implementation deps.kotlin_stdlib
     implementation deps.appcompat
@@ -62,6 +61,7 @@ dependencies {
     implementation deps.slf4j_android
     implementation deps.firebase_analytics
     implementation deps.android_material
+    implementation project(':base-compat')
     implementation (project(":spend")) {
         exclude module: 'libsodium-jni'
     }

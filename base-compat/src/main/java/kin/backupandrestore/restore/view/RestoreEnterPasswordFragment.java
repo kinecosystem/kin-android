@@ -16,6 +16,8 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import org.kin.base.compat.R;
+import org.kin.sdk.base.tools.BackupRestoreImpl;
+
 import kin.backupandrestore.backup.view.TextWatcherAdapter;
 import kin.backupandrestore.backup.view.TextWatcherAdapter.TextChangeListener;
 import kin.backupandrestore.base.BaseToolbarActivity;
@@ -92,22 +94,19 @@ public class RestoreEnterPasswordFragment extends Fragment implements RestoreEnt
 
     private void injectPresenter(String keystoreData) {
         presenter = new RestoreEnterPasswordPresenterImpl(
-                new CallbackManager(new EventDispatcherImpl(new BroadcastManagerImpl(getActivity()))), keystoreData);
+                new CallbackManager(new EventDispatcherImpl(new BroadcastManagerImpl(getActivity()))),
+                keystoreData,
+                new BackupRestoreImpl()
+        );
         presenter.onAttach(this, ((RestoreActivity) getActivity()).getPresenter());
     }
 
     private void initToolbar() {
         BaseToolbarActivity toolbarActivity = (BaseToolbarActivity) getActivity();
-        toolbarActivity
-                .setNavigationIcon(R.drawable.back);
+        toolbarActivity.setNavigationIcon(R.drawable.back);
         toolbarActivity.setToolbarColor(android.R.color.white);
         toolbarActivity.setToolbarTitle(R.string.backup_and_restore_upload_qr_toolbar_title);
-        toolbarActivity.setNavigationClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                presenter.onBackClicked();
-            }
-        });
+        toolbarActivity.setNavigationClickListener(v -> presenter.onBackClicked());
     }
 
     private void initViews(View root) {
@@ -120,12 +119,7 @@ public class RestoreEnterPasswordFragment extends Fragment implements RestoreEnt
                 presenter.restoreClicked(password.getText());
             }
         });
-        textWatcherAdapter = new TextWatcherAdapter(new TextChangeListener() {
-            @Override
-            public void afterTextChanged(Editable editable) {
-                presenter.onPasswordChanged(editable.toString());
-            }
-        });
+        textWatcherAdapter = new TextWatcherAdapter(editable -> presenter.onPasswordChanged(editable.toString()));
 
         password.addTextChangedListener(textWatcherAdapter);
         password.setFrameBackgroundColor(R.color.backup_and_restore_black);

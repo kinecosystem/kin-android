@@ -9,6 +9,7 @@ import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.getAgoraMemo
 import org.kin.sdk.base.tools.ListObserver
 import org.kin.sdk.base.tools.Observer
+import org.kin.sdk.demo.viewmodel.BackupViewModel
 import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.FullInvoiceViewModel
 import org.kin.sdk.demo.viewmodel.InvoicesViewModel
@@ -65,6 +66,12 @@ class ModernWalletViewModel(
         }
     }
 
+    private inner class ExportWalletActionViewModel : WalletViewModel.ExportWalletActionViewModel {
+        override fun onItemTapped(activity: Any) {
+            navigator.navigateTo(BackupViewModel.NavigationArgs(args.publicAddress))
+        }
+    }
+
     private data class DeleteWalletActionViewModel(val kinAccountContext: KinAccountContext) :
         WalletViewModel.DeleteWalletActionViewModel {
         override fun onItemTapped(completed: (ex: Throwable?) -> Unit) =
@@ -87,6 +94,7 @@ class ModernWalletViewModel(
         WalletViewModel.WalletStatus.Unknown,
         listOf(
             CopyAddressActionViewModel(kinAccountContext),
+            ExportWalletActionViewModel(),
             SendTransactionActionViewModel(navigator, args),
             InvoicesActionActionViewModel(navigator, kinAccountContext.accountId.stellarBase32Encode()),
             LatencyTestTransactionActionViewModel(navigator, args),

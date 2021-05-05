@@ -43,7 +43,6 @@ class HomeActivity :
             HomeViewModel.NavigationArgs.ResolverType.fromValue(bundle.getInt(BundleKeys.resolverType))
         when (resolverType) {
             Modern -> resolver.resolver = resolver.modernResolver
-            Compat -> resolver.resolver = resolver.compatResolver
         }
         return resolver.resolver.resolve(HomeViewModel.NavigationArgs(resolverType), navigator)
     }

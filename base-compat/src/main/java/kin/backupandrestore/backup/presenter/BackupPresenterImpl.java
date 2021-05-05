@@ -6,10 +6,12 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.kin.sdk.base.models.Key;
+import org.kin.sdk.base.models.KinAccount;
+
 import kin.backupandrestore.backup.view.BackupView;
 import kin.backupandrestore.base.BasePresenterImpl;
 import kin.backupandrestore.events.CallbackManager;
-import kin.sdk.KinAccount;
 
 import static kin.backupandrestore.events.BackupEventCode.BACKUP_CREATE_PASSWORD_PAGE_BACK_TAPPED;
 import static kin.backupandrestore.events.BackupEventCode.BACKUP_QR_PAGE_BACK_TAPPED;
@@ -23,16 +25,17 @@ public class BackupPresenterImpl extends BasePresenterImpl<BackupView> implement
     private @Step
     int step;
     private final CallbackManager callbackManager;
-    private final KinAccount kinAccount;
+    private final Key.PrivateKey privateKey;
     private boolean isBackupSucceed = false;
     private String accountKey;
 
 
-    public BackupPresenterImpl(@NonNull CallbackManager callbackManager, @NonNull KinAccount kinAccount,
+    public BackupPresenterImpl(@NonNull CallbackManager callbackManager,
+                               @NonNull Key.PrivateKey privateKey,
                                @Nullable final Bundle savedInstanceState) {
         this.callbackManager = callbackManager;
         this.step = getStep(savedInstanceState);
-        this.kinAccount = kinAccount;
+        this.privateKey = privateKey;
         this.accountKey = getAccountKey(savedInstanceState);
     }
 
@@ -138,8 +141,8 @@ public class BackupPresenterImpl extends BasePresenterImpl<BackupView> implement
     }
 
     @Override
-    public KinAccount getKinAccount() {
-        return kinAccount;
+    public Key.PrivateKey getPrivateKey() {
+        return privateKey;
     }
 
     @Override

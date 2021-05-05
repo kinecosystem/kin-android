@@ -36,7 +36,7 @@ sealed class KinEnvironment {
     abstract val networkEnvironment: NetworkEnvironment
     abstract val logger: KinLoggerFactory
     abstract val service: KinService
-    internal abstract val storage: Storage
+    abstract val storage: Storage
     internal abstract val executors: ExecutorServices
     internal abstract val networkHandler: NetworkOperationsHandler
 

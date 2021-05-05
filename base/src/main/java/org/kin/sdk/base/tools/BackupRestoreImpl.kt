@@ -1,8 +1,5 @@
-package kin.sdk.internal
+package org.kin.sdk.base.tools
 
-import kin.sdk.BackupRestore
-import kin.sdk.exception.CorruptedDataException
-import kin.sdk.exception.CryptoException
 import org.json.JSONException
 import org.json.JSONObject
 import org.kin.stellarfork.KeyPair
@@ -10,7 +7,26 @@ import org.libsodium.jni.NaCl
 import org.libsodium.jni.Sodium
 import java.io.UnsupportedEncodingException
 
-internal class BackupRestoreImpl : BackupRestore {
+/**
+ * Decryption/Encryption error when importing or
+ * exporting an account.
+ */
+class CryptoException : Exception {
+    constructor(e: Throwable?) : super(e) {}
+    constructor(msg: String?) : super(msg) {}
+    constructor(msg: String?, e: Throwable?) : super(msg, e) {}
+}
+
+/**
+ * Input exported account data is corrupted and cannot be imported.
+ */
+class CorruptedDataException : Exception {
+    constructor(e: Throwable?) : super(e) {}
+    constructor(msg: String?) : super(msg) {}
+    constructor(msg: String?, e: Throwable?) : super(msg, e) {}
+}
+
+class BackupRestoreImpl : BackupRestore {
     private companion object {
         private const val SALT_LENGTH_BYTES = 16
         private const val HASH_LENGTH_BYTES = 32

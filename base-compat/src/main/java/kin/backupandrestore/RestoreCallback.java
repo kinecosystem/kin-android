@@ -1,12 +1,12 @@
 package kin.backupandrestore;
 
+import org.kin.sdk.base.KinAccountContext;
+
 import kin.backupandrestore.exception.BackupAndRestoreException;
-import kin.sdk.KinAccount;
-import kin.sdk.KinClient;
 
 public interface RestoreCallback {
 
-    void onSuccess(KinClient kinClient, KinAccount kinAccount);
+    void onSuccess(KinAccountContext kinAccountContext);
 
     void onCancel();
 

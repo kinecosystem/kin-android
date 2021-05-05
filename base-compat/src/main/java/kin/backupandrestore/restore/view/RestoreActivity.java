@@ -4,22 +4,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
-import kin.backupandrestore.BackupAndRestoreManager;
 import org.kin.base.compat.R;
+
 import kin.backupandrestore.base.BaseToolbarActivity;
 import kin.backupandrestore.events.BroadcastManagerImpl;
 import kin.backupandrestore.events.CallbackManager;
 import kin.backupandrestore.events.EventDispatcherImpl;
 import kin.backupandrestore.restore.presenter.RestorePresenter;
 import kin.backupandrestore.restore.presenter.RestorePresenterImpl;
-import kin.sdk.Environment;
-import kin.sdk.KinClient;
 
 public class RestoreActivity extends BaseToolbarActivity implements RestoreView {
 
@@ -28,22 +25,10 @@ public class RestoreActivity extends BaseToolbarActivity implements RestoreView 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        KinClient kinClient = getKinClientFromIntent();
         presenter = new RestorePresenterImpl(
-                new CallbackManager(new EventDispatcherImpl(new BroadcastManagerImpl(this))), kinClient,
+                new CallbackManager(new EventDispatcherImpl(new BroadcastManagerImpl(this))),
                 savedInstanceState);
         presenter.onAttach(this);
-    }
-
-    @NonNull
-    private KinClient getKinClientFromIntent() {
-        Intent intent = getIntent();
-        String networkUrl = intent.getStringExtra(BackupAndRestoreManager.NETWORK_URL_EXTRA);
-        String networkPassphrase = intent.getStringExtra(BackupAndRestoreManager.NETWORK_PASSPHRASE_EXTRA);
-        String appId = intent.getStringExtra(BackupAndRestoreManager.APP_ID_EXTRA);
-        String storeKey = intent.getStringExtra(BackupAndRestoreManager.STORE_KEY_EXTRA);
-        return new KinClient(getApplicationContext(), new Environment(networkUrl,
-                networkPassphrase), appId, storeKey);
     }
 
     @Override

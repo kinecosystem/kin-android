@@ -76,6 +76,7 @@ dependencies {
     api deps.agora_api
     api project(':base-storage')
     implementation 'com.github.joshjdevl.libsodiumjni:libsodium-jni:2.0.1'
+    implementation 'org.json:json:20190722'
 
     testImplementation deps.kotlin_stdlib
     testImplementation deps.kotlin_junit

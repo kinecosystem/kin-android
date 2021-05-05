@@ -4,12 +4,12 @@ package kin.backupandrestore.restore.presenter;
 import android.content.Intent;
 import android.os.Bundle;
 
-import kin.backupandrestore.AccountExtractor;
+import org.kin.sdk.base.models.KinAccount;
+import org.kin.stellarfork.KeyPair;
+
 import kin.backupandrestore.base.BasePresenterImpl;
 import kin.backupandrestore.events.CallbackManager;
 import kin.backupandrestore.restore.view.RestoreView;
-import kin.sdk.KinAccount;
-import kin.sdk.KinClient;
 
 public class RestorePresenterImpl extends BasePresenterImpl<RestoreView> implements RestorePresenter {
 
@@ -24,15 +24,12 @@ public class RestorePresenterImpl extends BasePresenterImpl<RestoreView> impleme
 
     private int currentStep;
     private String accountKey;
-    private KinClient kinClient;
-    private KinAccount kinAccount;
+    private KeyPair kinAccount;
 
     private final CallbackManager callbackManager;
 
-    public RestorePresenterImpl(CallbackManager callbackManager, KinClient kinClient, Bundle saveInstanceState) {
+    public RestorePresenterImpl(CallbackManager callbackManager, Bundle saveInstanceState) {
         this.callbackManager = callbackManager;
-        this.kinClient = kinClient;
-        this.kinAccount = getKinAccount(saveInstanceState);
         this.currentStep = getStep(saveInstanceState);
         this.accountKey = getAccountKey(saveInstanceState);
         this.callbackManager.setCancelledResult();
@@ -50,11 +47,6 @@ public class RestorePresenterImpl extends BasePresenterImpl<RestoreView> impleme
 
     private String getAccountKey(Bundle saveInstanceState) {
         return saveInstanceState != null ? saveInstanceState.getString(KEY_ACCOUNT_KEY) : null;
-    }
-
-    private KinAccount getKinAccount(Bundle saveInstanceState) {
-        return saveInstanceState != null ? AccountExtractor
-                .getKinAccount(kinClient, saveInstanceState.getString(KEY_PUBLIC_ADDRESS)) : null;
     }
 
     @Override
@@ -92,7 +84,7 @@ public class RestorePresenterImpl extends BasePresenterImpl<RestoreView> impleme
                 break;
             case STEP_FINISH:
                 if (kinAccount != null) {
-                    callbackManager.sendRestoreSuccessResult(kinAccount.getPublicAddress());
+                    callbackManager.sendRestoreSuccessResult(kinAccount.getAccountId());
                 } else {
                     if (view != null) {
                         view.showError();
@@ -112,7 +104,7 @@ public class RestorePresenterImpl extends BasePresenterImpl<RestoreView> impleme
     }
 
     @Override
-    public void navigateToRestoreCompletedPage(final KinAccount kinAccount) {
+    public void navigateToRestoreCompletedPage(final KeyPair kinAccount) {
         this.kinAccount = kinAccount;
         switchToStep(STEP_RESTORE_COMPLETED);
     }
@@ -156,13 +148,7 @@ public class RestorePresenterImpl extends BasePresenterImpl<RestoreView> impleme
         outState.putInt(KEY_RESTORE_STEP, currentStep);
         outState.putString(KEY_ACCOUNT_KEY, accountKey);
         if (kinAccount != null) {
-            outState.putString(KEY_PUBLIC_ADDRESS, kinAccount.getPublicAddress());
+            outState.putString(KEY_PUBLIC_ADDRESS, kinAccount.getAccountId());
         }
     }
-
-    @Override
-    public KinClient getKinClient() {
-        return kinClient;
-    }
-
 }

@@ -2,6 +2,10 @@ package kin.backupandrestore.backup.presenter;
 
 import androidx.annotation.NonNull;
 
+import org.kin.sdk.base.models.Key;
+import org.kin.sdk.base.tools.BackupRestore;
+import org.kin.stellarfork.KeyPair;
+
 import java.util.regex.Pattern;
 
 import kin.backupandrestore.Validator;
@@ -9,8 +13,6 @@ import kin.backupandrestore.backup.view.BackupNavigator;
 import kin.backupandrestore.backup.view.CreatePasswordView;
 import kin.backupandrestore.base.BasePresenterImpl;
 import kin.backupandrestore.events.CallbackManager;
-import kin.sdk.KinAccount;
-import kin.sdk.exception.CryptoException;
 
 import static kin.backupandrestore.events.BackupEventCode.BACKUP_CREATE_PASSWORD_PAGE_NEXT_TAPPED;
 import static kin.backupandrestore.events.BackupEventCode.BACKUP_CREATE_PASSWORD_PAGE_VIEWED;
@@ -20,18 +22,22 @@ public class CreatePasswordPresenterImpl extends BasePresenterImpl<CreatePasswor
 
     private final BackupNavigator backupNavigator;
     private final CallbackManager callbackManager;
-    private KinAccount kinAccount;
+    private final BackupRestore backupRestore;
+    private Key.PrivateKey privateKey;
 
     private boolean isPasswordRulesOK = false;
     private boolean isIUnderstandChecked = false;
     private final Pattern pattern;
 
     public CreatePasswordPresenterImpl(@NonNull final CallbackManager callbackManager,
-                                       @NonNull final BackupNavigator backupNavigator, @NonNull KinAccount kinAccount) {
+                                       @NonNull final BackupNavigator backupNavigator,
+                                       @NonNull final BackupRestore backupRestore,
+                                       @NonNull Key.PrivateKey privateKey) {
         this.backupNavigator = backupNavigator;
         this.callbackManager = callbackManager;
         this.callbackManager.sendBackupEvent(BACKUP_CREATE_PASSWORD_PAGE_VIEWED);
-        this.kinAccount = kinAccount;
+        this.backupRestore = backupRestore;
+        this.privateKey = privateKey;
         this.pattern = getPattern();
     }
 
@@ -97,9 +103,9 @@ public class CreatePasswordPresenterImpl extends BasePresenterImpl<CreatePasswor
 
     private void exportAccount(String password) {
         try {
-            final String accountKey = kinAccount.export(password);
+            final String accountKey = backupRestore.exportWallet(KeyPair.fromSecretSeed(privateKey.stellarBase32Encode()), password);
             backupNavigator.navigateToSaveAndSharePage(accountKey);
-        } catch (CryptoException e) {
+        } catch (org.kin.sdk.base.tools.CryptoException e) {
             if (view != null) {
                 view.showBackupFailed();
             }

@@ -2,10 +2,12 @@ package kin.backupandrestore.backup.presenter;
 
 import android.os.Bundle;
 
+import org.kin.sdk.base.models.Key;
+import org.kin.sdk.base.models.KinAccount;
+
 import kin.backupandrestore.backup.view.BackupNavigator;
 import kin.backupandrestore.backup.view.BackupView;
 import kin.backupandrestore.base.BasePresenter;
-import kin.sdk.KinAccount;
 
 public interface BackupPresenter extends BasePresenter<BackupView>, BackupNavigator {
 
@@ -13,5 +15,5 @@ public interface BackupPresenter extends BasePresenter<BackupView>, BackupNaviga
 
     void setAccountKey(String key);
 
-    KinAccount getKinAccount();
+    Key.PrivateKey getPrivateKey();
 }

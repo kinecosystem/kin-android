@@ -19,6 +19,10 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import org.kin.base.compat.R;
+import org.kin.sdk.base.models.Key;
+import org.kin.sdk.base.models.KinAccount;
+import org.kin.sdk.base.tools.BackupRestoreImpl;
+
 import kin.backupandrestore.backup.presenter.CreatePasswordPresenter;
 import kin.backupandrestore.backup.presenter.CreatePasswordPresenterImpl;
 import kin.backupandrestore.backup.view.TextWatcherAdapter.TextChangeListener;
@@ -27,16 +31,15 @@ import kin.backupandrestore.events.BroadcastManagerImpl;
 import kin.backupandrestore.events.CallbackManager;
 import kin.backupandrestore.events.EventDispatcherImpl;
 import kin.backupandrestore.widget.PasswordEditText;
-import kin.sdk.KinAccount;
 
 public class CreatePasswordFragment extends Fragment implements CreatePasswordView {
 
     public static CreatePasswordFragment newInstance(@NonNull final BackupNavigator nextStepListener,
-                                                     @NonNull final KeyboardHandler keyboardHandler, @NonNull KinAccount kinAccount) {
+                                                     @NonNull final KeyboardHandler keyboardHandler, @NonNull Key.PrivateKey privateKey) {
         CreatePasswordFragment fragment = new CreatePasswordFragment();
         fragment.setNextStepListener(nextStepListener);
         fragment.setKeyboardHandler(keyboardHandler);
-        fragment.setKinAccount(kinAccount);
+        fragment.setKinAccount(privateKey);
         return fragment;
     }
 
@@ -46,7 +49,7 @@ public class CreatePasswordFragment extends Fragment implements CreatePasswordVi
     private BackupNavigator nextStepListener;
     private KeyboardHandler keyboardHandler;
     private CreatePasswordPresenter createPasswordPresenter;
-    private KinAccount kinAccount;
+    private Key.PrivateKey privateKey;
 
     private PasswordEditText enterPassEditText;
     private PasswordEditText confirmPassEditText;
@@ -59,8 +62,10 @@ public class CreatePasswordFragment extends Fragment implements CreatePasswordVi
         View root = inflater.inflate(R.layout.backup_and_restore_fragment_backup_create_password, container, false);
         initViews(root);
         createPasswordPresenter = new CreatePasswordPresenterImpl(
-                new CallbackManager(new EventDispatcherImpl(new BroadcastManagerImpl(getActivity()))), nextStepListener,
-                kinAccount);
+                new CallbackManager(new EventDispatcherImpl(new BroadcastManagerImpl(getActivity()))),
+                nextStepListener,
+                new BackupRestoreImpl(),
+                privateKey);
         createPasswordPresenter.onAttach(this);
         return root;
     }
@@ -166,8 +171,8 @@ public class CreatePasswordFragment extends Fragment implements CreatePasswordVi
         this.keyboardHandler = keyboardHandler;
     }
 
-    public void setKinAccount(KinAccount kinAccount) {
-        this.kinAccount = kinAccount;
+    public void setKinAccount(Key.PrivateKey privateKey) {
+        this.privateKey = privateKey;
     }
 
     private void openKeyboard(View view) {

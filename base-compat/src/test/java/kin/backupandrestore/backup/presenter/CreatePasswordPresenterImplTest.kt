@@ -1,7 +1,9 @@
 package kin.backupandrestore.backup.presenter
 
+import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
+import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
@@ -10,16 +12,19 @@ import kin.backupandrestore.backup.view.BackupNavigator
 import kin.backupandrestore.backup.view.CreatePasswordView
 import kin.backupandrestore.events.BackupEventCode.BACKUP_CREATE_PASSWORD_PAGE_VIEWED
 import kin.backupandrestore.events.CallbackManager
-import kin.sdk.KinAccount
 import kin.sdk.exception.CryptoException
 import org.junit.Before
 import org.junit.Test
+import org.kin.sdk.base.models.Key
+import org.kin.sdk.base.tools.BackupRestore
+import org.kin.sdk.base.tools.BackupRestoreImpl
 
 class CreatePasswordPresenterImplTest {
 
     private val callbackManager: CallbackManager = mock()
-    private val kinAccount: KinAccount = mock()
+    private val kinAccount: Key.PrivateKey = Key.PrivateKey.random()
     private val backupNavigator: BackupNavigator = mock()
+    private val backupRestore: BackupRestore = mock()
 
     private val view: CreatePasswordView = mock()
 
@@ -31,7 +36,7 @@ class CreatePasswordPresenterImplTest {
 
     @Before
     fun setUp() {
-        presenter = CreatePasswordPresenterImpl(callbackManager, backupNavigator, kinAccount)
+        presenter = CreatePasswordPresenterImpl(callbackManager, backupNavigator, backupRestore, kinAccount)
         presenter.onAttach(view)
     }
 
@@ -109,28 +114,28 @@ class CreatePasswordPresenterImplTest {
 
     @Test
     fun `next button clicked and export succeeded`() {
-        whenever(kinAccount.export(pass)) doReturn (accountKey)
+        whenever(backupRestore.exportWallet(any(), eq(pass))) doReturn (accountKey)
         presenter.nextButtonClicked(pass, pass)
         verify(backupNavigator).navigateToSaveAndSharePage(accountKey)
     }
 
     @Test
     fun `next button clicked and export failed`() {
-        whenever(kinAccount.export(pass)) doThrow (CryptoException::class)
+        whenever(backupRestore.exportWallet(any(),eq(pass))) doThrow (org.kin.sdk.base.tools.CryptoException::class)
         presenter.nextButtonClicked(pass, pass)
         verify(view).showBackupFailed()
     }
 
     @Test
     fun `onRetryClicked and export succeed`() {
-        whenever(kinAccount.export(pass)) doReturn (accountKey)
+        whenever(backupRestore.exportWallet(any(),eq(pass))) doReturn (accountKey)
         presenter.onRetryClicked(pass)
         verify(backupNavigator).navigateToSaveAndSharePage(accountKey)
     }
 
     @Test
     fun `onRetryClicked and export failed`() {
-        whenever(kinAccount.export(pass)) doThrow (CryptoException::class)
+        whenever(backupRestore.exportWallet(any(),eq(pass))) doThrow (org.kin.sdk.base.tools.CryptoException::class)
         presenter.onRetryClicked(pass)
         verify(view).showBackupFailed()
     }

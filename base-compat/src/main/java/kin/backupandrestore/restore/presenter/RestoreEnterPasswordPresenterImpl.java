@@ -5,15 +5,19 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 
+import org.kin.sdk.base.models.Key;
+import org.kin.sdk.base.tools.BackupRestore;
+import org.kin.sdk.base.tools.BackupRestoreImpl;
+import org.kin.sdk.base.tools.CorruptedDataException;
+import org.kin.sdk.base.tools.CryptoException;
+import org.kin.stellarfork.KeyPair;
+
+import kin.backupandrestore.BackupAndRestoreManager;
 import kin.backupandrestore.Validator;
 import kin.backupandrestore.events.CallbackManager;
 import kin.backupandrestore.exception.BackupAndRestoreException;
 import kin.backupandrestore.restore.view.RestoreEnterPasswordView;
-import kin.backupandrestore.utils.Logger;
-import kin.sdk.KinAccount;
-import kin.sdk.exception.CorruptedDataException;
 import kin.sdk.exception.CreateAccountException;
-import kin.sdk.exception.CryptoException;
 
 import static kin.backupandrestore.events.RestoreEventCode.RESTORE_PASSWORD_DONE_TAPPED;
 import static kin.backupandrestore.events.RestoreEventCode.RESTORE_PASSWORD_ENTRY_PAGE_BACK_TAPPED;
@@ -27,11 +31,13 @@ public class RestoreEnterPasswordPresenterImpl extends BaseChildPresenterImpl<Re
 
     private final String keystoreData;
     private final CallbackManager callbackManager;
+    private final BackupRestore backupRestore;
 
-    public RestoreEnterPasswordPresenterImpl(@NonNull final CallbackManager callbackManager, String keystoreData) {
+    public RestoreEnterPasswordPresenterImpl(@NonNull final CallbackManager callbackManager, String keystoreData, BackupRestore backupRestore) {
         this.callbackManager = callbackManager;
         this.keystoreData = keystoreData;
         this.callbackManager.sendRestoreEvent(RESTORE_PASSWORD_ENTRY_PAGE_VIEWED);
+        this.backupRestore = backupRestore;
     }
 
     @Override
@@ -50,7 +56,7 @@ public class RestoreEnterPasswordPresenterImpl extends BaseChildPresenterImpl<Re
     public void restoreClicked(String password) {
         callbackManager.sendRestoreEvent(RESTORE_PASSWORD_DONE_TAPPED);
         try {
-            KinAccount kinAccount = importAccount(keystoreData, password);
+            KeyPair kinAccount = importAccount(keystoreData, password);
             getParentPresenter().navigateToRestoreCompletedPage(kinAccount);
         } catch (BackupAndRestoreException e) {
 //            Logger.e("RestoreEnterPasswordPresenterImpl - restore failed.", e);
@@ -65,18 +71,26 @@ public class RestoreEnterPasswordPresenterImpl extends BaseChildPresenterImpl<Re
         }
     }
 
-    private KinAccount importAccount(@NonNull final String keystore, @NonNull final String password)
+    private KeyPair importAccount(@NonNull final String keystore, @NonNull final String password)
             throws BackupAndRestoreException {
         Validator.checkNotNull(keystore, "keystore");
         Validator.checkNotNull(keystore, "password");
-        KinAccount importedAccount;
+        KeyPair importedAccount;
         try {
-            importedAccount = getParentPresenter().getKinClient().importAccount(keystore, password);
+            importedAccount = backupRestore.importWallet(keystore, password);
+            if(BackupAndRestoreManager.instance() != null) {
+                BackupAndRestoreManager.instance().
+                        getEnvironment()
+                        .importPrivateKey(new Key.PrivateKey(importedAccount.getRawSecretSeed()))
+                        .resolve();
+            }
         } catch (CryptoException e) {
             throw new BackupAndRestoreException(CODE_RESTORE_FAILED, "Could not import the account");
-        } catch (CreateAccountException e) {
-            throw new BackupAndRestoreException(CODE_RESTORE_FAILED, "Could not create the account");
-        } catch (CorruptedDataException e) {
+        }
+//        catch (CreateAccountException e) {
+//            throw new BackupAndRestoreException(CODE_RESTORE_FAILED, "Could not create the account");
+//        }
+        catch (CorruptedDataException e) {
             throw new BackupAndRestoreException(CODE_RESTORE_INVALID_KEYSTORE_FORMAT,
                     "The keystore is invalid - wrong format");
         }
