@@ -1,4 +1,3 @@
-
 package org.kin.base.viewmodel
 
 import com.nhaarman.mockitokotlin2.any
@@ -26,7 +25,8 @@ import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.SKU
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asPrivateKey
-import org.kin.sdk.base.network.api.KinTransactionApi.SubmitTransactionResponse.Result.InvoiceErrors
+import org.kin.sdk.base.network.api.KinTransactionApiV4
+import org.kin.sdk.base.network.api.KinTransactionApiV4.SubmitTransactionResponse.Result.*
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.repository.AppInfoRepository
 import org.kin.sdk.base.repository.InvoiceRepository
