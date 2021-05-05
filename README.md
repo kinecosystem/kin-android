@@ -15,9 +15,6 @@ Use the Kin SDK for Android to enable the use of Kin inside of your app. Include
 
 *\*Note: [base-storage](base-storage), [base-viewmodel](base-viewmodel), & [base-viewmodel-impl](base-viewmodel-impl) are internal dependencies to other libraries that are not meant to be directly consumed at this time.*
 
-## Note on Upcoming Solana Migration (Dec 8, 2020)
-See [base](base) or [base-compat](base-compat) for specific migration details related to each module.
-
 ## Installation
 
 ```groovy
