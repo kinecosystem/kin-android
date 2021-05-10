@@ -1,22 +1,24 @@
 package org.kin.sdk.base.network.services
 
+import org.kin.sdk.base.models.AppIdx
 import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
+import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
-import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
+import org.kin.sdk.base.models.solana.AssociatedTokenProgram
+import org.kin.sdk.base.models.solana.Instruction
 import org.kin.sdk.base.models.solana.MemoProgram
-import org.kin.sdk.base.models.solana.SystemProgram
 import org.kin.sdk.base.models.solana.TokenProgram
 import org.kin.sdk.base.models.solana.Transaction
 import org.kin.sdk.base.models.solana.marshal
 import org.kin.sdk.base.models.solana.unmarshal
 import org.kin.sdk.base.models.toKeyPair
-import org.kin.sdk.base.models.toSigningKeyPair
 import org.kin.sdk.base.network.api.KinAccountApiV4
 import org.kin.sdk.base.network.api.KinAccountCreationApiV4
 import org.kin.sdk.base.network.api.KinStreamingApiV4
@@ -32,9 +34,7 @@ import org.kin.sdk.base.tools.Observer
 import org.kin.sdk.base.tools.Promise
 import org.kin.sdk.base.tools.onErrorResumeNextError
 import org.kin.sdk.base.tools.queueWork
-import org.kin.sdk.base.tools.sha256
 import org.kin.sdk.base.tools.toHexString
-import org.kin.stellarfork.KeyPair
 import java.util.concurrent.TimeUnit
 
 class KinServiceImplV4(
@@ -64,32 +64,32 @@ class KinServiceImplV4(
 
     private val cache = Cache<String>()
 
-    private fun cachedServiceConfig() =
+    private fun cachedServiceConfig(): Promise<KinTransactionApiV4.GetServiceConfigResponse> =
         cache.resolve(
             "serviceConfig",
             TimeUnit.MILLISECONDS.convert(30, TimeUnit.MINUTES)
         ) {
-            networkOperationsHandler.queueWork<KinTransactionApiV4.GetServiceConfigResponse> { resolve ->
+            networkOperationsHandler.queueWork { resolve ->
                 transactionApi.getServiceConfig { resolve(it) }
             }
         }
 
-    private fun cachedRecentBlockHash() =
+    private fun cachedRecentBlockHash(): Promise<KinTransactionApiV4.GetRecentBlockHashResponse> =
         cache.resolve(
             "recentBlockHash",
             TimeUnit.MILLISECONDS.convert(2, TimeUnit.MINUTES)
         ) {
-            networkOperationsHandler.queueWork<KinTransactionApiV4.GetRecentBlockHashResponse> { resolve ->
+            networkOperationsHandler.queueWork { resolve ->
                 transactionApi.getRecentBlockHash { resolve(it) }
             }
         }
 
-    private fun cachedMinRentExemption() =
+    private fun cachedMinRentExemption(): Promise<KinTransactionApiV4.GetMinimumBalanceForRentExemptionResponse> =
         cache.resolve(
             "minRentExemption",
             TimeUnit.MILLISECONDS.convert(30, TimeUnit.MINUTES)
         ) {
-            networkOperationsHandler.queueWork<KinTransactionApiV4.GetMinimumBalanceForRentExemptionResponse> { resolve ->
+            networkOperationsHandler.queueWork { resolve ->
                 transactionApi.getMinimumBalanceForRentExemption(
                     KinTransactionApiV4.GetMinimumBalanceForRentExemptionRequest(TokenProgram.accountSize)
                 ) { resolve(it) }
@@ -98,7 +98,8 @@ class KinServiceImplV4(
 
     override fun createAccount(
         accountId: KinAccount.Id,
-        signer: Key.PrivateKey
+        signer: Key.PrivateKey,
+        appIndex: AppIdx
     ): Promise<KinAccount> {
         return networkOperationsHandler.queueWork { respond, error ->
             if (error is KinService.FatalError.TransientFailure) {
@@ -112,39 +113,54 @@ class KinServiceImplV4(
                 }
                 .then({ (serviceConfig, recentBlockHash, minRentExemption) ->
 
-                    val tokenAccountSeed = signer.toSigningKeyPair().rawSecretSeed!!.sha256()
-                    val tokenAccount = KeyPair.fromSecretSeed(tokenAccountSeed).asPrivateKey()
-                    val tokenAccountPub: Key.PublicKey = tokenAccount.asPublicKey()
+//                    val tokenAccountSeed = signer.toSigningKeyPair().rawSecretSeed!!.sha256()
+//                    val tokenAccount = KeyPair.fromSecretSeed(tokenAccountSeed).asPrivateKey()
+//                    val tokenAccountPub: Key.PublicKey = tokenAccount.asPublicKey()
 
-                    val subsidizer: Key.PublicKey = serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
+                    val subsidizer: Key.PublicKey =
+                        serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
                     val owner: Key.PublicKey = signer.asPublicKey()
                     val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
                     val mint = serviceConfig.token!!.toKeyPair().asPublicKey()
 
+                    val memo = if (appIndex.value > 0) KinBinaryMemo.Builder(appIndex.value)
+                        .setTranferType(KinBinaryMemo.TransferType.None)
+                        .build() else null
+
+                    val createAssocAccount = AssociatedTokenProgram.CreateAssociatedTokenAccount(
+                        subsidizer,
+                        owner,
+                        mint
+                    )
+
                     val transaction = Transaction.newTransaction(
                         subsidizer,
-                        SystemProgram.CreateAccount(
-                            subsidizer = subsidizer,
-                            address = tokenAccountPub,
-                            owner = programKey,
-                            lamports = minRentExemption.lamports!!,
-                            size = TokenProgram.accountSize
-                        ).instruction,
-                        TokenProgram.InitializeAccount(
-                            account = tokenAccountPub,
-                            mint = mint,
-                            owner = owner,
-                            programKey = programKey
-                        ).instruction,
-                        TokenProgram.SetAuthority(
-                            account = tokenAccountPub,
-                            currentAuthority = owner,
-                            newAuthority = subsidizer,
-                            authorityType = TokenProgram.AuthorityType.AuthorityCloseAccount,
-                            programKey = programKey
-                        ).instruction
+//                        SystemProgram.CreateAccount(
+//                            subsidizer = subsidizer,
+//                            address = tokenAccountPub,
+//                            owner = programKey,
+//                            lamports = minRentExemption.lamports!!,
+//                            size = TokenProgram.accountSize
+//                        ).instruction,
+//                        TokenProgram.InitializeAccount(
+//                            account = tokenAccountPub,
+//                            mint = mint,
+//                            owner = owner,
+//                            programKey = programKey
+//                        ).instruction,
+                        *listOfNotNull(
+                            memo?.let { MemoProgram.Base64EncodedMemo.fromBytes(it.encode()).instruction },
+                            createAssocAccount.instruction,
+                            TokenProgram.SetAuthority(
+                                account = createAssocAccount.addr,
+                                currentAuthority = owner,
+                                newAuthority = subsidizer,
+                                authorityType = TokenProgram.AuthorityType.AuthorityCloseAccount,
+                                programKey = programKey
+                            ).instruction
+                        ).toTypedArray()
                     ).copyAndSetRecentBlockhash(recentBlockHash.blockHash!!)
-                        .copyAndSign(tokenAccount, signer)
+                        .copyAndSign(signer)
 
                     log.log { "serviceConfig: $serviceConfig" }
                     log.log { "recentBlockHash: $recentBlockHash" }
@@ -214,10 +230,10 @@ class KinServiceImplV4(
         }
     }
 
-    override fun resolveTokenAccounts(accountId: KinAccount.Id): Promise<List<Key.PublicKey>> {
+    override fun resolveTokenAccounts(accountId: KinAccount.Id): Promise<List<KinTokenAccountInfo>> {
         val cacheKey = "resolvedAccounts:${accountId.stellarBase32Encode()}"
         val resolve = cache.resolve(cacheKey) {
-            networkOperationsHandler.queueWork<List<Key.PublicKey>> { respond ->
+            networkOperationsHandler.queueWork<List<KinTokenAccountInfo>> { respond ->
                 accountApi.resolveTokenAcounts(
                     KinAccountApiV4.ResolveTokenAccountsRequest(accountId).requestPrint()
                 ) { response ->
@@ -244,6 +260,79 @@ class KinServiceImplV4(
                 resolve
             } else {
                 Promise.of(it)
+            }
+        }
+    }
+
+    fun mergeTokenAccounts(
+        accountId: KinAccount.Id,
+        signer: Key.PrivateKey,
+        appIndex: AppIdx
+    ): Promise<Int> {
+        return resolveTokenAccounts(accountId).flatMap { existingAccounts ->
+            if (existingAccounts.isEmpty()) {
+                Promise.of(0)
+            } else {
+                Promise.all(cachedServiceConfig(), cachedRecentBlockHash())
+                    .onErrorResumeNextError {
+                        KinService.FatalError.TransientFailure(
+                            RuntimeException("Pre-requisite response failed! $it")
+                        )
+                    }
+                    .flatMap { (serviceConfig, recentBlockHash) ->
+                        val dest = existingAccounts[0]
+                        val instructions = mutableListOf<Instruction>()
+                        createAccount(accountId, signer, appIndex)
+                            .flatMap {
+                                for (tokenAccount in existingAccounts) {
+                                    if (tokenAccount == dest) {
+                                        continue
+                                    }
+
+                                    instructions += TokenProgram.Transfer(
+                                        tokenAccount.key,
+                                        dest.key,
+                                        signer.asPublicKey(),
+                                        tokenAccount.balance,
+                                        TokenProgram.PROGRAM_KEY
+                                    ).instruction
+
+                                    // If no close authority is set, it likely means we do not know it, and
+                                    // can't make any assumptions.
+                                    if (tokenAccount.closeAuthority == null) {
+                                        continue
+                                    }
+
+                                    // If the subsidizer is the close authority, we can include the close instruction
+                                    // as they will be ok with signing for it.
+                                    //
+                                    // Alternatively, if agora is the close authority, agora wil sign it.
+                                    for (account in listOfNotNull(tokenAccount.key, serviceConfig.subsidizerAccount?.toKeyPair()?.asPublicKey())) {
+                                        if (tokenAccount.key == account) {
+                                            instructions += TokenProgram.CloseAccount(
+                                                tokenAccount.key,
+                                                tokenAccount.closeAuthority,
+                                                accountId.toKeyPair().asPublicKey()
+                                            ).instruction
+                                            break
+                                        }
+                                    }
+                                }
+
+                                val tx = Transaction.newTransaction(
+                                    serviceConfig.subsidizerAccount.toKeyPair().asPublicKey(),
+                                    *instructions.toTypedArray()
+                                ).copyAndSetRecentBlockhash(recentBlockHash.blockHash!!)
+                                    .copyAndSign(signer)
+
+                                val kinTransaction = SolanaKinTransaction(
+                                    bytesValue = tx.marshal(),
+                                    networkEnvironment = networkEnvironment
+                                )
+                                submitTransaction(kinTransaction)
+                            }
+                    }
+                    .flatMap { resolveTokenAccounts(accountId).map { it.size } }
             }
         }
     }

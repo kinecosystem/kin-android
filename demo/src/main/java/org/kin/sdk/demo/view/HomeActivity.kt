@@ -34,8 +34,6 @@ class HomeActivity :
         ActivityNavigatorImpl(this)
     }
 
-    private lateinit var modernButton: PrimaryButton
-    private lateinit var compatButton: PrimaryButton
     private lateinit var walletItems: RecyclerView
 
     override fun createViewModel(bundle: Bundle): HomeViewModel {
@@ -99,16 +97,6 @@ class HomeActivity :
             addTo(rootLayout, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
         }
 
-        modernButton = with(PrimaryButton(context)) {
-            text = context.getString(R.string.use_base_lib)
-            addTo(rootLayout, leftMargin = 16.dip, rightMargin = 16.dip, bottomMargin = 16.dip)
-        }
-
-        compatButton = with(PrimaryButton(context)) {
-            text = context.getString(R.string.use_base_compat_lib)
-            addTo(rootLayout, leftMargin = 16.dip, rightMargin = 16.dip, bottomMargin = 16.dip)
-        }
-
         return rootLayout
     }
 
@@ -120,13 +108,6 @@ class HomeActivity :
 
     override fun onBindView(viewModel: HomeViewModel) {
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
-
-        modernButton.setOnClickListener {
-            viewModel.onUseBaseTapped()
-        }
-        compatButton.setOnClickListener {
-            viewModel.onUseBaseCompatTapped()
-        }
     }
 
     override fun onStateUpdated(state: HomeViewModel.State) {
@@ -157,16 +138,5 @@ class HomeActivity :
                 listOf(RecyclerViewTools.placeholder(R.string.placeholder_no_wallets))
             }
         )
-
-        when (state.resolverType) {
-            Modern -> {
-                modernButton.isEnabled = false
-                compatButton.isEnabled = true
-            }
-            Compat -> {
-                modernButton.isEnabled = true
-                compatButton.isEnabled = false
-            }
-        }
     }
 }

@@ -21,7 +21,6 @@ import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBalance
-import org.kin.sdk.base.models.KinDateFormat
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
@@ -201,7 +200,9 @@ class KinAccountContextImplTest {
 
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.SDKUpgradeRequired)
-        }.whenever(mockService).createAccount(eq(registeredAccount.id), eq(registeredAccount.key as Key.PrivateKey))
+        }.whenever(mockService).createAccount(eq(registeredAccount.id),
+            eq(registeredAccount.key as Key.PrivateKey),
+            AppIdx.TEST_APP_IDX) 
 
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.SDKUpgradeRequired)
@@ -212,7 +213,7 @@ class KinAccountContextImplTest {
             assertNull(value)
 
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
-            verify(mockService).createAccount(any(), any())
+            verify(mockService).createAccount(any(), any(), AppIdx.TEST_APP_IDX)
             verifyZeroInteractions(mockService)
             verifyNoMoreInteractions(mockStorage)
         }
@@ -310,7 +311,9 @@ class KinAccountContextImplTest {
             ))
         doAnswer {
             Promise.of(registeredAccountNoPrivKey)
-        }.whenever(mockService).createAccount(eq(accountId), eq(registeredAccount.key as Key.PrivateKey))
+        }.whenever(mockService).createAccount(eq(accountId),
+            eq(registeredAccount.key as Key.PrivateKey),
+            AppIdx.TEST_APP_IDX)
 
         doAnswer {
             Promise.of(Optional.of(unregisteredAccount))
@@ -325,7 +328,9 @@ class KinAccountContextImplTest {
             assertNotNull(value)
             assertEquals(registeredAccount, value)
 
-            verify(mockService).createAccount(eq(accountId), eq(registeredAccount.key as Key.PrivateKey))
+            verify(mockService).createAccount(eq(accountId),
+                eq(registeredAccount.key as Key.PrivateKey),
+                AppIdx.TEST_APP_IDX)
             verify(mockStorage).getStoredAccount(eq(accountId))
             verify(mockStorage).updateAccount(eq(registeredAccount))
             verifyNoMoreInteractions(mockService)
@@ -343,7 +348,9 @@ class KinAccountContextImplTest {
             ))
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.PermanentlyUnavailable)
-        }.whenever(mockService).createAccount(eq(accountId), eq(registeredAccount.key as Key.PrivateKey))
+        }.whenever(mockService).createAccount(eq(accountId),
+            eq(registeredAccount.key as Key.PrivateKey),
+            AppIdx.TEST_APP_IDX)
 
         doAnswer {
             Promise.of(registeredAccountNoPrivKey)
@@ -366,7 +373,9 @@ class KinAccountContextImplTest {
             assertNotNull(value)
             assertEquals(registeredAccount, value)
 
-            verify(mockService).createAccount(eq(accountId), eq(registeredAccount.key as Key.PrivateKey))
+            verify(mockService).createAccount(eq(accountId),
+                eq(registeredAccount.key as Key.PrivateKey),
+                AppIdx.TEST_APP_IDX)
             verify(mockService).getAccount(eq(accountId))
             verify(mockStorage).getStoredAccount(eq(accountId))
             verify(mockStorage).updateAccountInStorage(eq(registeredAccountNoPrivKey))

@@ -11,6 +11,7 @@ import org.kin.agora.gen.transaction.v4.TransactionService
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinBalance
+import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asPublicKey
@@ -49,6 +50,13 @@ internal fun AccountInfo.toKinAccount(): KinAccount =
         accountId.toPublicKey(),
         balance = KinBalance(QuarkAmount(balance).toKin()),
         status = KinAccount.Status.Registered(0)
+    )
+
+internal fun AccountInfo.toKinTokenAccountInfo(): KinTokenAccountInfo =
+    KinTokenAccountInfo(
+        accountId.toPublicKey(),
+        balance = QuarkAmount(balance).toKin(),
+        closeAuthority.toPublicKey()
     )
 
 internal fun Model.SolanaAccountId.toPublicKey(): Key.PublicKey =
@@ -390,7 +398,9 @@ internal fun TransactionService.HistoryItem.toHistoricalKinTransaction(networkEn
 
 internal fun ((KinAccountApiV4.ResolveTokenAccountsResponse) -> Unit).resolveTokenAccountsResponse(): PromisedCallback<AccountService.ResolveTokenAccountsResponse> {
     return PromisedCallback<AccountService.ResolveTokenAccountsResponse>({ response ->
-        val tokenAccounts = response.tokenAccountsList.map { it.toPublicKey() }
+        val tokenAccounts = response.tokenAccountInfosList.map {
+            it.toKinTokenAccountInfo()
+        }
 
         this(
             KinAccountApiV4.ResolveTokenAccountsResponse(

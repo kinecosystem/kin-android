@@ -5,7 +5,6 @@ import org.junit.Test
 import org.kin.sdk.base.models.AppId
 import org.kin.sdk.base.models.ClassicKinMemo
 import org.kin.sdk.base.models.Key
-import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.MemoSuffix
 import org.kin.sdk.base.models.QuarkAmount
@@ -14,8 +13,8 @@ import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.getAgoraMemo
 import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.stellar.models.memo
+import org.kin.sdk.base.tools.Base58
 import org.kin.sdk.base.tools.longToByteArray
-import org.kin.sdk.base.tools.printHexString
 import org.kin.sdk.base.tools.subByteArray
 import org.kin.sdk.base.tools.toByteArray
 import org.kin.sdk.base.tools.toHexString
@@ -106,7 +105,14 @@ class ProgramsTest {
         val expectedAmount = 123456789L.longToByteArray()
 
         assertEquals(3.toByte(), instruction.data[0])
-        assertTrue(expectedAmount.contentEquals(instruction.data.subByteArray(1, instruction.data.size-1)))
+        assertTrue(
+            expectedAmount.contentEquals(
+                instruction.data.subByteArray(
+                    1,
+                    instruction.data.size - 1
+                )
+            )
+        )
 
         assertFalse(instruction.accounts[0].isSigner)
         assertTrue(instruction.accounts[0].isWritable)
@@ -138,7 +144,10 @@ class ProgramsTest {
         ).instruction
 
         assertEquals(6, instruction.data[0])
-        assertEquals(TokenProgram.AuthorityType.AuthorityCloseAccount.value.toByte(), instruction.data[1])
+        assertEquals(
+            TokenProgram.AuthorityType.AuthorityCloseAccount.value.toByte(),
+            instruction.data[1]
+        )
 
         assertFalse(instruction.accounts[0].isSigner)
         assertTrue(instruction.accounts[0].isWritable)
@@ -160,7 +169,11 @@ class ProgramsTest {
         ).instruction
 
         assertEquals(
-            byteArrayOf(6.toByte(), TokenProgram.AuthorityType.AuthorityCloseAccount.value.toByte(), 0.toByte()).toHexString(),
+            byteArrayOf(
+                6.toByte(),
+                TokenProgram.AuthorityType.AuthorityCloseAccount.value.toByte(),
+                0.toByte()
+            ).toHexString(),
             instruction.data.toHexString()
         )
 
@@ -183,7 +196,8 @@ class ProgramsTest {
 
 
         val instructionWithTextMemo = MemoProgram.RawMemo(textMemo.asKinMemo().rawValue).instruction
-        val instructionWithBinaryMemo = MemoProgram.Base64EncodedMemo.fromBytes(binaryMemo.toKinMemo().rawValue).instruction
+        val instructionWithBinaryMemo =
+            MemoProgram.Base64EncodedMemo.fromBytes(binaryMemo.toKinMemo().rawValue).instruction
 
         val txTextMemo = Transaction.newTransaction(
             keys[0].asPublicKey(),
@@ -242,4 +256,50 @@ class ProgramsTest {
         assertEquals(3, TokenProgram.AuthorityType.AuthorityCloseAccount.value)
 
     }
+
+
+    // Associated Account Tests
+
+    @Test
+    fun testGetAssociatedAccount() {
+        // Values generated from taken from spl code.
+        val wallet = Key.PublicKey(Base58.decode("4uQeVj5tqViQh7yWWGStvkEG1Zmhx6uasJtWCJziofM"))
+        val mint = Key.PublicKey(Base58.decode("8opHzTAnfzRpPEx21XtnrVTX28YQuCpAjcn1PczScKh"))
+        val addr = Key.PublicKey(Base58.decode("H7MQwEzt97tUJryocn3qaEoy2ymWstwyEk1i9Yv3EmuZ"))
+
+        val actual = AssociatedTokenProgram.getAssociatedAccount(wallet, mint)
+        assertEquals(addr, actual)
+    }
+
+    @Test
+    fun testCreateAssociatedAccount() {
+        val keys = generateKeys(3).map { it.asPublicKey() }
+
+        val expectedAddr = AssociatedTokenProgram.getAssociatedAccount(keys[1], keys[2])
+
+        val createAssocAccount = AssociatedTokenProgram.CreateAssociatedTokenAccount(
+            keys[0],
+            keys[1],
+            keys[2]
+        )
+        val instruction = createAssocAccount.instruction
+        assertEquals(expectedAddr, createAssocAccount.addr)
+
+        assertEquals(0, instruction.data.size)
+        assertEquals(7, instruction.accounts.size)
+        assertTrue(instruction.accounts[0].isSigner)
+        assertTrue(instruction.accounts[0].isWritable)
+        assertFalse(instruction.accounts[1].isSigner)
+        assertTrue(instruction.accounts[1].isWritable)
+        for (i in 2 until instruction.accounts.size) {
+            assertFalse(instruction.accounts[i].isSigner)
+            assertFalse(instruction.accounts[i].isWritable)
+        }
+
+
+        assertEquals(SystemProgram.PROGRAM_KEY, instruction.accounts[4].publicKey)
+        assertEquals(TokenProgram.PROGRAM_KEY, instruction.accounts[5].publicKey)
+        assertEquals(SYS_VAR_RENT_KEY, instruction.accounts[6].publicKey)
+    }
+
 }

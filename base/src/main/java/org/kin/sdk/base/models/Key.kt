@@ -8,7 +8,13 @@ sealed class Key {
 
     data class PublicKey constructor(override val value: ByteArray) : Key() {
 
-        constructor(publicKeyString: String) : this(KeyPair.fromAccountId(publicKeyString).publicKey)
+        constructor(publicKeyString: String) : this({
+            try {
+                KeyPair.fromAccountId(publicKeyString).publicKey
+            } catch (t: Throwable) {
+                Base58.decode(publicKeyString)
+            }
+        }())
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -45,7 +51,13 @@ sealed class Key {
 
     data class PrivateKey constructor(override val value: ByteArray) : Key() {
 
-        constructor(privateKeyString: String) : this(KeyPair.fromSecretSeed(privateKeyString).rawSecretSeed!!)
+        constructor(privateKeyString: String) : this({
+            try {
+                KeyPair.fromSecretSeed(privateKeyString).rawSecretSeed!!
+            } catch (t: Throwable) {
+                Base58.decode(privateKeyString)
+            }
+        })
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true

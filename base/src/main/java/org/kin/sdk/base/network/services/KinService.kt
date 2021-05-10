@@ -1,12 +1,13 @@
 package org.kin.sdk.base.network.services
 
+import org.kin.sdk.base.models.AppIdx
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
-import org.kin.sdk.base.network.api.KinTransactionApiV4
 import org.kin.sdk.base.network.api.KinTransactionApiV4.SubmitTransactionResponse
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.tools.Observer
@@ -19,11 +20,11 @@ interface KinService {
      * Creates a [KinAccount] and activates it on the network.
      * @param signer only ever used to sign a request, never transmitted
      */
-    fun createAccount(accountId: KinAccount.Id, signer: Key.PrivateKey): Promise<KinAccount>
+    fun createAccount(accountId: KinAccount.Id, signer: Key.PrivateKey, appIndex: AppIdx): Promise<KinAccount>
 
     fun getAccount(accountId: KinAccount.Id): Promise<KinAccount>
 
-    fun resolveTokenAccounts(accountId: KinAccount.Id): Promise<List<Key.PublicKey>>
+    fun resolveTokenAccounts(accountId: KinAccount.Id): Promise<List<KinTokenAccountInfo>>
 
     fun getLatestTransactions(kinAccountId: KinAccount.Id): Promise<List<KinTransaction>>
 

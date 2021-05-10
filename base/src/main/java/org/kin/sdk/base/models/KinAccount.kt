@@ -1,8 +1,5 @@
 package org.kin.sdk.base.models
 
-import org.kin.sdk.base.tools.Base58
-import org.kin.stellarfork.KeyPair
-
 data class KinAccount @JvmOverloads constructor(
     val key: Key,
     val id: Id = Id(key.asPublicKey().value),
@@ -12,7 +9,7 @@ data class KinAccount @JvmOverloads constructor(
 ) {
     data class Id(val value: ByteArray) {
 
-        constructor(accountIdString: String) : this(KeyPair.fromAccountId(accountIdString).publicKey)
+        constructor(accountIdString: String) : this(Key.PublicKey(accountIdString).value)
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
@@ -33,9 +30,9 @@ data class KinAccount @JvmOverloads constructor(
             return "Id(value=${stellarBase32Encode()}, b58=${base58Encode()})"
         }
 
-        fun stellarBase32Encode(): String = toKeyPair().accountId
+        fun stellarBase32Encode(): String = Key.PublicKey(value).stellarBase32Encode()
 
-        fun base58Encode(): String = Base58.encode(value)
+        fun base58Encode(): String = Key.PublicKey(value).base58Encode()
     }
 
     sealed class Status(val value: Int) {
@@ -47,3 +44,9 @@ data class KinAccount @JvmOverloads constructor(
 fun KinAccount.merge(newer: KinAccount): KinAccount {
     return KinAccount(key, id, newer.tokenAccounts, newer.balance, newer.status)
 }
+
+data class KinTokenAccountInfo(
+    val key: Key.PublicKey,
+    val balance: KinAmount,
+    val closeAuthority: Key.PublicKey?
+)

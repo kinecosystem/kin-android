@@ -1,5 +1,7 @@
 package org.kin.sdk.base.models.solana
 
+import net.i2p.crypto.eddsa.math.GroupElement
+import net.i2p.crypto.eddsa.spec.EdDSANamedCurveTable
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.toQuarks
@@ -9,6 +11,8 @@ import org.kin.sdk.base.tools.longToByteArray
 import org.kin.sdk.base.tools.subByteArray
 import org.kin.stellarfork.codec.Base64
 import java.io.ByteArrayOutputStream
+import java.security.MessageDigest
+import kotlin.math.max
 
 object SystemProgram {
     val PROGRAM_KEY = Key.PublicKey(ByteArray(32))
@@ -69,6 +73,133 @@ object SystemProgram {
     }
 }
 
+val SYS_VAR_RENT_KEY = Key.PublicKey(Base58.decode("SysvarRent111111111111111111111111111111111"))
+
+
+object Address {
+
+    object ErrTooManySeeds: Exception("too many seeds")
+    object ErrMaxSeedLengthExceeded : Exception("max seed length exceeded")
+    object ErrInvalidPublicKey: Exception("invalid public key")
+
+    private val maxSeeds = 16
+    private val maxSeedLength = 32
+
+    // CreateProgramAddress mirrors the implementation of the Solana SDK's CreateProgramAddress.
+    //
+    // ProgramAddresses are public keys that _do not_ lie on the ed25519 curve to ensure that
+    // there is no associated private key. In the event that the program and seed parameters
+    // result in a valid public key, ErrInvalidPublicKey is returned.
+    //
+    // Reference: https://github.com/solana-labs/solana/blob/5548e599fe4920b71766e0ad1d121755ce9c63d5/sdk/program/src/pubkey.rs#L158
+    fun createProgramAddress(program: Key.PublicKey, vararg seeds: ByteArray) : Key.PublicKey? {
+        if (seeds.size > maxSeeds) {
+            throw ErrTooManySeeds
+        }
+
+        val h =  MessageDigest.getInstance("SHA-256")
+        for (s in seeds) {
+            if (s.size > maxSeedLength) {
+                throw ErrMaxSeedLengthExceeded
+            }
+            try {
+                h.update(s)
+            } catch (t: Throwable) {
+                throw Exception("failed to hash seed", t)
+            }
+        }
+
+        for (v in arrayOf(program.value, "ProgramDerivedAddress".toByteArray())) {
+            try {
+                h.update(v)
+            } catch (t: Throwable) {
+                throw Exception("failed to hash seed", t)
+            }
+        }
+
+        val pub = h.digest()
+
+        // Following the Solana SDK, we want to _reject_ the generated public key
+        // if it's a valid compressed EdwardsPoint.
+        //
+        // Reference: https://github.com/solana-labs/solana/blob/5548e599fe4920b71766e0ad1d121755ce9c63d5/sdk/program/src/pubkey.rs#L182-L187
+        try {
+            val a = GroupElement(EdDSANamedCurveTable.ED_25519_CURVE_SPEC.curve, pub)
+        } catch (t: Throwable) {
+            return Key.PublicKey(pub)
+        }
+        throw ErrInvalidPublicKey
+    }
+
+    // FindProgramAddress mirrors the implementation of the Solana SDK's FindProgramAddress. Its primary
+    // use case (for Kin and Agora) is for deriving associated accounts.
+    //
+    // Reference: https://github.com/solana-labs/solana/blob/5548e599fe4920b71766e0ad1d121755ce9c63d5/sdk/program/src/pubkey.rs#L234
+    fun findProgramAddress(program: Key.PublicKey, vararg seeds: ByteArray) : Key.PublicKey? {
+        val maxUint8  = (1 shl 8) - 1 // consistent with go impl
+        val bumpSeed = byteArrayOf(maxUint8.toByte())
+
+        for(i in 0 until maxUint8) {
+            try {
+                return createProgramAddress(
+                    program,
+                    *seeds.toMutableList()
+                        .apply { add(bumpSeed) }
+                        .toTypedArray()
+                )
+            } catch (e: ErrInvalidPublicKey) {
+                bumpSeed[0]--
+            }
+        }
+        return null
+    }
+}
+
+object AssociatedTokenProgram {
+    val PROGRAM_KEY: Key.PublicKey = Key.PublicKey(
+        arrayOf(
+            140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142,
+            13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216,
+            219, 233, 248, 89
+        ).map { it.toByte() }.toByteArray()
+    )
+
+    // GetAssociatedAccount returns the associated account address for an SPL token.
+    //
+    // Reference: https://spl.solana.com/associated-token-account#finding-the-associated-token-account-address
+    fun getAssociatedAccount(wallet: Key.PublicKey, mint: Key.PublicKey) : Key.PublicKey? {
+        return Address.findProgramAddress(
+            PROGRAM_KEY,
+            wallet.value,
+            TokenProgram.PROGRAM_KEY.value,
+            mint.value,
+        )
+    }
+
+    // Reference: https://github.com/solana-labs/solana-program-library/blob/0639953c7dd0f5228c3ceda3ba68fece3b46ff1d/associated-token-account/program/src/lib.rs#L54
+    data class CreateAssociatedTokenAccount(
+        val subsidizer: Key.PublicKey,
+        val wallet: Key.PublicKey,
+        val mint: Key.PublicKey
+    ) {
+        val addr = getAssociatedAccount(wallet, mint) ?: throw Exception("can't derive an associated account")
+
+        val instruction: Instruction by lazy {
+            Instruction.newInstruction(
+                PROGRAM_KEY,
+                byteArrayOf(),
+                AccountMeta.newAccountMeta(subsidizer, true),
+                AccountMeta.newAccountMeta(addr, false),
+                AccountMeta.newReadonlyAccountMeta(wallet, false),
+                AccountMeta.newReadonlyAccountMeta(mint, false),
+                AccountMeta.newReadonlyAccountMeta(SystemProgram.PROGRAM_KEY, false),
+                AccountMeta.newReadonlyAccountMeta(TokenProgram.PROGRAM_KEY, false),
+                AccountMeta.newReadonlyAccountMeta(SYS_VAR_RENT_KEY, false)
+            )
+        }
+    }
+}
+
 object TokenProgram {
     // Reference: https://github.com/solana-labs/solana-program-library/blob/11b1e3eefdd4e523768d63f7c70a7aa391ea0d02/token/program/src/state.rs#L125
     val accountSize: Long = 165L
@@ -86,7 +217,6 @@ object TokenProgram {
             145, 58, 140, 245, 133, 126, 255, 0, 169
         ).map { it.toByte() }.toByteArray()
     )
-    val SYS_VAR_RENT = Base58.decode("SysvarRent111111111111111111111111111111111")
 
     sealed class Command(val value: Int) {
         object InitializeMint : Command(0)
@@ -127,7 +257,7 @@ object TokenProgram {
                 AccountMeta.newAccountMeta(account, true),
                 AccountMeta.newReadonlyAccountMeta(mint, false),
                 AccountMeta.newReadonlyAccountMeta(owner, false),
-                AccountMeta.newReadonlyAccountMeta(Key.PublicKey(SYS_VAR_RENT), false)
+                AccountMeta.newReadonlyAccountMeta(SYS_VAR_RENT_KEY, false)
             )
         }
     }
@@ -196,7 +326,11 @@ object TokenProgram {
         //   2. ..2+M `[signer]` M signer accounts
         val instruction: Instruction by lazy {
             var data =
-                byteArrayOf(Command.SetAuthority.value.toByte(), authorityType.value.toByte(), 0.toByte())
+                byteArrayOf(
+                    Command.SetAuthority.value.toByte(),
+                    authorityType.value.toByte(),
+                    0.toByte()
+                )
             if (newAuthority != null) {
                 data[2] = 1
                 data += newAuthority.value
@@ -206,6 +340,39 @@ object TokenProgram {
                 data,
                 AccountMeta.newAccountMeta(account, false),
                 AccountMeta.newReadonlyAccountMeta(currentAuthority, true)
+            )
+        }
+    }
+
+    // Reference: https://github.com/solana-labs/solana-program-library/blob/b011698251981b5a12088acba18fad1d41c3719a/token/program/src/instruction.rs#L183-L197
+    data class CloseAccount(
+        val account: Key.PublicKey,
+        val dest: Key.PublicKey,
+        val owner: Key.PublicKey
+    ) {
+
+        // Close an account by transferring all its SOL to the destination account.
+        // Non-native accounts may only be closed if its token amount is zero.
+        //
+        // Accounts expected by this instruction:
+        //
+        //   * Single owner
+        //   0. `[writable]` The account to close.
+        //   1. `[writable]` The destination account.
+        //   2. `[signer]` The account's owner.
+        //
+        //   * Multisignature owner
+        //   0. `[writable]` The account to close.
+        //   1. `[writable]` The destination account.
+        //   2. `[]` The account's multisignature owner.
+        //   3. ..3+M `[signer]` M signer accounts.
+        val instruction: Instruction by lazy {
+            Instruction.newInstruction(
+                PROGRAM_KEY,
+                byteArrayOf(Command.CloseAccount.value.toByte()),
+                AccountMeta.newAccountMeta(account, false),
+                AccountMeta.newAccountMeta(dest, false),
+                AccountMeta.newReadonlyAccountMeta(owner, false)
             )
         }
     }
@@ -226,7 +393,11 @@ object MemoProgram {
 
     data class Base64EncodedMemo(val base64Value: String) {
         companion object {
-            fun fromBytes(bytes: ByteArray): Base64EncodedMemo = Base64EncodedMemo(Base64.encodeBase64String(bytes)!!)
+            fun fromBytes(bytes: ByteArray): Base64EncodedMemo = Base64EncodedMemo(
+                Base64.encodeBase64String(
+                    bytes
+                )!!
+            )
         }
 
         val instruction: Instruction by lazy {

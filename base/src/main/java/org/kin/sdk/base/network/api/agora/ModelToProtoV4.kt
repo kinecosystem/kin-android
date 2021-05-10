@@ -37,6 +37,7 @@ internal fun KinAccountApiV4.GetAccountRequest.toGrpcRequest(): AccountService.G
 
 internal fun KinAccountApiV4.ResolveTokenAccountsRequest.toGrpcRequest(): AccountService.ResolveTokenAccountsRequest? =
     AccountService.ResolveTokenAccountsRequest.newBuilder()
+        .setIncludeAccountInfo(true)
         .setAccountId(accountId.toProtoSolanaAccountId())
         .build()
 

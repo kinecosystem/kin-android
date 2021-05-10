@@ -2,6 +2,7 @@ package org.kin.sdk.base.network.api
 
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.KinAccount
+import org.kin.sdk.base.models.KinTokenAccountInfo
 
 interface KinAccountApiV4 {
 
@@ -19,7 +20,7 @@ interface KinAccountApiV4 {
 
     data class ResolveTokenAccountsRequest(val accountId: KinAccount.Id)
 
-    data class ResolveTokenAccountsResponse(val result: Result, val accounts: List<Key.PublicKey>) {
+    data class ResolveTokenAccountsResponse(val result: Result, val accounts: List<KinTokenAccountInfo>) {
         sealed class Result(val value: Int) {
             object UpgradeRequiredError : Result(-3)
             data class TransientFailure(val error: Throwable) : Result(-2)

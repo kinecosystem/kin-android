@@ -390,7 +390,7 @@ class KinAccountContextImpl private constructor(
     override val service: KinService,
     override val storage: Storage,
     override val accountId: KinAccount.Id,
-    override val appInfoProvider: AppInfoProvider?,
+    override val appInfoProvider: AppInfoProvider,
     override val logger: KinLoggerFactory
 ) : KinAccountContextBase(), KinAccountContext {
 
@@ -406,7 +406,7 @@ class KinAccountContextImpl private constructor(
             env.service,
             env.storage,
             setupNewAccount(env.storage).id,
-            (env as? KinEnvironment.Agora)?.appInfoProvider,
+            (env as KinEnvironment.Agora).appInfoProvider,
             env.logger
         )
 
@@ -432,7 +432,7 @@ class KinAccountContextImpl private constructor(
                 env.service,
                 env.storage,
                 accountId,
-                (env as? KinEnvironment.Agora)?.appInfoProvider,
+                (env as KinEnvironment.Agora).appInfoProvider,
                 env.logger
             )
     }
@@ -466,7 +466,7 @@ class KinAccountContextImpl private constructor(
     }
 
     private fun registerAccount(account: KinAccount): Promise<KinAccount> =
-        service.createAccount(account.id, account.key as Key.PrivateKey)
+        service.createAccount(account.id, account.key as Key.PrivateKey, appInfoProvider.appInfo.appIndex)
             .map {
                 val accountToStore = account.merge(it)
                 if (!storage.updateAccount(accountToStore)) {
@@ -592,6 +592,7 @@ class KinAccountContextImpl private constructor(
                         )
                     } else {
                         service.resolveTokenAccounts(accountId)
+                            .map { it.map { it.key } }
                             .flatMap {
                                 storage.updateAccountInStorage(account.copy(tokenAccounts = it))
                             }.map { resolvedAccount ->
@@ -613,6 +614,7 @@ class KinAccountContextImpl private constructor(
                     Promise.allAny(
                         *payments.map { paymentItem ->
                             service.resolveTokenAccounts(paymentItem.destinationAccount)
+                                .map { it.map { it.key } }
                                 .map {
                                     paymentItem.copy(
                                         destinationAccount = it.first().asKinAccountId()
@@ -746,6 +748,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
             .flatMap { storage.updateAccountInStorage(it) }
             .onErrorResumeNext(KinService.FatalError.ItemNotFound.javaClass) {
                 service.resolveTokenAccounts(accountId)
+                    .map { it.map { it.key } }
                     .flatMap { accounts ->
                         val maybeResolvedAccountId =
                             accounts.firstOrNull()?.asKinAccountId() ?: accountId

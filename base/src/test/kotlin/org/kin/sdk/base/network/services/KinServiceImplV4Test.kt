@@ -227,7 +227,9 @@ class KinServiceImplV4Test {
             )
         }.whenever(mockAccountCreationApi).createAccount(eq(createRequest), any())
 
-        sut.createAccount(account.id, account.key as Key.PrivateKey).test(100) {
+        sut.createAccount(account.id,
+            account.key as Key.PrivateKey,
+            AppIdx.TEST_APP_IDX).test(100) {
             assertNull(error)
             assertEquals(registeredAccount, value)
 
@@ -254,7 +256,9 @@ class KinServiceImplV4Test {
             )
         }.whenever(mockAccountCreationApi).createAccount(eq(createRequest), any())
 
-        sut.createAccount(account.id, account.key as Key.PrivateKey).test {
+        sut.createAccount(account.id,
+            account.key as Key.PrivateKey,
+            AppIdx.TEST_APP_IDX).test {
             assertNull(error)
             assertEquals(registeredAccount, value)
 
@@ -290,7 +294,9 @@ class KinServiceImplV4Test {
         }.whenever(mockAccountApi)
             .getAccount(eq(KinAccountApiV4.GetAccountRequest(registeredAccount.id)), any())
 
-        sut.createAccount(account.id, account.key as Key.PrivateKey).test {
+        sut.createAccount(account.id,
+            account.key as Key.PrivateKey,
+            AppIdx.TEST_APP_IDX).test {
             assertNull(error)
             assertEquals(registeredAccount, value)
 
@@ -319,7 +325,9 @@ class KinServiceImplV4Test {
             )
         }.whenever(mockAccountCreationApi).createAccount(eq(createRequest), any())
 
-        sut.createAccount(account.id, account.key as Key.PrivateKey).test {
+        sut.createAccount(account.id,
+            account.key as Key.PrivateKey,
+            AppIdx.TEST_APP_IDX).test {
             assertEquals(KinService.FatalError.IllegalResponse, error)
             assertNull(value)
 
@@ -344,7 +352,9 @@ class KinServiceImplV4Test {
             )
         }.whenever(mockAccountCreationApi).createAccount(eq(createRequest), any())
 
-        sut.createAccount(account.id, account.key as Key.PrivateKey).test {
+        sut.createAccount(account.id,
+            account.key as Key.PrivateKey,
+            AppIdx.TEST_APP_IDX).test {
             assertTrue(error is KinService.FatalError.UnexpectedServiceError)
             assertNull(value?.status)
 
@@ -369,7 +379,9 @@ class KinServiceImplV4Test {
             )
         }.whenever(mockAccountCreationApi).createAccount(eq(createRequest), any())
 
-        sut.createAccount(account.id, account.key as Key.PrivateKey).test {
+        sut.createAccount(account.id,
+            account.key as Key.PrivateKey,
+            AppIdx.TEST_APP_IDX).test {
             assertTrue(error is KinService.FatalError.TransientFailure)
             assertNull(value?.status)
 
@@ -394,7 +406,9 @@ class KinServiceImplV4Test {
             )
         }.whenever(mockAccountCreationApi).createAccount(eq(createRequest), any())
 
-        sut.createAccount(account.id, account.key as Key.PrivateKey).test {
+        sut.createAccount(account.id,
+            account.key as Key.PrivateKey,
+            AppIdx.TEST_APP_IDX).test {
             assertTrue(error is KinService.FatalError.SDKUpgradeRequired)
             assertNull(value?.status)
 
