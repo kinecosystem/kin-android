@@ -54,7 +54,7 @@ class ModernWalletViewModel(
     private data class CopyAddressActionViewModel(val kinAccountContext: KinAccountContext) :
         WalletViewModel.CopyAddressActionViewModel {
         override val publicAddress: String
-            get() = kinAccountContext.accountId.stellarBase32Encode()
+            get() = kinAccountContext.accountId.base58Encode()
     }
 
     private inner class FundActionViewModel : WalletViewModel.FundActionViewModel {
@@ -88,7 +88,7 @@ class ModernWalletViewModel(
 
     override fun getDefaultState(): WalletViewModel.State = WalletViewModel.State(
         WalletViewModel.WalletHeaderViewModel(
-            kinAccountContext.accountId.stellarBase32Encode(),
+            kinAccountContext.accountId.base58Encode(),
         null
         ),
         WalletViewModel.WalletStatus.Unknown,

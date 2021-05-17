@@ -23,6 +23,7 @@ import org.kin.sdk.design.view.tools.dip
 import org.kin.sdk.design.view.tools.updateItems
 import org.kin.sdk.demo.viewmodel.DemoNavigator
 import org.kin.sdk.demo.viewmodel.TransactionLoadTestingViewModel
+import org.kin.sdk.design.view.tools.addBase58ChangedListener
 
 class TransactionLoadTestingActivity : BaseActivity<TransactionLoadTestingViewModel, TransactionLoadTestingViewModel.NavigationArgs, TransactionLoadTestingViewModel.State, ResolverProvider, DemoNavigator>() {
     object BundleKeys {
@@ -127,7 +128,7 @@ class TransactionLoadTestingActivity : BaseActivity<TransactionLoadTestingViewMo
             }
         }
 
-        publicAddressView.innerEditText.addBase32ChangedListener { viewModel.onDestinationAddressUpdated(it) }
+        publicAddressView.innerEditText.addBase58ChangedListener { viewModel.onDestinationAddressUpdated(it) }
     }
 
     var finalState: TransactionLoadTestingViewModel.State? = null

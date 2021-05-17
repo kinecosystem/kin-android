@@ -484,24 +484,6 @@ class KinFileStorageTest {
     }
 
     @Test
-    fun testGetMinFee() {
-        sut.getMinFee().test {
-            assertFalse(value!!.isPresent)
-        }
-    }
-
-    @Test
-    fun testAddGetMinFee_andGet() {
-
-        sut.setMinFee(QuarkAmount(100)).test {
-            assertEquals(QuarkAmount(100), value!!.get()!!)
-        }
-        sut.getMinFee().test {
-            assertEquals(QuarkAmount(100), value!!.get()!!)
-        }
-    }
-
-    @Test
     fun testInvoices() {
         val newAccount: KinAccount = TestUtils.newKinAccount()
         val invoiceList = InvoiceList.Builder()

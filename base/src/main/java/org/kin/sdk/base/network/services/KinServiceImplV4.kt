@@ -8,7 +8,6 @@ import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.KinTokenAccountInfo
-import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.solana.AssociatedTokenProgram
@@ -28,6 +27,7 @@ import org.kin.sdk.base.network.api.agora.toProto
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.stellar.models.SolanaKinTransaction
+import org.kin.sdk.base.tools.Base58
 import org.kin.sdk.base.tools.KinLoggerFactory
 import org.kin.sdk.base.tools.NetworkOperationsHandler
 import org.kin.sdk.base.tools.Observer
@@ -112,13 +112,7 @@ class KinServiceImplV4(
                     )
                 }
                 .then({ (serviceConfig, recentBlockHash, minRentExemption) ->
-
-//                    val tokenAccountSeed = signer.toSigningKeyPair().rawSecretSeed!!.sha256()
-//                    val tokenAccount = KeyPair.fromSecretSeed(tokenAccountSeed).asPrivateKey()
-//                    val tokenAccountPub: Key.PublicKey = tokenAccount.asPublicKey()
-
-                    val subsidizer: Key.PublicKey =
-                        serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
+                    val subsidizer: Key.PublicKey = serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
                     val owner: Key.PublicKey = signer.asPublicKey()
                     val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
                     val mint = serviceConfig.token!!.toKeyPair().asPublicKey()
@@ -135,19 +129,6 @@ class KinServiceImplV4(
 
                     val transaction = Transaction.newTransaction(
                         subsidizer,
-//                        SystemProgram.CreateAccount(
-//                            subsidizer = subsidizer,
-//                            address = tokenAccountPub,
-//                            owner = programKey,
-//                            lamports = minRentExemption.lamports!!,
-//                            size = TokenProgram.accountSize
-//                        ).instruction,
-//                        TokenProgram.InitializeAccount(
-//                            account = tokenAccountPub,
-//                            mint = mint,
-//                            owner = owner,
-//                            programKey = programKey
-//                        ).instruction,
                         *listOfNotNull(
                             memo?.let { MemoProgram.Base64EncodedMemo.fromBytes(it.encode()).instruction },
                             createAssocAccount.instruction,
@@ -161,6 +142,8 @@ class KinServiceImplV4(
                         ).toTypedArray()
                     ).copyAndSetRecentBlockhash(recentBlockHash.blockHash!!)
                         .copyAndSign(signer)
+
+                    println("transaction: (real) ${Base58.encode(transaction.marshal())}")
 
                     log.log { "serviceConfig: $serviceConfig" }
                     log.log { "recentBlockHash: $recentBlockHash" }
@@ -483,19 +466,13 @@ class KinServiceImplV4(
         }
     }
 
-    override fun canWhitelistTransactions(): Promise<Boolean> = Promise.of(true)
-
-    override fun getMinFee(): Promise<QuarkAmount> = Promise.of(QuarkAmount(0))
-
     override fun buildAndSignTransaction(
         ownerKey: Key.PrivateKey,
         sourceKey: Key.PublicKey,
-        nonce: Long,
         paymentItems: List<KinPaymentItem>,
-        memo: KinMemo,
-        fee: QuarkAmount
+        memo: KinMemo
     ): Promise<KinTransaction> {
-        log.log { "buildAndSignTransaction: ownerKey:$ownerKey sourceKey:$sourceKey nonce:$nonce paymentItems:$paymentItems memo:$memo fee:$fee" }
+        log.log { "buildAndSignTransaction: ownerKey:$ownerKey sourceKey:$sourceKey paymentItems:$paymentItems memo:$memo" }
         return networkOperationsHandler.queueWork { respond ->
             Promise.all(cachedServiceConfig(), cachedRecentBlockHash())
                 .onErrorResumeNextError {
@@ -570,7 +547,7 @@ class KinServiceImplV4(
                     KinTransactionApiV4.SubmitTransactionResponse.Result.InsufficientFee ->
                         KinService.FatalError.InsufficientFeeInRequest
                     KinTransactionApiV4.SubmitTransactionResponse.Result.BadSequenceNumber ->
-                        KinService.FatalError.BadSequenceNumberInRequest
+                        KinService.FatalError.BadBlockhashInRequest
                     KinTransactionApiV4.SubmitTransactionResponse.Result.NoAccount ->
                         KinService.FatalError.UnknownAccountInRequest
                     KinTransactionApiV4.SubmitTransactionResponse.Result.InsufficientBalance ->

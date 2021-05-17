@@ -62,23 +62,20 @@ class KinAccountContextReadOnlyImplTest {
     fun setUp() {
         excecutors = ExecutorServices()
         mockService = mock {
-            on { canWhitelistTransactions() } doReturn Promise.of(false)
-            on { getMinFee() } doReturn Promise.of(fee)
+
         }
         mockStorage = mock {
-            on { getMinFee() } doReturn Promise.of(Optional.of(fee))
             on { getStoredAccount(eq(registeredAccount.id)) } doReturn
                     Promise.of(Optional.of(registeredAccount))
             on { getMinApiVersion() } doReturn Promise.of(Optional.of(4))
         }
 
         mockService2 = mock {
-            on { canWhitelistTransactions() } doReturn Promise.of(false)
-            on { getMinFee() } doReturn Promise.of(fee)
         }
         mockStorage2 = mock {
-            on { getMinFee() } doReturn Promise.of(Optional.of(fee))
             on { getMinApiVersion() } doReturn Promise.of(Optional.of(4))
+            on { getStoredAccount(eq(registeredAccount2.id)) } doReturn
+                    Promise.of(Optional.of(registeredAccount2))
         }
 
         sut = KinAccountContext.Builder(

@@ -15,7 +15,7 @@ import org.kin.sdk.design.view.tools.BaseActivity
 import org.kin.sdk.design.view.widget.PrimaryButton
 import org.kin.sdk.design.view.widget.internal.StandardDialog
 import org.kin.sdk.design.view.widget.internal.StandardEditText
-import org.kin.sdk.design.view.tools.addBase32ChangedListener
+import org.kin.sdk.design.view.tools.addBase58ChangedListener
 import org.kin.sdk.design.view.tools.addIntegerChangedListener
 import org.kin.sdk.design.view.tools.addTo
 import org.kin.sdk.design.view.tools.dip
@@ -34,7 +34,6 @@ class SendTransactionActivity : BaseActivity<SendTransactionViewModel, SendTrans
 
     private lateinit var sendButton: PrimaryButton
     private lateinit var memoView: StandardEditText
-    private lateinit var feeView: StandardEditText
     private lateinit var amountView: StandardEditText
     private lateinit var publicAddressView: StandardEditText
 
@@ -62,14 +61,6 @@ class SendTransactionActivity : BaseActivity<SendTransactionViewModel, SendTrans
                 innerEditText.imeOptions = EditorInfo.IME_ACTION_NEXT
                 innerEditText.setRawInputType(InputType.TYPE_CLASS_NUMBER)
                 innerEditText.setSingleLine()
-                addTo(formLayout, bottomMargin = 8.dip)
-            }
-            feeView = with(StandardEditText(context)) {
-                setHintText(getString(R.string.hint_fee_amount))
-                innerEditText.imeOptions = EditorInfo.IME_ACTION_NEXT
-                innerEditText.setRawInputType(InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
-                innerEditText.setSingleLine()
-
                 addTo(formLayout, bottomMargin = 8.dip)
             }
             memoView = with(StandardEditText(context)) {
@@ -116,9 +107,8 @@ class SendTransactionActivity : BaseActivity<SendTransactionViewModel, SendTrans
             }
         }
 
-        publicAddressView.innerEditText.addBase32ChangedListener { viewModel.onDestinationAddressUpdated(it) }
+        publicAddressView.innerEditText.addBase58ChangedListener { viewModel.onDestinationAddressUpdated(it) }
         amountView.innerEditText.addIntegerChangedListener { viewModel.onAmountUpdated(it) }
-        feeView.innerEditText.addIntegerChangedListener { viewModel.onFeeUpdated(it) }
         memoView.innerEditText.addTextChangedListener { viewModel.onMemoUpdated(it.toString()) }
     }
 

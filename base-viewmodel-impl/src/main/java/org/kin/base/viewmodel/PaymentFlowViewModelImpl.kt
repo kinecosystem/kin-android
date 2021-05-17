@@ -141,7 +141,7 @@ class PaymentFlowViewModelImpl(
                     Result.Failure.Reason.BAD_NETWORK
                 is KinService.FatalError.IllegalRequest,
                 KinService.FatalError.UnknownAccountInRequest,
-                KinService.FatalError.BadSequenceNumberInRequest,
+                KinService.FatalError.BadBlockhashInRequest,
                 KinService.FatalError.InsufficientFeeInRequest ->
                     Result.Failure.Reason.MISCONFIGURED_REQUEST
                 is KinService.FatalError.InvoiceErrorsInRequest -> {

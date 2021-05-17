@@ -43,17 +43,11 @@ interface KinService {
 
     fun getTransaction(transactionHash: TransactionHash): Promise<KinTransaction>
 
-    fun canWhitelistTransactions(): Promise<Boolean>
-
-    fun getMinFee(): Promise<QuarkAmount>
-
     fun buildAndSignTransaction(
         ownerKey: Key.PrivateKey,
         sourceKey: Key.PublicKey,
-        nonce: Long,
         paymentItems: List<KinPaymentItem>,
-        memo: KinMemo,
-        fee: QuarkAmount
+        memo: KinMemo
     ): Promise<KinTransaction>
 
     fun submitTransaction(transaction: KinTransaction): Promise<KinTransaction>
@@ -99,8 +93,8 @@ interface KinService {
         object UnknownAccountInRequest :
             FatalError(IllegalStateException("Unknown Account"))
 
-        object BadSequenceNumberInRequest :
-            FatalError(IllegalArgumentException("Bad Sequence Number"))
+        object BadBlockhashInRequest :
+            FatalError(IllegalArgumentException("Bad Blockhash in Transaction"))
 
         object InsufficientFeeInRequest :
             FatalError(IllegalArgumentException("Insufficient Fee"))

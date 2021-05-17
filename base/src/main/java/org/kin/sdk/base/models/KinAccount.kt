@@ -27,7 +27,7 @@ data class KinAccount @JvmOverloads constructor(
         }
 
         override fun toString(): String {
-            return "Id(value=${stellarBase32Encode()}, b58=${base58Encode()})"
+            return "Id(value=${base58Encode()})"
         }
 
         fun stellarBase32Encode(): String = Key.PublicKey(value).stellarBase32Encode()

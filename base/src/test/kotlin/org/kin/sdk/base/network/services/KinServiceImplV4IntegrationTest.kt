@@ -197,14 +197,12 @@ class KinServiceImplV4IntegrationTest {
         context.service.buildAndSignTransaction(
             registeredAccount.key as Key.PrivateKey,
             registeredAccount.key.asPublicKey(),
-            (registeredAccount.status as KinAccount.Status.Registered).sequence,
             listOf(KinPaymentItem(KinAmount(1), destination.id)),
             KinBinaryMemo.Builder(0)
                 .setForeignKey(listOf(invoice).toProto().sha224Hash().decode())
                 .setTranferType(KinBinaryMemo.TransferType.Spend)
                 .build()
                 .toKinMemo(),
-            fee
         ).test {
             println("1: " + Base64.encodeBase64String((value as SolanaKinTransaction).bytesValue))
         }

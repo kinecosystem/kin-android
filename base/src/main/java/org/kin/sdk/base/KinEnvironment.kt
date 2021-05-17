@@ -39,6 +39,7 @@ sealed class KinEnvironment {
     abstract val storage: Storage
     internal abstract val executors: ExecutorServices
     internal abstract val networkHandler: NetworkOperationsHandler
+    abstract val shouldAutoMergeTokenAccounts: Boolean
 
     class Agora private constructor(
         private val managedChannel: ManagedChannel,
@@ -51,6 +52,7 @@ sealed class KinEnvironment {
         val appInfoRepository: AppInfoRepository = InMemoryAppInfoRepositoryImpl(),
         val invoiceRepository: InvoiceRepository = InMemoryInvoiceRepositoryImpl(),
         val appInfoProvider: AppInfoProvider,
+        override var shouldAutoMergeTokenAccounts: Boolean,
     ) : KinEnvironment() {
         class Builder(private val networkEnvironment: NetworkEnvironment) {
             private var managedChannel: ManagedChannel? = null
@@ -61,6 +63,7 @@ sealed class KinEnvironment {
             private var appInfoProvider: AppInfoProvider? = null
             private var service: KinService? = null
             private var minApiVersion: Int = 4
+            private var shouldAutoMergeTokenAccounts = true
 
             private lateinit var storage: Storage
             private var storageBuilder: KinFileStorage.Builder? = null
@@ -115,7 +118,8 @@ sealed class KinEnvironment {
                         executors = executors,
                         networkHandler = networkHandler,
                         service = service,
-                        appInfoProvider = appInfoProvider
+                        appInfoProvider = appInfoProvider,
+                        shouldAutoMergeTokenAccounts = shouldAutoMergeTokenAccounts
                     ).apply {
                         appInfoRepository.addAppInfo(appInfoProvider.appInfo)
 
@@ -186,6 +190,11 @@ sealed class KinEnvironment {
                     this.storageBuilder = fileStorageBuilder
                     CompletedBuilder()
                 }
+
+            /* By default this it set to auto-merge token accounts */
+            fun doNotAutoMergeTokenAccounts(): Builder = apply {
+                this.shouldAutoMergeTokenAccounts = false
+            }
         }
     }
 

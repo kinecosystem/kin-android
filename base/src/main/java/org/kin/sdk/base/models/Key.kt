@@ -32,7 +32,7 @@ sealed class Key {
         }
 
         override fun toString(): String {
-            return "Key.PublicKey(value=${stellarBase32Encode()}, b58=${base58Encode()})"
+            return "Key.PublicKey(value=${base58Encode()})"
         }
 
         fun stellarBase32Encode(): String = KeyPair.fromPublicKey(value).accountId

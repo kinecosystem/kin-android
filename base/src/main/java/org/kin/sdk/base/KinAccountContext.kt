@@ -16,15 +16,12 @@ import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.KinTokenAccountInfo
-import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.merge
-import org.kin.sdk.base.models.toKin
-import org.kin.sdk.base.models.toQuarks
 import org.kin.sdk.base.network.api.agora.sha224Hash
 import org.kin.sdk.base.network.api.agora.toProto
 import org.kin.sdk.base.network.services.AppInfoProvider
@@ -163,8 +160,6 @@ interface KinPaymentReadOperationsAltIdioms {
 }
 
 interface KinPaymentReadOperations : KinPaymentReadOperationsAltIdioms {
-
-    fun calculateFee(numberOfOperations: Int): Promise<QuarkAmount>
 
     /**
      * Retrieves the last N [KinPayment]s sent or received by the
@@ -392,7 +387,8 @@ class KinAccountContextImpl private constructor(
     override val storage: Storage,
     override val accountId: KinAccount.Id,
     override val appInfoProvider: AppInfoProvider,
-    override val logger: KinLoggerFactory
+    override val logger: KinLoggerFactory,
+    shouldAutoMergeTokenAccounts: Boolean
 ) : KinAccountContextBase(), KinAccountContext {
 
     /**
@@ -408,7 +404,8 @@ class KinAccountContextImpl private constructor(
             env.storage,
             setupNewAccount(env.storage).id,
             (env as KinEnvironment.Agora).appInfoProvider,
-            env.logger
+            env.logger,
+            env.shouldAutoMergeTokenAccounts
         )
 
         private fun setupNewAccount(storage: Storage): KinAccount {
@@ -434,18 +431,21 @@ class KinAccountContextImpl private constructor(
                 env.storage,
                 accountId,
                 (env as KinEnvironment.Agora).appInfoProvider,
-                env.logger
+                env.logger,
+                env.shouldAutoMergeTokenAccounts
             )
     }
 
     private val outgoingTransactions = PromiseQueue<List<KinPayment>>()
 
     init {
-        mergeTokenAccountsIfNecessary().then({
-            println("tokenAccounts: ${it}")
-        }, {
-            println("mergeAccountsFailure: {$it}")
-        })
+        if (shouldAutoMergeTokenAccounts) {
+            mergeTokenAccountsIfNecessary().then({
+                println("tokenAccounts: ${it}")
+            }, {
+                println("mergeAccountsFailure: {$it}")
+            })
+        }
     }
 
     private fun mergeTokenAccountsIfNecessary(): Promise<List<KinTokenAccountInfo>> {
@@ -658,16 +658,12 @@ class KinAccountContextImpl private constructor(
             return sourceAccountPromise.flatMap { accountData ->
                 paymentItemsPromise.flatMap {
                     attemptCount++
-                    calculateFee(payments.size).flatMap { fee ->
-                        service.buildAndSignTransaction(
-                            accountData.ownerKey,
-                            accountData.sourceKey,
-                            accountData.nonce,
-                            it,
-                            memo,
-                            fee
-                        )
-                    }
+                    service.buildAndSignTransaction(
+                        accountData.ownerKey,
+                        accountData.sourceKey,
+                        it,
+                        memo
+                    )
                 }
             }
         }
@@ -682,14 +678,9 @@ class KinAccountContextImpl private constructor(
                     .workOn(executors.parallelIO)
                     .onErrorResumeNext { error ->
                         when (error) {
-                            is KinService.FatalError.BadSequenceNumberInRequest -> {
+                            is KinService.FatalError.BadBlockhashInRequest -> {
                                 service.invalidateBlockhashCache()
                                 attempt(error)
-                            }
-                            is KinService.FatalError.InsufficientFeeInRequest -> {
-                                service.getMinFee()
-                                    .flatMap { storage.setMinFee(it) }
-                                    .flatMap { attempt(error) }
                             }
                             is KinService.FatalError.UnknownAccountInRequest -> {
                                 val delay = invalidAccountErrorRetryStrategy.nextDelay()
@@ -886,23 +877,6 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
         return storage.deleteAllStorage(accountId)
     }
 
-
-    override fun calculateFee(numberOfOperations: Int): Promise<QuarkAmount> =
-        service.canWhitelistTransactions()
-            .flatMap {
-                if (it) Promise.of(KinAmount.ZERO.toQuarks())
-                else {
-                    storage.getMinFee()
-                        .flatMap {
-                            it.map { Promise.of(it) }
-                                .orElse {
-                                    service.getMinFee()
-                                        .doOnResolved { storage.setMinFee(it).resolve() }
-                                }
-                        }.map { QuarkAmount(it.value * numberOfOperations) }
-                }
-            }
-
     // Internal
 
     private fun requestNextPage(): Promise<List<KinTransaction>> {
@@ -952,7 +926,7 @@ abstract class KinAccountContextBase : KinAccountReadOperations, KinPaymentReadO
         return storage.getStoredAccount(accountId)
             .map {
                 val amountToDeduct = with(transaction.asKinPayments()) {
-                    var totalAmount = transaction.fee.toKin()
+                    var totalAmount = KinAmount.ZERO
                     filter {
                         it.destinationAccountId != accountId
                     }.forEach { payment ->

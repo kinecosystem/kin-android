@@ -24,6 +24,7 @@ import org.kin.sdk.base.models.KinBalance
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.LineItem
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
@@ -62,7 +63,8 @@ import kotlin.test.assertTrue
 class KinAccountContextImplTest {
 
     companion object {
-        val registeredAccount = TestUtils.newSigningKinAccount()
+        val privateKey = TestUtils.newPrivateKey()
+        val registeredAccount = KinAccount(privateKey)
             .updateStatus(KinAccount.Status.Registered(1234)).copy(
                 balance = KinBalance(KinAmount(1000))
             )
@@ -94,21 +96,19 @@ class KinAccountContextImplTest {
     fun setUp() {
         excecutors = ExecutorServices()
         mockService = mock {
-            on { canWhitelistTransactions() } doReturn Promise.of(false)
-            on { getMinFee() } doReturn Promise.of(fee)
+
         }
         mockStorage = mock {
-            on { getMinFee() } doReturn Promise.of(Optional.of(fee))
             on { getMinApiVersion() } doReturn Promise.of(Optional.empty())
+//            on { getStoredAccount(eq(registeredAccount.id))} doReturn Promise.of(Optional.of(registeredAccount))
         }
 
         mockService2 = mock {
-            on { canWhitelistTransactions() } doReturn Promise.of(false)
-            on { getMinFee() } doReturn Promise.of(fee)
+
         }
         mockStorage2 = mock {
-            on { getMinFee() } doReturn Promise.of(Optional.of(fee))
             on { getMinApiVersion() } doReturn Promise.of(Optional.empty())
+//            on { getStoredAccount(eq(registeredAccount2.id))} doReturn Promise.of(Optional.of(registeredAccount2))
         }
 
         sut = KinAccountContext.Builder(
@@ -129,6 +129,7 @@ class KinAccountContextImplTest {
                 })
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
+                .doNotAutoMergeTokenAccounts()
                 .setStorage(mockStorage)
         ).useExistingAccount(registeredAccount.id).build()
 
@@ -150,12 +151,13 @@ class KinAccountContextImplTest {
                 })
                 .setKinService(mockService2)
                 .setExecutorServices(excecutors)
+                .doNotAutoMergeTokenAccounts()
                 .setStorage(mockStorage2)
         ).useExistingAccount(registeredAccount2.id).build()
 
         doAnswer {
             val accountId: KinAccount.Id = it.arguments.first() as KinAccount.Id
-            Promise.of(listOf(accountId.toKeyPair().asPublicKey()))
+            Promise.of(listOf(KinTokenAccountInfo(accountId.toKeyPair().asPublicKey(), KinAmount.ONE, null)))
         }.whenever(mockService).resolveTokenAccounts(any())
 
         verify(mockStorage).getAllAccountIds()
@@ -169,6 +171,7 @@ class KinAccountContextImplTest {
                 .setAppInfoProvider(KinEnvironmentTest.DummyAppInfoProvider())
                 .setKinService(mockService)
                 .setExecutorServices(excecutors)
+                .doNotAutoMergeTokenAccounts()
                 .setStorage(mockStorage)
         ).createNewAccount().build()
 
@@ -201,8 +204,8 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.SDKUpgradeRequired)
         }.whenever(mockService).createAccount(eq(registeredAccount.id),
-            eq(registeredAccount.key as Key.PrivateKey),
-            AppIdx.TEST_APP_IDX) 
+            eq(privateKey),
+            eq(AppIdx.TEST_APP_IDX))
 
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.SDKUpgradeRequired)
@@ -213,7 +216,7 @@ class KinAccountContextImplTest {
             assertNull(value)
 
             verify(mockStorage).getStoredAccount(eq(registeredAccount.id))
-            verify(mockService).createAccount(any(), any(), AppIdx.TEST_APP_IDX)
+            verify(mockService).createAccount(any(), any(), eq(AppIdx.TEST_APP_IDX))
             verifyZeroInteractions(mockService)
             verifyNoMoreInteractions(mockStorage)
         }
@@ -275,7 +278,7 @@ class KinAccountContextImplTest {
 
         val newKey = TestUtils.newPublicKey()
         doAnswer {
-            Promise.of(listOf(newKey))
+            Promise.of(listOf(KinTokenAccountInfo(newKey, KinAmount.ONE, null)))
         }.whenever(mockService).resolveTokenAccounts(eq(registeredAccount.id))
 
         doAnswer {
@@ -313,7 +316,7 @@ class KinAccountContextImplTest {
             Promise.of(registeredAccountNoPrivKey)
         }.whenever(mockService).createAccount(eq(accountId),
             eq(registeredAccount.key as Key.PrivateKey),
-            AppIdx.TEST_APP_IDX)
+            eq(AppIdx.TEST_APP_IDX))
 
         doAnswer {
             Promise.of(Optional.of(unregisteredAccount))
@@ -329,8 +332,8 @@ class KinAccountContextImplTest {
             assertEquals(registeredAccount, value)
 
             verify(mockService).createAccount(eq(accountId),
-                eq(registeredAccount.key as Key.PrivateKey),
-                AppIdx.TEST_APP_IDX)
+                eq(privateKey),
+                eq(AppIdx.TEST_APP_IDX))
             verify(mockStorage).getStoredAccount(eq(accountId))
             verify(mockStorage).updateAccount(eq(registeredAccount))
             verifyNoMoreInteractions(mockService)
@@ -349,8 +352,9 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.error<KinAccount>(KinService.FatalError.PermanentlyUnavailable)
         }.whenever(mockService).createAccount(eq(accountId),
-            eq(registeredAccount.key as Key.PrivateKey),
-            AppIdx.TEST_APP_IDX)
+            eq(privateKey),
+            eq(AppIdx.TEST_APP_IDX)
+        )
 
         doAnswer {
             Promise.of(registeredAccountNoPrivKey)
@@ -374,8 +378,8 @@ class KinAccountContextImplTest {
             assertEquals(registeredAccount, value)
 
             verify(mockService).createAccount(eq(accountId),
-                eq(registeredAccount.key as Key.PrivateKey),
-                AppIdx.TEST_APP_IDX)
+                eq(privateKey),
+               eq(AppIdx.TEST_APP_IDX))
             verify(mockService).getAccount(eq(accountId))
             verify(mockStorage).getStoredAccount(eq(accountId))
             verify(mockStorage).updateAccountInStorage(eq(registeredAccountNoPrivKey))
@@ -595,10 +599,8 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
         )
 
         doAnswer {
@@ -645,13 +647,9 @@ class KinAccountContextImplTest {
             verify(mockService).buildAndSignTransaction(
                 eq(registeredAccount.key as Key.PrivateKey),
                 eq(registeredAccount.key.asPublicKey()),
-                eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
                 eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
                 eq(KinMemo.NONE),
-                eq(fee)
             )
-            verify(mockService).canWhitelistTransactions()
-            verify(mockStorage).getMinFee()
             val expectedTransactionToSubmit = {Promise.of(transactionToBeSent as KinTransaction)}
             verify(mockService).buildSignAndSubmitTransaction(any())
             verify(mockStorage).advanceSequence(eq(registeredAccount.id))
@@ -705,10 +703,8 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id, Optional.of(invoice)))),
             eq(expectedMemo),
-            eq(fee)
         )
 
         doAnswer {
@@ -757,13 +753,9 @@ class KinAccountContextImplTest {
             verify(mockService).buildAndSignTransaction(
                 eq(registeredAccount.key as Key.PrivateKey),
                 eq(registeredAccount.key.asPublicKey()),
-                eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
                 eq(listOf(KinPaymentItem(KinAmount(123), destination.id, Optional.of(invoice)))),
                 eq(expectedMemo),
-                eq(fee)
             )
-            verify(mockService).canWhitelistTransactions()
-            verify(mockStorage).getMinFee()
             verify(mockService).buildSignAndSubmitTransaction(any())
             verify(mockStorage).advanceSequence(eq(registeredAccount.id))
             verify(mockStorage).insertNewTransactionInStorage(
@@ -806,10 +798,8 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
         )
 
         doAnswer {
@@ -873,10 +863,8 @@ class KinAccountContextImplTest {
         verify(mockService, times(3)).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
         )
         verify(mockService, times(3)).buildSignAndSubmitTransaction(any())
         verify(mockStorage, times(3)).advanceSequence(eq(registeredAccount.id))
@@ -889,8 +877,6 @@ class KinAccountContextImplTest {
             eq(KinBalance(registeredAccount.balance.amount -amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
-        verify(mockService, times(3)).canWhitelistTransactions()
-        verify(mockStorage, times(3)).getMinFee()
         verifyNoMoreInteractions(mockService)
         verifyNoMoreInteractions(mockStorage)
     }
@@ -925,10 +911,8 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
         )
 
         doAnswer {
@@ -950,7 +934,7 @@ class KinAccountContextImplTest {
 
         doAnswer {
             if (++i == 0 || i == 2) {
-                Promise.error(KinService.FatalError.BadSequenceNumberInRequest)
+                Promise.error(KinService.FatalError.BadBlockhashInRequest)
             } else {
                 Promise.of(responseTransaction)
             }
@@ -1003,10 +987,8 @@ class KinAccountContextImplTest {
         verify(mockService, times(5)).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
         )
         verify(
             mockService,
@@ -1024,8 +1006,6 @@ class KinAccountContextImplTest {
             eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
-        verify(mockService, times(5)).canWhitelistTransactions()
-        verify(mockStorage, times(5)).getMinFee()
         verify(mockService, times(4)).resolveTokenAccounts(any())
         verify(mockStorage, times(2)).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(
             registeredAccount.key.asPublicKey()))))
@@ -1063,10 +1043,8 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
         )
 
         doAnswer {
@@ -1087,7 +1065,7 @@ class KinAccountContextImplTest {
         var i = -1
 
         doAnswer {
-            Promise.error<KinTransaction>(KinService.FatalError.BadSequenceNumberInRequest)
+            Promise.error<KinTransaction>(KinService.FatalError.BadBlockhashInRequest)
         }.whenever(mockService).buildSignAndSubmitTransaction(any())
 
         val amountSpent = KinAmount(123)
@@ -1118,7 +1096,7 @@ class KinAccountContextImplTest {
         }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
 
         sut.sendKinPayment(KinAmount(123), destination.id).test(1000) {
-            assertEquals(KinService.FatalError.BadSequenceNumberInRequest, error)
+            assertEquals(KinService.FatalError.BadBlockhashInRequest, error)
         }
 
         verify(mockStorage, times(12)).getStoredAccount(eq(registeredAccount.id))
@@ -1126,10 +1104,10 @@ class KinAccountContextImplTest {
         verify(mockService, times(6)).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
         verify(
             mockService,
@@ -1147,8 +1125,6 @@ class KinAccountContextImplTest {
             eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(0)).getStoredTransactions(eq(registeredAccount.id))
-        verify(mockService, times(6)).canWhitelistTransactions()
-        verify(mockStorage, times(6)).getMinFee()
         verify(mockService, times(10)).resolveTokenAccounts(any())
         verify(mockStorage, times(5)).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(
             registeredAccount.key.asPublicKey()))))
@@ -1186,10 +1162,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
 
         doAnswer {
@@ -1245,10 +1221,10 @@ class KinAccountContextImplTest {
         verify(mockService, times(1)).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
         verify(
             mockService,
@@ -1266,150 +1242,6 @@ class KinAccountContextImplTest {
             eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
         )
         verify(mockStorage, times(0)).getStoredTransactions(eq(registeredAccount.id))
-        verify(mockService, times(1)).canWhitelistTransactions()
-        verify(mockStorage, times(1)).getMinFee()
-        verifyNoMoreInteractions(mockService)
-        verifyNoMoreInteractions(mockStorage)
-    }
-
-    @Test
-    fun sendThreeKinPayments_with_insufficient_fee_for_first_two() {
-        val destination = TestUtils.newKinAccount()
-        val transactionToBeSent =
-            SolanaKinTransaction(
-                Base64.decodeBase64("AgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABhp+xHw13QTBg0/2iNL+W0wZ/W9fAF76qqZH8Al+djtT4xw1fIufa+fmDQ5EFlwziYixu4Xt3tqgIwcJm41DgCAgABBCsVqc1L7yzYCeRkVw0qbL2bzGTjLqTrvPdIdXu7PdW94cG3LT0a+kX6wqa2O0qYbqC6rMebhyR0LBQgHRjoebjh8kk+ML92HthfRee5O1nEhhSh3G/n3/omSR1jJoT8qQbd9uHXZaGT2cvhRs7reawctIXtX1s3kTqM9YV+/wCp/emg+dGNKfC5/F0EbUpvD4rCYPM6q/9+KMsPHsXv4esBAwMBAgEJA+CuuwAAAAAA")!!,
-                networkEnvironment = networkEnvironment
-            )
-        val responseTransaction = SolanaKinTransaction(
-            transactionToBeSent.bytesValue,
-            KinTransaction.RecordType.Acknowledged(
-                System.currentTimeMillis(),
-                KinTransaction.ResultCode.Success
-            ),
-            networkEnvironment
-        )
-
-        doAnswer {
-            Promise.of(Optional.of(registeredAccount))
-        }.whenever(mockStorage).getStoredAccount(eq(registeredAccount.id))
-
-        doAnswer {
-            Promise.of(registeredAccount)
-        }.whenever(mockService).getAccount(eq(registeredAccount.id))
-
-        doAnswer {
-            Promise.of(transactionToBeSent)
-        }.whenever(mockService).buildAndSignTransaction(
-            eq(registeredAccount.key as Key.PrivateKey),
-            eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
-            eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
-            eq(KinMemo.NONE),
-            eq(fee)
-        )
-
-        doAnswer {
-            Promise.of(registeredAccount)
-        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount))
-
-        doAnswer {
-            Promise.of(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey())))
-        }.whenever(mockStorage).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(registeredAccount.id.toKeyPair().asPublicKey()))))
-
-        doAnswer {
-            Promise.of(listOf(responseTransaction))
-        }.whenever(mockStorage).insertNewTransactionInStorage(
-            eq(registeredAccount.id),
-            eq(responseTransaction)
-        )
-
-        doAnswer {
-            Promise.of(Optional.of(fee))
-        }.whenever(mockStorage).setMinFee(eq(fee))
-
-        var i = -1
-
-        doAnswer {
-            if (++i == 0 || i == 2) {
-                Promise.error(KinService.FatalError.InsufficientFeeInRequest)
-            } else {
-                Promise.of(responseTransaction)
-            }
-        }.whenever(mockService).buildSignAndSubmitTransaction(any())
-
-        val amountSpent = KinAmount(123)
-        val updatedAccountWithNewBalance = registeredAccount.merge(
-            KinAccount(
-                registeredAccount.key,
-                balance = KinBalance(amountSpent)
-            )
-        )
-
-        doAnswer {
-            Promise.of(Optional.of(updatedAccountWithNewBalance))
-        }.whenever(mockStorage).updateAccountBalance(
-            eq(registeredAccount.id),
-            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
-        )
-
-        doAnswer {
-            Promise.of(
-                KinTransactions(
-                    listOf(
-                        responseTransaction,
-                        responseTransaction,
-                        responseTransaction
-                    ), null, null
-                )
-            )
-        }.whenever(mockStorage).getStoredTransactions(eq(registeredAccount.id))
-
-        sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
-            assertNull(error)
-            assertEquals(responseTransaction.asKinPayments().first(), value)
-        }
-
-        sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
-            assertNull(error)
-            assertEquals(responseTransaction.asKinPayments().first(), value)
-        }
-
-        sut.sendKinPayment(KinAmount(123), destination.id).test(10) {
-            assertNull(error)
-            assertEquals(responseTransaction.asKinPayments().first(), value)
-        }
-
-        verify(mockStorage, times(10)).getStoredAccount(eq(registeredAccount.id))
-        verify(mockService, times(5)).buildAndSignTransaction(
-            eq(registeredAccount.key as Key.PrivateKey),
-            eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
-            eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
-            eq(KinMemo.NONE),
-            eq(fee)
-        )
-        verify(
-            mockService,
-            times(5)
-        ).buildSignAndSubmitTransaction(any()) // 5 due to 2 retries
-        verify(mockStorage, times(3))
-            .advanceSequence(eq(registeredAccount.id))
-        verify(mockService, times(2)).getMinFee()
-        verify(mockStorage, times(2)).setMinFee(eq(fee))
-        verify(mockStorage, times(3)).insertNewTransactionInStorage(
-            eq(registeredAccount.id),
-            eq(responseTransaction)
-        )
-        verify(mockStorage, times(3)).updateAccountBalance(
-            eq(registeredAccount.id),
-            eq(KinBalance(registeredAccount.balance.amount - amountSpent - responseTransaction.fee.toKin()))
-        )
-        verify(mockStorage, times(3)).getStoredTransactions(eq(registeredAccount.id))
-        verify(mockService, times(5)).canWhitelistTransactions()
-        verify(mockStorage, times(5)).getMinFee()
-        verify(mockService, times(4)).resolveTokenAccounts(any())
-        verify(mockStorage, times(2)).updateAccountInStorage(eq(registeredAccount.copy(tokenAccounts = listOf(
-            registeredAccount.key.asPublicKey()))))
         verifyNoMoreInteractions(mockService)
         verifyNoMoreInteractions(mockStorage)
     }
@@ -1493,10 +1325,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(1), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
 
         doAnswer {
@@ -1504,10 +1336,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(2), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
 
         doAnswer {
@@ -1515,10 +1347,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(3), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
 
         doAnswer {
@@ -1574,10 +1406,8 @@ class KinAccountContextImplTest {
         }.whenever(mockService2).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount2.key.asPublicKey()),
-            eq((registeredAccount2.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(4), registeredAccount.id))),
             eq(KinMemo.NONE),
-            eq(fee)
         )
 
         doAnswer {
@@ -1585,10 +1415,8 @@ class KinAccountContextImplTest {
         }.whenever(mockService2).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount2.key.asPublicKey()),
-            eq((registeredAccount2.status as KinAccount.Status.Registered).sequence),
             eq(listOf(KinPaymentItem(KinAmount(5), registeredAccount.id))),
             eq(KinMemo.NONE),
-            eq(fee)
         )
 
         doAnswer {
@@ -1728,20 +1556,20 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(3), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(4), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
 
         doAnswer {
@@ -1749,10 +1577,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            eq((registeredAccount.status as KinAccount.Status.Registered).sequence),
+            
             eq(listOf(KinPaymentItem(KinAmount(5), destination.id))),
             eq(KinMemo.NONE),
-            eq(fee)
+            
         )
 
         doAnswer {

@@ -223,10 +223,13 @@ class AgoraKinAccountsApiV4Test {
             ) {
                 responseObserver?.onNext(
                     AccountService.ResolveTokenAccountsResponse.newBuilder()
-                        .addAllTokenAccounts(
+                        .addAllTokenAccountInfos(
                             listOf(
-                                Model.SolanaAccountId.newBuilder()
-                                    .setValue(ByteString.copyFrom(KinAccount.Id("GC4ATKYF6C66DSWN6QBXANRYEBSMGDYCNL6FXK5MZDJMKIFU2GSVLTTQ").value))
+                                AccountService.AccountInfo.newBuilder()
+                                    .setAccountId(Model.SolanaAccountId.newBuilder()
+                                        .setValue(ByteString.copyFrom(KinAccount.Id("GC4ATKYF6C66DSWN6QBXANRYEBSMGDYCNL6FXK5MZDJMKIFU2GSVLTTQ").value))
+                                        .build())
+                                    .setBalance(1L)
                                     .build()
                             )
                         )
@@ -242,7 +245,7 @@ class AgoraKinAccountsApiV4Test {
                 )
             ) { capture(it) }
         }.testValue {
-            assertEquals(account.key, it.accounts.first())
+            assertEquals(account.key, it.accounts.first().key)
         }
     }
 

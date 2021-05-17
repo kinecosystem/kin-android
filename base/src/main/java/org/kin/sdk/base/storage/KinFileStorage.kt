@@ -441,31 +441,6 @@ class KinFileStorage @JvmOverloads internal constructor(
             }
     }
 
-    override fun setMinFee(minFee: QuarkAmount): Promise<Optional<QuarkAmount>> {
-        return Promise.create<Optional<QuarkAmount>> { resolve, _ ->
-            val updatedKinConfig = getKinConfig()
-                .map {
-                    it.toBuilder()
-                }
-                .orElse {
-                    StorageKinConfig.newBuilder()
-                }
-                .setMinFee(minFee.value.toLong())
-                .build()
-
-            resolve(
-                if (setKinConfig(updatedKinConfig)) Optional.of(minFee)
-                else Optional.empty<QuarkAmount>()
-            )
-        }.workOn(executors.sequentialIO)
-    }
-
-    override fun getMinFee(): Promise<Optional<QuarkAmount>> {
-        return Promise.create<Optional<QuarkAmount>> { resolve, _ ->
-            resolve(getKinConfig().map { QuarkAmount(it.minFee) })
-        }.workOn(executors.sequentialIO)
-    }
-
     override fun deleteAllStorage(accountId: KinAccount.Id): Promise<Boolean> {
         return Promise.create<Boolean> { resolve, _ ->
             resolve(

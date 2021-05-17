@@ -54,17 +54,14 @@ class ModernFullInvoiceViewModel(
         }
 
         if (args.payerAccountId != null) {
-            payerkinAccountContext?.calculateFee(1)
-                ?.then { fee ->
-                    updateState {
-                        it.copy(
-                            invoice = it.invoice?.copy(
-                                fee = fee.toKin().value,
-                                total = it.invoice?.let { it.total + fee.toKin().value }
-                                    ?: BigDecimal.ZERO)
-                        )
-                    }
-                }
+            updateState {
+                it.copy(
+                    invoice = it.invoice?.copy(
+                        fee = BigDecimal.ZERO,
+                        total = it.invoice?.let { it.total }
+                            ?: BigDecimal.ZERO)
+                )
+            }
         }
     }
 

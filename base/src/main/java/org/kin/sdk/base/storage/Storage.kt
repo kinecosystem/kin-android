@@ -73,10 +73,6 @@ interface Storage {
         balance: KinBalance
     ): Promise<Optional<KinAccount>>
 
-    fun setMinFee(minFee: QuarkAmount): Promise<Optional<QuarkAmount>>
-
-    fun getMinFee(): Promise<Optional<QuarkAmount>>
-
     fun deleteAllStorage(accountId: KinAccount.Id): Promise<Boolean>
 
     fun deleteAllStorage(): Promise<Boolean>

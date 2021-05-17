@@ -72,7 +72,7 @@ class ModernHomeViewModel(
                     previousState.copy(
                         /*mainNetWallets = listOf(AddMainNetWalletItemViewModel()) , */
                         testNetWallets = accountIds.mapIndexed { index, accountId ->
-                            WalletItemViewModel(index, accountId.stellarBase32Encode(), navigator)
+                            WalletItemViewModel(index, accountId.base58Encode(), navigator)
                         }  + ImportTestNetWalletItemViewModel() + AddTestNetWalletItemViewModel()
                     )
                 }

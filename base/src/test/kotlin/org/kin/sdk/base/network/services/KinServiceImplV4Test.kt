@@ -20,17 +20,20 @@ import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.KinDateFormat
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.LineItem
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.asKinAccountId
 import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
+import org.kin.sdk.base.models.solana.AssociatedTokenProgram
 import org.kin.sdk.base.models.solana.FixedByteArray32
 import org.kin.sdk.base.models.solana.Hash
-import org.kin.sdk.base.models.solana.SystemProgram
+import org.kin.sdk.base.models.solana.MemoProgram
 import org.kin.sdk.base.models.solana.TokenProgram
 import org.kin.sdk.base.models.solana.Transaction
+import org.kin.sdk.base.models.solana.marshal
 import org.kin.sdk.base.models.solana.unmarshal
 import org.kin.sdk.base.models.toKeyPair
 import org.kin.sdk.base.models.toSigningKeyPair
@@ -40,15 +43,14 @@ import org.kin.sdk.base.network.api.KinStreamingApiV4
 import org.kin.sdk.base.network.api.KinTransactionApiV4
 import org.kin.sdk.base.stellar.models.ApiConfig
 import org.kin.sdk.base.stellar.models.KinTransaction
+import org.kin.sdk.base.tools.Base58
 import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
 import org.kin.sdk.base.tools.Optional
 import org.kin.sdk.base.tools.TestUtils
 import org.kin.sdk.base.tools.ValueSubject
-import org.kin.sdk.base.tools.sha256
 import org.kin.sdk.base.tools.test
 import org.kin.sdk.base.tools.updateStatus
-import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.codec.Base64
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -67,41 +69,44 @@ class KinServiceImplV4Test {
         val tokenKey = TokenProgram.PROGRAM_KEY
         val mintKey = Key.PublicKey("GBJEHPZ5WWQ7QZZKARPYSZCKZ3ZOJQWYRGABSN6LAUNQRN7KBOQL5EXS")
         val recentBlockHash = Hash(FixedByteArray32())
+        val appIndex = AppIdx.TEST_APP_IDX
 
         val registeredAccount = account.updateStatus(KinAccount.Status.Registered(1234))
         val createRequest = run {
             val subsidizer: Key.PublicKey = subsidizerId.toKeyPair().asPublicKey()
+            val owner = account.key.asPublicKey()
+            val programKey = tokenKey
+            val mint = mintKey
 
             val signer = account.toSigningKeyPair().asPrivateKey()
-            val tokenAccountSeed = signer.toSigningKeyPair().rawSecretSeed!!.sha256()
-            val tokenAccount = KeyPair.fromSecretSeed(tokenAccountSeed).asPrivateKey()
-            val accountPub: Key.PublicKey = tokenAccount.asPublicKey()
-            val owner = account.key.asPublicKey()
+
+            val memo = if (appIndex.value > 0) KinBinaryMemo.Builder(appIndex.value)
+                .setTranferType(KinBinaryMemo.TransferType.None)
+                .build() else null
+
+            val createAssocAccount = AssociatedTokenProgram.CreateAssociatedTokenAccount(
+                subsidizer,
+                owner,
+                mint
+            )
 
             val transaction = Transaction.newTransaction(
                 subsidizer,
-                SystemProgram.CreateAccount(
-                    subsidizer = subsidizer,
-                    address = accountPub,
-                    owner = TokenProgram.PROGRAM_KEY,
-                    lamports = minRentExemptionInLamports,
-                    size = TokenProgram.accountSize
-                ).instruction,
-                TokenProgram.InitializeAccount(
-                    account = accountPub,
-                    mint = mintKey,
-                    owner = owner,
-                    programKey = tokenKey
-                ).instruction,
-                TokenProgram.SetAuthority(
-                    account = accountPub,
-                    currentAuthority = owner,
-                    newAuthority = subsidizer,
-                    authorityType = TokenProgram.AuthorityType.AuthorityCloseAccount,
-                    programKey = tokenKey
-                ).instruction
+                *listOfNotNull(
+                    memo?.let { MemoProgram.Base64EncodedMemo.fromBytes(it.encode()).instruction },
+                    createAssocAccount.instruction,
+                    TokenProgram.SetAuthority(
+                        account = createAssocAccount.addr,
+                        currentAuthority = owner,
+                        newAuthority = subsidizer,
+                        authorityType = TokenProgram.AuthorityType.AuthorityCloseAccount,
+                        programKey = programKey
+                    ).instruction
+                ).toTypedArray()
             ).copyAndSetRecentBlockhash(recentBlockHash)
-                .copyAndSign(signer, tokenAccount)
+                .copyAndSign(signer)
+
+            println("transaction: ${Base58.encode(transaction.marshal())}")
 
             KinAccountCreationApiV4.CreateAccountRequest(transaction)
         }
@@ -423,7 +428,7 @@ class KinServiceImplV4Test {
 
     @Test
     fun resolveAccount_success() {
-        val tokenAccounts = listOf(TestUtils.newPublicKey())
+        val tokenAccounts = listOf(KinTokenAccountInfo(TestUtils.newPublicKey(), KinAmount.ONE, null))
         doAnswer {
             val respond =
                 it.getArgument<(KinAccountApiV4.ResolveTokenAccountsResponse) -> Unit>(1)
@@ -1089,10 +1094,8 @@ class KinServiceImplV4Test {
         sut.buildAndSignTransaction(
             sourceAccount.key as Key.PrivateKey,
             sourceAccount.key.asPublicKey(),
-            (sourceAccount.status as KinAccount.Status.Registered).sequence,
             listOf(KinPaymentItem(KinAmount(123), destinationAccount.id)),
             KinMemo.NONE,
-            QuarkAmount(100)
         ).test {
             assertNull(error)
             assertNotNull(value)
@@ -1122,14 +1125,12 @@ class KinServiceImplV4Test {
         sut.buildAndSignTransaction(
             sourceAccount.key as Key.PrivateKey,
             sourceAccount.key.asPublicKey(),
-            (sourceAccount.status as KinAccount.Status.Registered).sequence,
             listOf(KinPaymentItem(KinAmount(123), destinationAccount.id)),
             KinBinaryMemo.Builder(1)
                 .setForeignKey(byteArrayOf(1,2,3))
                 .setTranferType(KinBinaryMemo.TransferType.Spend)
                 .build()
                 .toKinMemo(),
-            QuarkAmount(100)
         ).test {
             assertNull(error)
             assertNotNull(value)
@@ -1172,14 +1173,12 @@ class KinServiceImplV4Test {
         sut.buildAndSignTransaction(
             sourceAccount.key as Key.PrivateKey,
             sourceAccount.key.asPublicKey(),
-            (sourceAccount.status as KinAccount.Status.Registered).sequence,
             listOf(KinPaymentItem(KinAmount(123), destinationAccount.id, Optional.of(invoice))),
             KinBinaryMemo.Builder(destinationKinAppIdx.value)
                 .setForeignKey(invoiceList.id.invoiceHash.decode())
                 .setTranferType(KinBinaryMemo.TransferType.Spend)
                 .build()
                 .toKinMemo(),
-            QuarkAmount(100)
         ).test(timeout = 100) {
             assertNull(error)
             assertNotNull(value)
@@ -1475,7 +1474,7 @@ class KinServiceImplV4Test {
 
         sut.submitTransaction(signedTransaction).test() {
             assertNull(value)
-            assertTrue(error is KinService.FatalError.BadSequenceNumberInRequest)
+            assertTrue(error is KinService.FatalError.BadBlockhashInRequest)
 
             verify(mockTransactionApi)
                 .submitTransaction(eq(submitTransactionRequest), any())
@@ -1708,14 +1707,6 @@ class KinServiceImplV4Test {
         assertEquals(request1.hashCode(), request2.hashCode())
         kotlin.test.assertNotEquals(request1, request3)
         kotlin.test.assertNotEquals(request1.hashCode(), request3.hashCode())
-    }
-
-    @Test
-    fun getMinFee_success() {
-
-        sut.getMinFee().test {
-            assertEquals(value, QuarkAmount(0))
-        }
     }
 
     @Test

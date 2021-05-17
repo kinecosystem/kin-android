@@ -154,6 +154,32 @@ fun EditText.addBase32ChangedListener(onChanged: (String) -> Unit) {
     })
 }
 
+fun EditText.addBase58ChangedListener(onChanged: (String) -> Unit) {
+    val validCharacters = setOf(*"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz".toCharArray().toTypedArray())
+
+    filters = arrayOf(object : InputFilter {
+        override fun filter(
+            source: CharSequence, start: Int,
+            end: Int, dest: Spanned?, dstart: Int, dend: Int
+        ): CharSequence? {
+            return source.filter { validCharacters.contains(it) }
+        }
+    })
+
+    addTextChangedListener(object : TextWatcher {
+        override fun afterTextChanged(text: Editable?) {
+            onChanged(text?.toString() ?: "")
+        }
+
+        override fun beforeTextChanged(text: CharSequence?, p1: Int, p2: Int, p3: Int) {
+        }
+
+        override fun onTextChanged(text: CharSequence?, p1: Int, p2: Int, p3: Int) {
+        }
+
+    })
+}
+
 fun View.fadeIn() {
     alpha = 0f
     animate().alpha(1f)
