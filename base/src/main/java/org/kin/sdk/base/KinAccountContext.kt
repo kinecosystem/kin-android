@@ -15,6 +15,7 @@ import org.kin.sdk.base.models.KinBinaryMemo
 import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPayment
 import org.kin.sdk.base.models.KinPaymentItem
+import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.asKinAccountId
@@ -439,6 +440,31 @@ class KinAccountContextImpl private constructor(
 
     private val outgoingTransactions = PromiseQueue<List<KinPayment>>()
 
+    init {
+        mergeTokenAccountsIfNecessary().then({
+            println("tokenAccounts: ${it}")
+        }, {
+            println("mergeAccountsFailure: {$it}")
+        })
+    }
+
+    private fun mergeTokenAccountsIfNecessary(): Promise<List<KinTokenAccountInfo>> {
+        return getAccount()
+            .flatMap { account ->
+                val privateKey = account.key as? Key.PrivateKey
+                if (privateKey != null && account.status is KinAccount.Status.Registered) {
+                    service.mergeTokenAccounts(
+                        accountId,
+                        privateKey,
+                        appInfoProvider.appInfo.appIndex
+                    ).flatMap { tokenAccountInfos ->
+                        storage.updateAccountInStorage(account.copy(tokenAccounts = tokenAccountInfos.map { it.key }))
+                            .map { tokenAccountInfos }
+                    }
+                } else Promise.of(emptyList<KinTokenAccountInfo>())
+            }
+    }
+
     override fun getAccount(forceUpdate: Boolean): Promise<KinAccount> {
         log.log("getAccount")
         return storage.getStoredAccount(accountId)
@@ -466,7 +492,11 @@ class KinAccountContextImpl private constructor(
     }
 
     private fun registerAccount(account: KinAccount): Promise<KinAccount> =
-        service.createAccount(account.id, account.key as Key.PrivateKey, appInfoProvider.appInfo.appIndex)
+        service.createAccount(
+            account.id,
+            account.key as Key.PrivateKey,
+            appInfoProvider.appInfo.appIndex
+        )
             .map {
                 val accountToStore = account.merge(it)
                 if (!storage.updateAccount(accountToStore)) {
@@ -554,7 +584,7 @@ class KinAccountContextImpl private constructor(
         memo: KinMemo,
         sourceAccountSpec: AccountSpec,
         destinationAccountSpec: AccountSpec,
-    ): Promise<List<KinPayment>>  {
+    ): Promise<List<KinPayment>> {
         log.log("sendKinPayments")
         val MAX_ATTEMPTS = 6
         val FIXED_ATTEMPTS = 2

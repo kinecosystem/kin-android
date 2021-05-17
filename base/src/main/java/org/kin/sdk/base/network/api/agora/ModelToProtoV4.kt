@@ -5,6 +5,7 @@ import org.kin.agora.gen.account.v4.AccountService
 import org.kin.agora.gen.common.v4.Model
 import org.kin.agora.gen.transaction.v4.TransactionService
 import org.kin.sdk.base.models.KinAccount
+import org.kin.sdk.base.models.KinAmount
 import org.kin.sdk.base.models.solana.marshal
 import org.kin.sdk.base.network.api.KinAccountApiV4
 import org.kin.sdk.base.network.api.KinAccountCreationApiV4
@@ -66,13 +67,21 @@ internal fun KinTransactionApiV4.GetTransactionRequest.toGrpcRequest(): Transact
 
 internal fun KinTransactionApiV4.SubmitTransactionRequest.toGrpcRequest(): TransactionService.SubmitTransactionRequest? {
 
-    val amount = transaction.totalAmount
-    val commitment= if (amount.value < BigDecimal(50000) ) { // ~1 $USD
-        Model.Commitment.RECENT
-    } else if (amount.value < BigDecimal(500000) ) { // ~10 $USD
-        Model.Commitment.SINGLE
-    } else {
-        Model.Commitment.MAX
+    val amount = try {
+        transaction.totalAmount
+    } catch (t: Throwable) {
+        KinAmount.ONE
+    }
+    val commitment= when {
+        amount.value < BigDecimal(50000) -> { // ~1 $USD
+            Model.Commitment.RECENT
+        }
+        amount.value < BigDecimal(500000) -> { // ~10 $USD
+            Model.Commitment.SINGLE
+        }
+        else -> {
+            Model.Commitment.MAX
+        }
     }
 
     return TransactionService.SubmitTransactionRequest.newBuilder()

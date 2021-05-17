@@ -82,7 +82,7 @@ class KinTestServiceImplV4(
                 service.resolveTokenAccounts(accountId)
                     .flatMap {
                         fundAccount(
-                            it.firstOrNull()?.asKinAccountId() ?: accountId
+                            it.firstOrNull()?.key?.asKinAccountId() ?: accountId
                         )
                     }
             } else Promise.error(error)

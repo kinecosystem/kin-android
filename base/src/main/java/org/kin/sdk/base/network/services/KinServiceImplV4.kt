@@ -230,6 +230,11 @@ class KinServiceImplV4(
         }
     }
 
+    private fun invalidateResolvedTokenAccounts(accountId: KinAccount.Id) {
+        val cacheKey = "resolvedAccounts:${accountId.stellarBase32Encode()}"
+        cache.invalidate(cacheKey)
+    }
+
     override fun resolveTokenAccounts(accountId: KinAccount.Id): Promise<List<KinTokenAccountInfo>> {
         val cacheKey = "resolvedAccounts:${accountId.stellarBase32Encode()}"
         val resolve = cache.resolve(cacheKey) {
@@ -264,14 +269,15 @@ class KinServiceImplV4(
         }
     }
 
-    fun mergeTokenAccounts(
+    override fun mergeTokenAccounts(
         accountId: KinAccount.Id,
         signer: Key.PrivateKey,
-        appIndex: AppIdx
-    ): Promise<Int> {
+        appIndex: AppIdx,
+        shouldCreateAssociatedAccount: Boolean
+    ): Promise<List<KinTokenAccountInfo>> {
         return resolveTokenAccounts(accountId).flatMap { existingAccounts ->
             if (existingAccounts.isEmpty()) {
-                Promise.of(0)
+                Promise.of(emptyList())
             } else {
                 Promise.all(cachedServiceConfig(), cachedRecentBlockHash())
                     .onErrorResumeNextError {
@@ -280,59 +286,110 @@ class KinServiceImplV4(
                         )
                     }
                     .flatMap { (serviceConfig, recentBlockHash) ->
-                        val dest = existingAccounts[0]
+                        var dest = existingAccounts[0].key
                         val instructions = mutableListOf<Instruction>()
-                        createAccount(accountId, signer, appIndex)
-                            .flatMap {
-                                for (tokenAccount in existingAccounts) {
-                                    if (tokenAccount == dest) {
-                                        continue
-                                    }
+                        val signers = mutableSetOf<Key.PrivateKey>()
 
-                                    instructions += TokenProgram.Transfer(
-                                        tokenAccount.key,
-                                        dest.key,
-                                        signer.asPublicKey(),
-                                        tokenAccount.balance,
-                                        TokenProgram.PROGRAM_KEY
-                                    ).instruction
+                        val subsidizer: Key.PublicKey =
+                            serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
+                        val owner: Key.PublicKey = signer.asPublicKey()
+                        val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
+                        val mint = serviceConfig.token!!.toKeyPair().asPublicKey()
 
-                                    // If no close authority is set, it likely means we do not know it, and
-                                    // can't make any assumptions.
-                                    if (tokenAccount.closeAuthority == null) {
-                                        continue
-                                    }
+                        val memo = if (appIndex.value > 0) KinBinaryMemo.Builder(appIndex.value)
+                            .setTranferType(KinBinaryMemo.TransferType.None)
+                            .build() else null
 
-                                    // If the subsidizer is the close authority, we can include the close instruction
-                                    // as they will be ok with signing for it.
-                                    //
-                                    // Alternatively, if agora is the close authority, agora wil sign it.
-                                    for (account in listOfNotNull(tokenAccount.key, serviceConfig.subsidizerAccount?.toKeyPair()?.asPublicKey())) {
-                                        if (tokenAccount.key == account) {
-                                            instructions += TokenProgram.CloseAccount(
-                                                tokenAccount.key,
-                                                tokenAccount.closeAuthority,
-                                                accountId.toKeyPair().asPublicKey()
-                                            ).instruction
-                                            break
-                                        }
-                                    }
+                        val createAssocAccount =
+                            AssociatedTokenProgram.CreateAssociatedTokenAccount(
+                                subsidizer,
+                                owner,
+                                mint
+                            )
+
+                        if (shouldCreateAssociatedAccount) {
+                            // If we already have the assoc account skip creating it
+                            if (existingAccounts.isEmpty() || existingAccounts[0].key != createAssocAccount.addr) {
+
+                                if (memo != null) {
+                                    instructions += MemoProgram.Base64EncodedMemo.fromBytes(memo.encode()).instruction
                                 }
+                                instructions += createAssocAccount.instruction
+                                instructions += TokenProgram.SetAuthority(
+                                    account = createAssocAccount.addr,
+                                    currentAuthority = owner,
+                                    newAuthority = subsidizer,
+                                    authorityType = TokenProgram.AuthorityType.AuthorityCloseAccount,
+                                    programKey = programKey
+                                ).instruction
+                                dest = createAssocAccount.addr
+                                signers += signer
+                            }
+                        }
 
-                                val tx = Transaction.newTransaction(
-                                    serviceConfig.subsidizerAccount.toKeyPair().asPublicKey(),
-                                    *instructions.toTypedArray()
-                                ).copyAndSetRecentBlockhash(recentBlockHash.blockHash!!)
-                                    .copyAndSign(signer)
+                        existing@ for (tokenAccount in existingAccounts) {
+                            if (tokenAccount.key == dest) {
+                                continue@existing
+                            }
 
-                                val kinTransaction = SolanaKinTransaction(
-                                    bytesValue = tx.marshal(),
-                                    networkEnvironment = networkEnvironment
+                            instructions += TokenProgram.Transfer(
+                                tokenAccount.key,
+                                dest,
+                                signer.asPublicKey(),
+                                tokenAccount.balance,
+                                TokenProgram.PROGRAM_KEY
+                            ).instruction
+
+                            signers += signer
+
+                            // If no close authority is set, it likely means we do not know it, and
+                            // can't make any assumptions.
+                            if (tokenAccount.closeAuthority == null) {
+                                continue@existing
+                            }
+
+                            // If the subsidizer is the close authority, we can include the close instruction
+                            // as they will be ok with signing for it.
+                            //
+                            // Alternatively, if agora is the close authority, agora wil sign it.
+                            for (account in listOf(
+                                null,
+                                accountId,
+                                serviceConfig.subsidizerAccount?.toKeyPair()?.asPublicKey()
+                            )) {
+                                if (tokenAccount.closeAuthority == account) {
+                                    instructions += TokenProgram.CloseAccount(
+                                        tokenAccount.key,
+                                        tokenAccount.closeAuthority,
+                                        tokenAccount.closeAuthority
+                                    ).instruction
+                                }
+                            }
+                        }
+
+                        val tx = Transaction.newTransaction(
+                            serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey(),
+                            *instructions.toTypedArray()
+                        ).copyAndSetRecentBlockhash(recentBlockHash.blockHash!!)
+                            .copyAndSign(*signers.toTypedArray())
+
+                        val kinTransaction = SolanaKinTransaction(
+                            bytesValue = tx.marshal(),
+                            networkEnvironment = networkEnvironment
+                        )
+                        submitTransaction(kinTransaction)
+                            .doOnResolved { invalidateResolvedTokenAccounts(accountId) }
+                            .map {
+                                listOf(
+                                    KinTokenAccountInfo(
+                                        createAssocAccount.addr,
+                                        existingAccounts.map { it.balance }
+                                            .reduce { acc, kinAmount -> acc + kinAmount },
+                                        null
+                                    )
                                 )
-                                submitTransaction(kinTransaction)
                             }
                     }
-                    .flatMap { resolveTokenAccounts(accountId).map { it.size } }
             }
         }
     }

@@ -26,6 +26,13 @@ interface KinService {
 
     fun resolveTokenAccounts(accountId: KinAccount.Id): Promise<List<KinTokenAccountInfo>>
 
+    fun mergeTokenAccounts(
+        accountId: KinAccount.Id,
+        signer: Key.PrivateKey,
+        appIndex: AppIdx,
+        shouldCreateAssociatedAccount: Boolean = true
+    ): Promise<List<KinTokenAccountInfo>>
+
     fun getLatestTransactions(kinAccountId: KinAccount.Id): Promise<List<KinTransaction>>
 
     fun getTransactionPage(

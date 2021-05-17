@@ -57,7 +57,7 @@ sealed class Key {
             } catch (t: Throwable) {
                 Base58.decode(privateKeyString)
             }
-        })
+        }())
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true

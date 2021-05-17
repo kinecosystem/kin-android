@@ -2,6 +2,7 @@ package org.kin.sdk.base.models.solana
 
 import org.kin.sdk.base.models.Key
 import org.kin.sdk.base.models.asPublicKey
+import org.kin.sdk.base.tools.Base58
 import org.kin.sdk.base.tools.quickSort
 import org.kin.sdk.base.tools.toHexString
 
@@ -128,7 +129,7 @@ data class Transaction(
             if (index < 0) {
                 throw IllegalArgumentException(
                     "signing account " +
-                            "${pubKey.value.toHexString()} is not in the account list"
+                            "${Base58.encode(pubKey.value)} is not in the account list"
                 )
             }
             newSignatures[index] = Signature(FixedByteArray64(it.sign(messageBytes)))
