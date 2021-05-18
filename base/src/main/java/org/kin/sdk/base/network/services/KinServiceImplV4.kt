@@ -9,15 +9,18 @@ import org.kin.sdk.base.models.KinMemo
 import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.TransactionHash
+import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.solana.AssociatedTokenProgram
 import org.kin.sdk.base.models.solana.Instruction
 import org.kin.sdk.base.models.solana.MemoProgram
+import org.kin.sdk.base.models.solana.SystemProgram
 import org.kin.sdk.base.models.solana.TokenProgram
 import org.kin.sdk.base.models.solana.Transaction
 import org.kin.sdk.base.models.solana.marshal
 import org.kin.sdk.base.models.solana.unmarshal
 import org.kin.sdk.base.models.toKeyPair
+import org.kin.sdk.base.models.toSigningKeyPair
 import org.kin.sdk.base.network.api.KinAccountApiV4
 import org.kin.sdk.base.network.api.KinAccountCreationApiV4
 import org.kin.sdk.base.network.api.KinStreamingApiV4
@@ -112,7 +115,8 @@ class KinServiceImplV4(
                     )
                 }
                 .then({ (serviceConfig, recentBlockHash, minRentExemption) ->
-                    val subsidizer: Key.PublicKey = serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
+                    val subsidizer: Key.PublicKey =
+                        serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
                     val owner: Key.PublicKey = signer.asPublicKey()
                     val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
                     val mint = serviceConfig.token!!.toKeyPair().asPublicKey()
@@ -214,7 +218,7 @@ class KinServiceImplV4(
     }
 
     private fun invalidateResolvedTokenAccounts(accountId: KinAccount.Id) {
-        val cacheKey = "resolvedAccounts:${accountId.stellarBase32Encode()}"
+        val cacheKey = "resolvedAccounts:${accountId.base58Encode()}"
         cache.invalidate(cacheKey)
     }
 
@@ -466,69 +470,132 @@ class KinServiceImplV4(
         }
     }
 
+    private fun createTokenAccountForDest(
+        dest: Key.PublicKey,
+        subsidizer: Key.PublicKey,
+        programKey: Key.PublicKey,
+        token: Key.PublicKey,
+        lamports: Long,
+        accountSize: Long = TokenProgram.accountSize
+    ): Pair<List<Instruction>, Key.PrivateKey> {
+
+        val ephemeralKeypair = Key.PrivateKey.random()
+        val pub = ephemeralKeypair.asPublicKey()
+
+        return Pair(
+            listOf(
+                SystemProgram.CreateAccount(
+                    subsidizer,
+                    pub,
+                    programKey,
+                    lamports,
+                    accountSize
+                ).instruction,
+                TokenProgram.InitializeAccount(
+                    pub,
+                    token,
+                    pub,
+                    programKey
+                ).instruction,
+                TokenProgram.SetAuthority(
+                    pub,
+                    pub,
+                    subsidizer,
+                    TokenProgram.AuthorityType.AuthorityCloseAccount,
+                    programKey
+                ).instruction,
+                TokenProgram.SetAuthority(
+                    pub,
+                    pub,
+                    dest,
+                    TokenProgram.AuthorityType.AuthorityAccountHolder,
+                    programKey
+                ).instruction
+            ), ephemeralKeypair.toSigningKeyPair().asPrivateKey()
+        )
+    }
+
+    override fun createTokenAccountForDestinationOwner(owner: Key.PublicKey): Promise<Pair<List<Instruction>, Key.PrivateKey>> {
+        return Promise.all(cachedServiceConfig(), cachedMinRentExemption())
+            .map { (serviceConfig, minRentExemption) ->
+                val subsidizer: Key.PublicKey = serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
+                val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
+                val token = serviceConfig.token!!.toKeyPair().asPublicKey()
+
+                createTokenAccountForDest(
+                    owner,
+                    subsidizer,
+                    programKey,
+                    token,
+                    minRentExemption.lamports!!
+                )
+            }
+    }
+
     override fun buildAndSignTransaction(
         ownerKey: Key.PrivateKey,
         sourceKey: Key.PublicKey,
         paymentItems: List<KinPaymentItem>,
-        memo: KinMemo
+        memo: KinMemo,
+        createAccountInstructions: List<Instruction>,
+        additionalSigners: List<Key.PrivateKey>
     ): Promise<KinTransaction> {
         log.log { "buildAndSignTransaction: ownerKey:$ownerKey sourceKey:$sourceKey paymentItems:$paymentItems memo:$memo" }
         return networkOperationsHandler.queueWork { respond ->
-            Promise.all(cachedServiceConfig(), cachedRecentBlockHash())
-                .onErrorResumeNextError {
-                    KinService.FatalError.TransientFailure(
-                        RuntimeException("Pre-requisite response failed! $it")
-                    )
+            Promise.all(
+                cachedServiceConfig(), cachedRecentBlockHash()
+            ).onErrorResumeNextError {
+                KinService.FatalError.TransientFailure(
+                    RuntimeException("Pre-requisite response failed! $it")
+                )
+            }.then({ (serviceConfig, recentBlockHash) ->
+                val ownerAccount = ownerKey.asPublicKey()
+                val subsidizer: Key.PublicKey = serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
+                val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
+                val paymentInstructions = paymentItems.map { paymentItem ->
+                    val destinationAccount = paymentItem.destinationAccount.toKeyPair().asPublicKey()
+
+                    TokenProgram.Transfer(
+                        sourceKey,
+                        destinationAccount,
+                        ownerAccount,
+                        paymentItem.amount,
+                        programKey = programKey
+                    ).instruction
                 }
-                .then({ (serviceConfig, recentBlockHash) ->
-                    val ownerAccount = ownerKey.asPublicKey()
-                    val subsidizer: Key.PublicKey =
-                        serviceConfig.subsidizerAccount!!.toKeyPair().asPublicKey()
-                    val programKey = serviceConfig.tokenProgram!!.toKeyPair().asPublicKey()
-                    val paymentInstructions = paymentItems.map { paymentItem ->
-                        val destinationAccount = paymentItem.destinationAccount.toKeyPair()
-                            .asPublicKey()
-
-                        TokenProgram.Transfer(
-                            sourceKey,
-                            destinationAccount,
-                            ownerAccount,
-                            paymentItem.amount,
-                            programKey = programKey
-                        ).instruction
+                val memoInstruction = if (memo != KinMemo.NONE) {
+                    if (memo.type == KinMemo.Type.NoEncoding) {
+                        MemoProgram.Base64EncodedMemo.fromBytes(memo.rawValue).instruction
+                    } else {
+                        MemoProgram.RawMemo(memo.rawValue).instruction
                     }
-                    val memoInstruction = if (memo != KinMemo.NONE) {
-                        if (memo.type == KinMemo.Type.NoEncoding) {
-                            MemoProgram.Base64EncodedMemo.fromBytes(memo.rawValue).instruction
-                        } else {
-                            MemoProgram.RawMemo(memo.rawValue).instruction
-                        }
-                    } else null
+                } else null
 
-                    val tx = Transaction.newTransaction(
-                        subsidizer,
-                        *listOfNotNull(
-                            memoInstruction,
-                            *paymentInstructions.toTypedArray()
-                        ).toTypedArray()
-                    ).copyAndSetRecentBlockhash(recentBlockHash.blockHash!!)
-                        .copyAndSign(ownerKey)
+                val tx = Transaction.newTransaction(
+                    subsidizer,
+                    *listOfNotNull(
+                        memoInstruction,
+                        *createAccountInstructions.toTypedArray(),
+                        *paymentInstructions.toTypedArray()
+                    ).toTypedArray(),
+                ).copyAndSetRecentBlockhash(recentBlockHash.blockHash!!)
+                    .copyAndSign(ownerKey, *additionalSigners.toTypedArray())
 
-                    val kinTransaction = SolanaKinTransaction(
-                        bytesValue = tx.marshal(),
-                        networkEnvironment = networkEnvironment,
-                        invoiceList = paymentItems.toInvoiceList()
-                    )
+                val kinTransaction = SolanaKinTransaction(
+                    bytesValue = tx.marshal(),
+                    networkEnvironment = networkEnvironment,
+                    invoiceList = paymentItems.toInvoiceList()
+                )
 
-                    log.log { "serviceConfig: $serviceConfig" }
-                    log.log { "recentBlockHash: $recentBlockHash" }
-                    log.log { "ownerAccount: $ownerAccount" }
-                    log.log { "sourceOfFundsAccount: $sourceKey" }
-                    log.log { "transactionHexString: ${kinTransaction.bytesValue.toHexString()}" }
+                log.log { "serviceConfig: $serviceConfig" }
+                log.log { "recentBlockHash: $recentBlockHash" }
+                log.log { "ownerAccount: $ownerAccount" }
+                log.log { "sourceOfFundsAccount: $sourceKey" }
+                log.log { "transactionHexString: ${kinTransaction.bytesValue.toHexString()}" }
 
-                    respond(kinTransaction)
+                respond(kinTransaction)
 
-                }, { respond(it) })
+            }, { respond(it) })
         }
     }
 

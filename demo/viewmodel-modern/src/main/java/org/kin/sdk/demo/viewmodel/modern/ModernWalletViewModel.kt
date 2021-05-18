@@ -96,7 +96,7 @@ class ModernWalletViewModel(
             CopyAddressActionViewModel(kinAccountContext),
             ExportWalletActionViewModel(),
             SendTransactionActionViewModel(navigator, args),
-            InvoicesActionActionViewModel(navigator, kinAccountContext.accountId.stellarBase32Encode()),
+            InvoicesActionActionViewModel(navigator, kinAccountContext.accountId.base58Encode()),
             LatencyTestTransactionActionViewModel(navigator, args),
             FundActionViewModel(),
             DeleteWalletActionViewModel(kinAccountContext)
@@ -152,9 +152,9 @@ class ModernWalletViewModel(
             .add { payments ->
                 updateState { previousState ->
                     previousState.copy(paymentHistoryItems = payments.map {
-                        val destination = it.destinationAccountId.stellarBase32Encode()
-                        val source = it.sourceAccountId.stellarBase32Encode()
-                        val incoming = destination == kinAccountContext.accountId.stellarBase32Encode()
+                        val destination = it.destinationAccountId.base58Encode()
+                        val source = it.sourceAccountId.base58Encode()
+                        val incoming = destination == kinAccountContext.accountId.base58Encode()
                         val amount = if (incoming) it.amount.value else it.amount.value.negate()
                         val address = if (incoming) source else destination
                         val memo = if (it.invoice != null) {

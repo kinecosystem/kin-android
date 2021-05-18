@@ -22,8 +22,11 @@ import org.kin.sdk.base.models.asKinPayments
 import org.kin.sdk.base.models.asPrivateKey
 import org.kin.sdk.base.models.asPublicKey
 import org.kin.sdk.base.models.merge
+import org.kin.sdk.base.models.solana.Instruction
 import org.kin.sdk.base.network.api.agora.sha224Hash
 import org.kin.sdk.base.network.api.agora.toProto
+import org.kin.sdk.base.network.api.agora.toProtoSolanaAccountId
+import org.kin.sdk.base.network.api.agora.toPublicKey
 import org.kin.sdk.base.network.services.AppInfoProvider
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.stellar.models.KinTransaction
@@ -449,20 +452,19 @@ class KinAccountContextImpl private constructor(
     }
 
     private fun mergeTokenAccountsIfNecessary(): Promise<List<KinTokenAccountInfo>> {
-        return getAccount()
-            .flatMap { account ->
-                val privateKey = account.key as? Key.PrivateKey
-                if (privateKey != null && account.status is KinAccount.Status.Registered) {
-                    service.mergeTokenAccounts(
-                        accountId,
-                        privateKey,
-                        appInfoProvider.appInfo.appIndex
-                    ).flatMap { tokenAccountInfos ->
-                        storage.updateAccountInStorage(account.copy(tokenAccounts = tokenAccountInfos.map { it.key }))
-                            .map { tokenAccountInfos }
-                    }
-                } else Promise.of(emptyList<KinTokenAccountInfo>())
+        val account = storage.getAccount(accountId)
+        val privateKey = account?.key as? Key.PrivateKey
+        return if (privateKey != null && account.status is KinAccount.Status.Registered) {
+            service.mergeTokenAccounts(
+                accountId,
+                privateKey,
+                appInfoProvider.appInfo.appIndex
+            ).flatMap { tokenAccountInfos ->
+                storage.updateAccountInStorage(account.copy(tokenAccounts = tokenAccountInfos.map { it.key }))
+                    .map { tokenAccountInfos }
             }
+        } else Promise.of(emptyList<KinTokenAccountInfo>())
+
     }
 
     override fun getAccount(forceUpdate: Boolean): Promise<KinAccount> {
@@ -574,7 +576,6 @@ class KinAccountContextImpl private constructor(
     }
 
     private data class SourceAccountSigningData(
-        val nonce: Long,
         val ownerKey: Key.PrivateKey,
         val sourceKey: Key.PublicKey
     )
@@ -615,7 +616,6 @@ class KinAccountContextImpl private constructor(
                     if ((attemptCount == 0 && account.tokenAccounts.isEmpty()) || sourceAccountSpec == AccountSpec.Exact) {
                         Promise.of(
                             SourceAccountSigningData(
-                                (account.status as? KinAccount.Status.Registered)?.sequence ?: 0,
                                 account.key as Key.PrivateKey,
                                 account.key.asPublicKey()
                             )
@@ -627,15 +627,15 @@ class KinAccountContextImpl private constructor(
                                 storage.updateAccountInStorage(account.copy(tokenAccounts = it))
                             }.map { resolvedAccount ->
                                 SourceAccountSigningData(
-                                    (resolvedAccount.status as? KinAccount.Status.Registered)?.sequence
-                                        ?: 0,
                                     resolvedAccount.key as Key.PrivateKey,
-                                    resolvedAccount.tokenAccounts.firstOrNull()
-                                        ?: resolvedAccount.key.asPublicKey()
+                                    resolvedAccount.tokenAccounts.firstOrNull() ?: resolvedAccount.key.asPublicKey()
                                 )
                             }
                     }
                 }
+
+            val createAccountInstructions = mutableListOf<Instruction>()
+            val additionalSigners = mutableListOf<Key.PrivateKey>()
 
             val paymentItemsPromise =
                 if (attemptCount == 0 || destinationAccountSpec == AccountSpec.Exact) {
@@ -644,11 +644,17 @@ class KinAccountContextImpl private constructor(
                     Promise.allAny(
                         *payments.map { paymentItem ->
                             service.resolveTokenAccounts(paymentItem.destinationAccount)
-                                .map { it.map { it.key } }
-                                .map {
-                                    paymentItem.copy(
-                                        destinationAccount = it.first().asKinAccountId()
-                                    )
+                                .flatMap {
+                                    if (it.isEmpty()) {
+                                        service.createTokenAccountForDestinationOwner(paymentItem.destinationAccount.toProtoSolanaAccountId().toPublicKey())
+                                            .map { (destAccountInstructions, signer) ->
+                                                createAccountInstructions += destAccountInstructions
+                                                additionalSigners += signer
+                                                paymentItem.copy(destinationAccount = signer.asKinAccountId())
+                                            }
+                                    } else {
+                                        Promise.of(paymentItem.copy(destinationAccount = it.first().key.asKinAccountId()))
+                                    }
                                 }
                                 .onErrorResumeNext { Promise.of(paymentItem) }
                         }.toTypedArray()
@@ -662,7 +668,9 @@ class KinAccountContextImpl private constructor(
                         accountData.ownerKey,
                         accountData.sourceKey,
                         it,
-                        memo
+                        memo,
+                        createAccountInstructions,
+                        additionalSigners
                     )
                 }
             }

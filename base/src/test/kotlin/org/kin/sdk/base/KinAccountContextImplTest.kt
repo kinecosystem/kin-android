@@ -315,7 +315,7 @@ class KinAccountContextImplTest {
         doAnswer {
             Promise.of(registeredAccountNoPrivKey)
         }.whenever(mockService).createAccount(eq(accountId),
-            eq(registeredAccount.key as Key.PrivateKey),
+            eq(privateKey),
             eq(AppIdx.TEST_APP_IDX))
 
         doAnswer {
@@ -601,6 +601,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
+            any(),
+            any()
         )
 
         doAnswer {
@@ -649,6 +651,8 @@ class KinAccountContextImplTest {
                 eq(registeredAccount.key.asPublicKey()),
                 eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
                 eq(KinMemo.NONE),
+                any(),
+                any()
             )
             val expectedTransactionToSubmit = {Promise.of(transactionToBeSent as KinTransaction)}
             verify(mockService).buildSignAndSubmitTransaction(any())
@@ -705,6 +709,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id, Optional.of(invoice)))),
             eq(expectedMemo),
+            any(),
+            any()
         )
 
         doAnswer {
@@ -755,6 +761,8 @@ class KinAccountContextImplTest {
                 eq(registeredAccount.key.asPublicKey()),
                 eq(listOf(KinPaymentItem(KinAmount(123), destination.id, Optional.of(invoice)))),
                 eq(expectedMemo),
+                any(),
+                any()
             )
             verify(mockService).buildSignAndSubmitTransaction(any())
             verify(mockStorage).advanceSequence(eq(registeredAccount.id))
@@ -800,6 +808,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
+            any(),
+            any()
         )
 
         doAnswer {
@@ -865,6 +875,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
+            any(),
+            any()
         )
         verify(mockService, times(3)).buildSignAndSubmitTransaction(any())
         verify(mockStorage, times(3)).advanceSequence(eq(registeredAccount.id))
@@ -913,6 +925,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
+            any(),
+            any()
         )
 
         doAnswer {
@@ -989,6 +1003,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
+            any(),
+            any()
         )
         verify(
             mockService,
@@ -1045,6 +1061,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
+            any(),
+            any()
         )
 
         doAnswer {
@@ -1104,10 +1122,10 @@ class KinAccountContextImplTest {
         verify(mockService, times(6)).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
         verify(
             mockService,
@@ -1162,10 +1180,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
 
         doAnswer {
@@ -1221,10 +1239,10 @@ class KinAccountContextImplTest {
         verify(mockService, times(1)).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(123), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
         verify(
             mockService,
@@ -1325,10 +1343,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(1), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
 
         doAnswer {
@@ -1336,10 +1354,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(2), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
 
         doAnswer {
@@ -1347,10 +1365,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(3), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
 
         doAnswer {
@@ -1408,6 +1426,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount2.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(4), registeredAccount.id))),
             eq(KinMemo.NONE),
+            any(),
+            any()
         )
 
         doAnswer {
@@ -1417,6 +1437,8 @@ class KinAccountContextImplTest {
             eq(registeredAccount2.key.asPublicKey()),
             eq(listOf(KinPaymentItem(KinAmount(5), registeredAccount.id))),
             eq(KinMemo.NONE),
+            any(),
+            any()
         )
 
         doAnswer {
@@ -1556,20 +1578,20 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(3), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
         doAnswer {
             Promise.of(transactionToBeSent)
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(4), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
 
         doAnswer {
@@ -1577,10 +1599,10 @@ class KinAccountContextImplTest {
         }.whenever(mockService).buildAndSignTransaction(
             eq(registeredAccount.key as Key.PrivateKey),
             eq(registeredAccount.key.asPublicKey()),
-            
             eq(listOf(KinPaymentItem(KinAmount(5), destination.id))),
             eq(KinMemo.NONE),
-            
+            any(),
+            any()
         )
 
         doAnswer {

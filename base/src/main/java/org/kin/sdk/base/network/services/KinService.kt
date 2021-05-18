@@ -8,6 +8,7 @@ import org.kin.sdk.base.models.KinPaymentItem
 import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
+import org.kin.sdk.base.models.solana.Instruction
 import org.kin.sdk.base.network.api.KinTransactionApiV4.SubmitTransactionResponse
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.tools.Observer
@@ -47,7 +48,9 @@ interface KinService {
         ownerKey: Key.PrivateKey,
         sourceKey: Key.PublicKey,
         paymentItems: List<KinPaymentItem>,
-        memo: KinMemo
+        memo: KinMemo,
+        createAccountInstructions: List<Instruction> = emptyList(),
+        signers: List<Key.PrivateKey> = emptyList()
     ): Promise<KinTransaction>
 
     fun submitTransaction(transaction: KinTransaction): Promise<KinTransaction>
@@ -121,6 +124,7 @@ interface KinService {
      * WARNING: This *ONLY* works in test environments.
      */
     val testService: KinTestService
+    fun createTokenAccountForDestinationOwner(owner: Key.PublicKey): Promise<Pair<List<Instruction>, Key.PrivateKey>>
 }
 
 /**
