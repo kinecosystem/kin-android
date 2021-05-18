@@ -1,6 +1,6 @@
 # <img src="../assets/kin-logo.png" height="32" alt="Kin Logo"> Design Module
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
-[![Download](https://api.bintray.com/packages/kinecosystem/kin-android/design/images/download.svg) ](https://bintray.com/kinecosystem/kin-android/design/_latestVersion)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/design/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/design)
 
 The Design library contains the UI components that are used in our full screen experiences like the [spend](../spend) module.
 The documented components below are endorsed for external use as well and will be supported in a backwards compatible way (as much as possible) between versions. However, other view components not listed here contained in this module are subject to change or disappear version to version.
