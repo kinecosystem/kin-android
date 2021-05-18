@@ -24,12 +24,14 @@ import org.kin.sdk.base.models.toKin
 import org.kin.sdk.base.network.api.KinAccountApiV4
 import org.kin.sdk.base.network.api.KinAccountApiV4.GetAccountResponse
 import org.kin.sdk.base.network.api.KinAccountCreationApiV4.CreateAccountResponse
+import org.kin.sdk.base.network.api.KinTransactionApiV4
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetMinimumBalanceForRentExemptionResponse
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetMiniumumKinVersionResponse
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetRecentBlockHashResponse
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetServiceConfigResponse
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetTransactionHistoryResponse
 import org.kin.sdk.base.network.api.KinTransactionApiV4.GetTransactionResponse
+import org.kin.sdk.base.network.api.KinTransactionApiV4.SignTransactionResponse
 import org.kin.sdk.base.network.api.KinTransactionApiV4.SubmitTransactionRequest
 import org.kin.sdk.base.network.api.KinTransactionApiV4.SubmitTransactionResponse
 import org.kin.sdk.base.network.api.agora.GrpcApi.Companion.canRetry
@@ -232,6 +234,66 @@ internal fun ((GetTransactionResponse) -> Unit).getTransactionResponse(networkEn
     })
 }
 
+internal fun ((SignTransactionResponse) -> Unit).signTransactionResponse(
+    request: KinTransactionApiV4.SignTransactionRequest,
+    networkEnvironment: NetworkEnvironment
+): PromisedCallback<TransactionService.SignTransactionResponse> {
+    return PromisedCallback<TransactionService.SignTransactionResponse>({ response ->
+        var transaction: KinTransaction? = null
+
+        val result = when (response.result) {
+            TransactionService.SignTransactionResponse.Result.OK -> {
+                transaction = TransactionService.HistoryItem.newBuilder()
+                    .setSolanaTransaction(
+                        Model.Transaction.newBuilder()
+                            .setValue(
+                                ByteString.copyFrom(
+                                    request.transaction
+                                        .copy(
+                                            signatures = request.transaction.signatures.toMutableList()
+                                                .apply {
+                                                    set(0, response.signature.toModel())
+                                                }
+                                        )
+                                        .marshal()
+                                )
+                            )
+                    )
+                    .apply {
+                        request.invoiceList?.let { invoiceList = it.toProto() }
+                    }
+                    .build()
+                    .toAcknowledgedKinTransaction(networkEnvironment)
+
+                SignTransactionResponse.Result.Ok
+            }
+            TransactionService.SignTransactionResponse.Result.INVOICE_ERROR -> {
+                SignTransactionResponse.Result.InvoiceErrors(response.invoiceErrorsList.map {
+                    when (it.reason) {
+                        InvoiceError.Reason.ALREADY_PAID -> KinTransactionApiV4.InvoiceError.ALREADY_PAID
+                        InvoiceError.Reason.WRONG_DESTINATION -> KinTransactionApiV4.InvoiceError.WRONG_DESTINATION
+                        InvoiceError.Reason.SKU_NOT_FOUND -> KinTransactionApiV4.InvoiceError.SKU_NOT_FOUND
+                        InvoiceError.Reason.UNRECOGNIZED,
+                        InvoiceError.Reason.UNKNOWN,
+                        null -> KinTransactionApiV4.InvoiceError.UNKNOWN
+                    }
+                })
+            }
+            TransactionService.SignTransactionResponse.Result.REJECTED -> SignTransactionResponse.Result.WebhookRejected
+            TransactionService.SignTransactionResponse.Result.UNRECOGNIZED,
+            null -> SignTransactionResponse.Result.UndefinedError(Exception("Internal Error"))
+        }
+        this(SignTransactionResponse(result, transaction))
+    }, {
+        val result = when {
+            it.canRetry() -> SignTransactionResponse.Result.TransientFailure(it)
+            it.isForcedUpgrade() -> SignTransactionResponse.Result.UpgradeRequiredError
+            else -> SignTransactionResponse.Result.UndefinedError(UnrecognizedResultException(it))
+        }
+        this(SignTransactionResponse(result, null))
+    })
+}
+
 internal fun ((SubmitTransactionResponse) -> Unit).submitTransactionResponse(
     request: SubmitTransactionRequest,
     networkEnvironment: NetworkEnvironment,
@@ -277,12 +339,12 @@ internal fun ((SubmitTransactionResponse) -> Unit).submitTransactionResponse(
             TransactionService.SubmitTransactionResponse.Result.INVOICE_ERROR -> {
                 SubmitTransactionResponse.Result.InvoiceErrors(response.invoiceErrorsList.map {
                     when (it.reason) {
-                        InvoiceError.Reason.ALREADY_PAID -> SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.ALREADY_PAID
-                        InvoiceError.Reason.WRONG_DESTINATION -> SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.WRONG_DESTINATION
-                        InvoiceError.Reason.SKU_NOT_FOUND -> SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.SKU_NOT_FOUND
+                        InvoiceError.Reason.ALREADY_PAID -> KinTransactionApiV4.InvoiceError.ALREADY_PAID
+                        InvoiceError.Reason.WRONG_DESTINATION -> KinTransactionApiV4.InvoiceError.WRONG_DESTINATION
+                        InvoiceError.Reason.SKU_NOT_FOUND -> KinTransactionApiV4.InvoiceError.SKU_NOT_FOUND
                         InvoiceError.Reason.UNRECOGNIZED,
                         InvoiceError.Reason.UNKNOWN,
-                        null -> SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError.UNKNOWN
+                        null -> KinTransactionApiV4.InvoiceError.UNKNOWN
                     }
                 })
             }

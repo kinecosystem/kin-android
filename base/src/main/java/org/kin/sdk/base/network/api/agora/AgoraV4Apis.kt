@@ -4,6 +4,7 @@ import io.grpc.ManagedChannel
 import org.kin.agora.gen.account.v4.AccountGrpc
 import org.kin.agora.gen.account.v4.AccountService
 import org.kin.agora.gen.transaction.v4.TransactionGrpc
+import org.kin.agora.gen.transaction.v4.TransactionService
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.network.api.KinAccountApiV4
 import org.kin.sdk.base.network.api.KinAccountCreationApiV4
@@ -14,6 +15,7 @@ import org.kin.sdk.base.stellar.models.NetworkEnvironment
 import org.kin.sdk.base.stellar.models.SolanaKinTransaction
 import org.kin.sdk.base.tools.ObservableCallback
 import org.kin.sdk.base.tools.Observer
+import org.kin.sdk.base.tools.PromisedCallback
 import org.kin.sdk.base.tools.ValueSubject
 
 class AgoraKinAccountCreationApiV4(
@@ -189,6 +191,15 @@ class AgoraKinTransactionsApiV4(
                 onCompleted.getTransactionResponse(networkEnvironment)
             )
     }
+
+    override fun signTransaction(
+        request: KinTransactionApiV4.SignTransactionRequest,
+        onCompleted: (KinTransactionApiV4.SignTransactionResponse) -> Unit
+    ) = transactionApi::signTransaction
+        .callAsPromisedCallback(
+            request.toGrpcRequest(),
+            onCompleted.signTransactionResponse(request, networkEnvironment)
+        )
 
     override fun submitTransaction(
         request: KinTransactionApiV4.SubmitTransactionRequest,

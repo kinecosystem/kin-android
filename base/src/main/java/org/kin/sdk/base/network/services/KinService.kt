@@ -9,6 +9,7 @@ import org.kin.sdk.base.models.KinTokenAccountInfo
 import org.kin.sdk.base.models.QuarkAmount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.solana.Instruction
+import org.kin.sdk.base.network.api.KinTransactionApiV4
 import org.kin.sdk.base.network.api.KinTransactionApiV4.SubmitTransactionResponse
 import org.kin.sdk.base.stellar.models.KinTransaction
 import org.kin.sdk.base.tools.Observer
@@ -108,7 +109,7 @@ interface KinService {
         object WebhookRejectedTransaction :
             FatalError(Exception("This transaction was rejected by the configured webhook without a reason"))
 
-        data class InvoiceErrorsInRequest(val invoiceErrors: List<SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError>) :
+        data class InvoiceErrorsInRequest(val invoiceErrors: List<KinTransactionApiV4.InvoiceError>) :
             FatalError(IllegalArgumentException("Invoice Errors"))
 
         /**

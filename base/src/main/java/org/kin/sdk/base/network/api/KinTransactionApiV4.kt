@@ -4,7 +4,9 @@ import org.kin.sdk.base.models.InvoiceList
 import org.kin.sdk.base.models.KinAccount
 import org.kin.sdk.base.models.TransactionHash
 import org.kin.sdk.base.models.solana.Hash
+import org.kin.sdk.base.models.solana.Signature
 import org.kin.sdk.base.models.solana.Transaction
+import org.kin.sdk.base.network.api.KinTransactionApiV4.InvoiceError
 import org.kin.sdk.base.stellar.models.KinTransaction
 
 interface KinTransactionApiV4 {
@@ -87,6 +89,43 @@ interface KinTransactionApiV4 {
         }
     }
 
+    sealed class InvoiceError(val value: Int) {
+        object UNKNOWN : InvoiceError(0)
+
+        /**
+         * The provided invoice has already been paid for.
+         *
+         * This is only applicable when the memo transaction type
+         *  is SPEND.
+         */
+        object ALREADY_PAID : InvoiceError(1)
+
+        /**
+         * The destination in the operation corresponding to this invoice
+         * is incorrect.
+         */
+        object WRONG_DESTINATION : InvoiceError(2)
+
+        /**
+         * One or more SKUs in the invoice was not found.
+         */
+        object SKU_NOT_FOUND : InvoiceError(3)
+    }
+
+    data class SignTransactionRequest(val transaction: Transaction, val invoiceList: InvoiceList? = null)
+
+    data class SignTransactionResponse(val result: Result, val kinTransaction: KinTransaction? = null) {
+        sealed class Result(val value: Int) {
+            object UpgradeRequiredError : SignTransactionResponse.Result(-3)
+            data class UndefinedError(val error: Throwable) : SignTransactionResponse.Result(-2)
+            data class TransientFailure(val error: Throwable) : SignTransactionResponse.Result(-1)
+            object Ok : SignTransactionResponse.Result(0)
+            object WebhookRejected : SignTransactionResponse.Result(5)
+            data class InvoiceErrors(val errors: List<InvoiceError>) :
+                SignTransactionResponse.Result(6)
+        }
+    }
+
     data class SubmitTransactionRequest(
         val transaction: Transaction,
         val invoiceList: InvoiceList? = null
@@ -106,30 +145,7 @@ interface KinTransactionApiV4 {
             object BadSequenceNumber : Result(3)
             object NoAccount : Result(4)
             object WebhookRejected : Result(5)
-            data class InvoiceErrors(val errors: List<InvoiceError>) : Result(6) {
-                sealed class InvoiceError(val value: Int) {
-                    object UNKNOWN : InvoiceError(0)
-
-                    /**
-                     * The provided invoice has already been paid for.
-                     *
-                     * This is only applicable when the memo transaction type
-                     *  is SPEND.
-                     */
-                    object ALREADY_PAID : InvoiceError(1)
-
-                    /**
-                     * The destination in the operation corresponding to this invoice
-                     * is incorrect.
-                     */
-                    object WRONG_DESTINATION : InvoiceError(2)
-
-                    /**
-                     * One or more SKUs in the invoice was not found.
-                     */
-                    object SKU_NOT_FOUND : InvoiceError(3)
-                }
-            }
+            data class InvoiceErrors(val errors: List<InvoiceError>) : Result(6)
         }
     }
 
@@ -190,5 +206,10 @@ interface KinTransactionApiV4 {
     fun getTransactionHistory(
         request: GetTransactionHistoryRequest,
         onCompleted: (GetTransactionHistoryResponse) -> Unit
+    )
+
+    fun signTransaction(
+        request: SignTransactionRequest,
+        onCompleted: (SignTransactionResponse) -> Unit
     )
 }

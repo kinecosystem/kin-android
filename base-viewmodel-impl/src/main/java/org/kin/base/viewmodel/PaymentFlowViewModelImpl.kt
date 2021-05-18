@@ -7,7 +7,7 @@ import org.kin.sdk.base.KinAccountContext
 import org.kin.sdk.base.models.AppIdx
 import org.kin.sdk.base.models.Invoice
 import org.kin.sdk.base.models.SHA224Hash
-import org.kin.sdk.base.network.api.KinTransactionApiV4.SubmitTransactionResponse.Result.InvoiceErrors.InvoiceError
+import org.kin.sdk.base.network.api.KinTransactionApiV4.InvoiceError
 import org.kin.sdk.base.network.services.KinService
 import org.kin.sdk.base.repository.AppInfoRepository
 import org.kin.sdk.base.repository.InvoiceRepository

@@ -65,6 +65,18 @@ internal fun KinTransactionApiV4.GetTransactionRequest.toGrpcRequest(): Transact
         )
         .build()
 
+internal fun KinTransactionApiV4.SignTransactionRequest.toGrpcRequest(): TransactionService.SignTransactionRequest {
+    return TransactionService.SignTransactionRequest.newBuilder()
+        .setTransaction(
+            Model.Transaction.newBuilder()
+                .setValue(ByteString.copyFrom(transaction.marshal()))
+        )
+        .apply {
+            this@toGrpcRequest.invoiceList?.let { invoiceList = it.toProto() }
+        }
+        .build()
+}
+
 internal fun KinTransactionApiV4.SubmitTransactionRequest.toGrpcRequest(): TransactionService.SubmitTransactionRequest? {
 
     val amount = try {

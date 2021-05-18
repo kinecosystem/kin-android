@@ -593,8 +593,28 @@ class KinServiceImplV4(
                 log.log { "sourceOfFundsAccount: $sourceKey" }
                 log.log { "transactionHexString: ${kinTransaction.bytesValue.toHexString()}" }
 
-                respond(kinTransaction)
+                transactionApi.signTransaction(
+                    KinTransactionApiV4.SignTransactionRequest(tx, paymentItems.toInvoiceList()).requestPrint()
+                ) { response ->
+                    response.responsePrint()
 
+                    val error: Exception? = when(response.result) {
+                        KinTransactionApiV4.SignTransactionResponse.Result.Ok -> {
+                            response.kinTransaction?.let { respond(it); null }
+                        }
+                        is KinTransactionApiV4.SignTransactionResponse.Result.InvoiceErrors ->
+                            KinService.FatalError.InvoiceErrorsInRequest(response.result.errors)
+                        is KinTransactionApiV4.SignTransactionResponse.Result.TransientFailure ->
+                            KinService.FatalError.TransientFailure(response.result.error)
+                        is KinTransactionApiV4.SignTransactionResponse.Result.UndefinedError ->
+                            KinService.FatalError.UnexpectedServiceError(response.result.error)
+                        KinTransactionApiV4.SignTransactionResponse.Result.UpgradeRequiredError ->
+                            KinService.FatalError.SDKUpgradeRequired
+                        KinTransactionApiV4.SignTransactionResponse.Result.WebhookRejected ->
+                            KinService.FatalError.WebhookRejectedTransaction
+                    }
+                    error?.let { respond(it) }
+                }
             }, { respond(it) })
         }
     }

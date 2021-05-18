@@ -2,6 +2,7 @@ package org.kin.sdk.base.network.services
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doAnswer
+import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.verify
@@ -43,6 +44,8 @@ import org.kin.sdk.base.network.api.KinStreamingApiV4
 import org.kin.sdk.base.network.api.KinTransactionApiV4
 import org.kin.sdk.base.stellar.models.ApiConfig
 import org.kin.sdk.base.stellar.models.KinTransaction
+import org.kin.sdk.base.stellar.models.NetworkEnvironment
+import org.kin.sdk.base.stellar.models.SolanaKinTransaction
 import org.kin.sdk.base.tools.Base58
 import org.kin.sdk.base.tools.KinLoggerFactoryImpl
 import org.kin.sdk.base.tools.NetworkOperationsHandlerImpl
@@ -187,6 +190,16 @@ class KinServiceImplV4Test {
                         minRentExemptionInLamports
                     )
                 )
+            }
+            on { signTransaction(any(), any()) } doAnswer {
+                val request = it.getArgument<KinTransactionApiV4.SignTransactionRequest>(0)
+                val respond = it.getArgument<(KinTransactionApiV4.SignTransactionResponse) -> Unit>(1)
+                val kinTransaction = SolanaKinTransaction(
+                    bytesValue = request.transaction.marshal(),
+                    networkEnvironment = NetworkEnvironment.TestNet,
+                    invoiceList = request.invoiceList
+                )
+                respond(KinTransactionApiV4.SignTransactionResponse(KinTransactionApiV4.SignTransactionResponse.Result.Ok, kinTransaction))
             }
         }
 
@@ -1105,6 +1118,7 @@ class KinServiceImplV4Test {
 
             verify(mockTransactionApi).getRecentBlockHash(any(), any())
             verify(mockTransactionApi).getServiceConfig(any(), any())
+            verify(mockTransactionApi).signTransaction(any(), any())
             verifyNoMoreInteractions(mockTransactionApi)
             verifyZeroInteractions(mockAccountApi)
         }
@@ -1140,6 +1154,7 @@ class KinServiceImplV4Test {
 
             verify(mockTransactionApi).getRecentBlockHash(any(), any())
             verify(mockTransactionApi).getServiceConfig(any(), any())
+            verify(mockTransactionApi).signTransaction(any(), any())
             verifyNoMoreInteractions(mockTransactionApi)
             verifyZeroInteractions(mockAccountApi)
         }
@@ -1190,6 +1205,7 @@ class KinServiceImplV4Test {
 
             verify(mockTransactionApi).getRecentBlockHash(any(), any())
             verify(mockTransactionApi).getServiceConfig(any(), any())
+            verify(mockTransactionApi).signTransaction(any(), any())
             verifyNoMoreInteractions(mockTransactionApi)
             verifyZeroInteractions(mockAccountApi)
         }
