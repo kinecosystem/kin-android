@@ -179,14 +179,6 @@ data class StellarKinTransaction @JvmOverloads constructor(
             )
         }
 
-//    fun isKinNonNativeAsset(): Boolean {
-//        TODO("Not yet implemented")
-//    }
-//
-//    internal val transactionEnvelope: TransactionEnvelope by lazy {
-//        TODO("Not yet implemented")
-//    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is KinTransaction) return false
@@ -207,89 +199,3 @@ data class StellarKinTransaction @JvmOverloads constructor(
         return "StellarKinTransaction(bytesValue=${bytesValue.toHexString()}, recordType=$recordType, networkEnvironment=$networkEnvironment, invoiceList=$invoiceList)"
     }
 }
-
-//data class StellarKinTransaction @JvmOverloads constructor(
-//    override val bytesValue: ByteArray,
-//    override val recordType: RecordType = RecordType.InFlight(System.currentTimeMillis()),
-//    override val networkEnvironment: NetworkEnvironment,
-//    override val invoiceList: InvoiceList? = null
-//) : KinTransaction {
-//
-//    fun isKinNonNativeAsset(): Boolean {
-//        return transactionEnvelope.tx!!.operations.filter { operation ->
-//            operation!!.body!!.discriminant == OperationType.PAYMENT
-//        }.map { PaymentOperation.Builder(it!!.body!!.paymentOp!!).build() }
-//            .map { (it.asset as? AssetTypeCreditAlphaNum4)?.code == "KIN" }
-//            .reduce { acc, b -> acc && b }
-//    }
-//
-//    internal val transactionEnvelope: TransactionEnvelope by lazy {
-//        TransactionEnvelope.decode(XdrDataInputStream(ByteArrayInputStream(bytesValue)))
-//    }
-//
-//    override val transactionHash: TransactionHash by lazy {
-//        TransactionHash(
-//            Transaction.fromEnvelopeXdr(
-//                transactionEnvelope,
-//                networkEnvironment.getNetwork()
-//            ).hash()
-//        )
-//    }
-//
-//    override val signingSource: KinAccount.Id by lazy {
-//        KinAccount.Id(
-//            KeyPair.fromXdrPublicKey(transactionEnvelope.tx!!.sourceAccount!!.accountID!!)
-//                .asPublicKey().value
-//        )
-//    }
-//
-//    override val fee: QuarkAmount by lazy {
-//        QuarkAmount(transactionEnvelope.tx!!.fee!!.uint32!!.toLong())
-//    }
-//
-//    override val memo: KinMemo by lazy {
-//        transactionEnvelope.tx!!.memo?.let { memo ->
-//            if (memo.discriminant == MemoType.MEMO_HASH) {
-//                KinMemo(memo.hash!!.hash!!)
-//            } else {
-//                memo.text?.let { KinMemo(it, Charsets.UTF_8) } ?: KinMemo.NONE
-//            }
-//        } ?: KinMemo.NONE
-//    }
-//
-//    override val paymentOperations: List<KinOperation.Payment> by lazy {
-//        transactionEnvelope.tx!!.operations.filter { operation ->
-//            operation!!.body!!.discriminant == OperationType.PAYMENT
-//        }.map { PaymentOperation.Builder(it!!.body!!.paymentOp!!).build() }
-//            .map { payOp: PaymentOperation ->
-//                KinOperation.Payment(
-//                    KinAmount(payOp.amount),
-//                    when {
-//                        payOp.sourceAccount != null -> KinAccount.Id(payOp.sourceAccount!!.publicKey)
-//                        else -> signingSource
-//                    },
-//                    KinAccount.Id(payOp.destination.publicKey)
-//                )
-//            }
-//    }
-//
-//    override fun equals(other: Any?): Boolean {
-//        if (this === other) return true
-//        if (other !is KinTransaction) return false
-//
-//        if (!bytesValue.contentEquals(other.bytesValue)) return false
-//        if (recordType != other.recordType) return false
-//        if (networkEnvironment != other.networkEnvironment) return false
-//        if (invoiceList != other.invoiceList) return false
-//
-//        return true
-//    }
-//
-//    override fun hashCode(): Int {
-//        return transactionHash.hashCode()
-//    }
-//
-//    override fun toString(): String {
-//        return "StellarKinTransaction(bytesValue=${bytesValue.toHexString()}, recordType=$recordType, networkEnvironment=$networkEnvironment, invoiceList=$invoiceList)"
-//    }
-//}
