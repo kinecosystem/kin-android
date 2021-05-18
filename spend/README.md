@@ -1,6 +1,6 @@
 # <img src="../assets/kin-logo.png" height="32" alt="Kin Logo"> Spend Module
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
-[![Download](https://api.bintray.com/packages/kinecosystem/kin-android/spend/images/download.svg) ](https://bintray.com/kinecosystem/kin-android/spend/_latestVersion)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/spend/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/spend)
 
 The spend module provides an easy to use out of the box spend flow UI that is prescribed to be used to execute spend payments for digital goods and services with Kin in your app.
 
