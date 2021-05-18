@@ -23,7 +23,7 @@ buildscript {
     ext {
         versions = [:]
         
-        versions.kin = "0.4.0"
+        versions.kin = "1.0.0"
     }
 }
 dependencies {
@@ -49,7 +49,8 @@ dependencies {
 }
 repositories {
     // ...
-    jcenter()
+    mavenCentral()
+	jcenter()
     maven { url "https://jitpack.io/" } // Jitpack is used for OkSSE fork only
 }
 ```
