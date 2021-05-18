@@ -1,6 +1,6 @@
 # <img src="../assets/kin-logo.png" height="32" alt="Kin Logo"> Base Compat Module
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
-[![Download](https://api.bintray.com/packages/kinecosystem/kin-android/base-compat/images/download.svg) ](https://bintray.com/kinecosystem/kin-android/base-compat/_latestVersion)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/base-compat/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/base-compat)
 
 The [:base-compat](../base-compat) module is a replacement for, and fully API compatible with [kin-sdk-android](https://github.com/kinecosystem/kin-sdk-android)
 
