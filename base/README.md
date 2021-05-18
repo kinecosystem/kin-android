@@ -1,6 +1,6 @@
 # <img src="../assets/kin-logo.png" height="32" alt="Kin Logo"> Base Module
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
-[![Download](https://api.bintray.com/packages/kinecosystem/kin-android/base/images/download.svg) ](https://bintray.com/kinecosystem/kin-android/base/_latestVersion)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/base/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/base)
 
 The [:base](../base) module is the foundation upon which the rest of the SDK stands. However, it can be used on its own to headlessly access the Kin Blockchain. It's pure JVM but used as the basis for other Android-specific modules in the SDK.
 
