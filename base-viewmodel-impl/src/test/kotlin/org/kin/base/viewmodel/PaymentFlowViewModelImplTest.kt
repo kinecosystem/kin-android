@@ -274,7 +274,7 @@ class PaymentFlowViewModelImplTest {
             sut.convertErrorToReason(
                 KinService.FatalError.InvoiceErrorsInRequest(
                     listOf(
-                        InvoiceErrors.InvoiceError.ALREADY_PAID
+                        KinTransactionApiV4.InvoiceError.ALREADY_PAID
                     )
                 )
             )
@@ -284,7 +284,7 @@ class PaymentFlowViewModelImplTest {
             sut.convertErrorToReason(
                 KinService.FatalError.InvoiceErrorsInRequest(
                     listOf(
-                        InvoiceErrors.InvoiceError.SKU_NOT_FOUND
+                        KinTransactionApiV4.InvoiceError.SKU_NOT_FOUND
                     )
                 )
             )
@@ -294,7 +294,7 @@ class PaymentFlowViewModelImplTest {
             sut.convertErrorToReason(
                 KinService.FatalError.InvoiceErrorsInRequest(
                     listOf(
-                        InvoiceErrors.InvoiceError.WRONG_DESTINATION
+                        KinTransactionApiV4.InvoiceError.WRONG_DESTINATION
                     )
                 )
             )
@@ -304,7 +304,7 @@ class PaymentFlowViewModelImplTest {
             sut.convertErrorToReason(
                 KinService.FatalError.InvoiceErrorsInRequest(
                     listOf(
-                        InvoiceErrors.InvoiceError.UNKNOWN
+                        KinTransactionApiV4.InvoiceError.UNKNOWN
                     )
                 )
             )
