@@ -9,7 +9,7 @@ Use the Kin SDK for Android to enable the use of Kin inside of your app. Include
 | Library&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Support                                                                                   | Path&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description                                                                                                                                                                                                                                                                               |
 |:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `base`                                                                                                                                                                                | <img src="assets/java.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24">    | [`/base`](base)                                                                                                              | The foundation library used by all other libraries in the system to support basic Kin operations: <ul><li>Wallet creation and management</li><li>Send and receive Kin</li><li>Metrics interfaces</li></ul>                                                                                |
-| `base-compat`                                                                                                                                                                         | <img src="assets/android.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24"> | [`/base-compat`](base-compat)                                                                                                | The [:base-compat](base-compat) library implements the public surface layer to be a drop in replacement of the, now deprecated, [kin-sdk-android](https://github.com/kinecosystem/kin-sdk-android) library. Just update your version in gradle and have better performance and stability. |
+| `base-compat`                                                                                                                                                                         | <img src="assets/android.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24"> | [`/base-compat`](base-compat)                                                                                                | The [:base-compat](base-compat) library now only contains the backup & restore flow retrofitted on top of base. If you're using an old version of base-compat please consider upgrading to base. |
 | `design`                                                                                                                                                                              | <img src="assets/android.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24"> | [`/design`](design)                                                                                                          | Shared [:design](design) library components for creating consistent Kin user experiences. When creating a custom Kin experience, this library can be used to include standard UI components for displaying Kin prices, transactions, etc.                                                            |
 | `spend`                                                                                                                                                                               | <img src="assets/android.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24"> | [`/spend`](spend)                                                                                                            | The [:spend](spend) library provides an out of the box model UI for spending Kin within an Android application. Specificy what you're buying, your account, tap confirm. Success.|
 
@@ -29,11 +29,8 @@ buildscript {
 dependencies {
     // ...
     
-    // *** base-compat is for LEGACY SUPPORT ONLY ***
-    // If you're a longtime Kin developer and want to use the compat 
-    // interface that looks like the now deprecated SDKS
+    // *** base-compat is for backup and restore support ONLY ***
     implementation "org.kin.sdk.android:base-compat:${versions.kin}"
-    
     
     // If you're a new developer or want more functionality you want a
     // mix of the libraries below:
@@ -46,12 +43,6 @@ dependencies {
     
     // Add design for direct access to UI views you can use in your own app
     implementation "org.kin.sdk.android:design:${versions.kin}"
-}
-repositories {
-    // ...
-    mavenCentral()
-	jcenter()
-    maven { url "https://jitpack.io/" } // Jitpack is used for OkSSE fork only
 }
 ```
 
