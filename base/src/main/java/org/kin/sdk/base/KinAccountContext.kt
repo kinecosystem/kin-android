@@ -454,7 +454,7 @@ class KinAccountContextImpl private constructor(
     private fun mergeTokenAccountsIfNecessary(): Promise<List<KinTokenAccountInfo>> {
         val account = storage.getAccount(accountId)
         val privateKey = account?.key as? Key.PrivateKey
-        return if (privateKey != null && account.status is KinAccount.Status.Registered) {
+        return if (privateKey != null && account.status is KinAccount.Status.Registered && account.tokenAccounts.size > 1) {
             service.mergeTokenAccounts(
                 accountId,
                 privateKey,
@@ -464,7 +464,6 @@ class KinAccountContextImpl private constructor(
                     .map { tokenAccountInfos }
             }
         } else Promise.of(emptyList<KinTokenAccountInfo>())
-
     }
 
     override fun getAccount(forceUpdate: Boolean): Promise<KinAccount> {
@@ -645,7 +644,7 @@ class KinAccountContextImpl private constructor(
                         *payments.map { paymentItem ->
                             service.resolveTokenAccounts(paymentItem.destinationAccount)
                                 .flatMap {
-                                    if (it.isEmpty()) {
+                                    if (it.isEmpty() && error == KinService.FatalError.UnknownAccountInRequest) {
                                         service.createTokenAccountForDestinationOwner(paymentItem.destinationAccount.toProtoSolanaAccountId().toPublicKey())
                                             .map { (destAccountInstructions, signer) ->
                                                 createAccountInstructions += destAccountInstructions
