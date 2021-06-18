@@ -534,7 +534,7 @@ class KinFileStorage @JvmOverloads internal constructor(
      */
 
     private fun envDirectory(): String =
-        "$filesDir/env/${Hex.encodeHexString(networkEnvironment.networkPassphrase.toByteArray())}"
+        "$filesDir"
 
     private fun directoryForConfig(): String =
         "${envDirectory()}/"
