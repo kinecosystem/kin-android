@@ -234,9 +234,9 @@ class KinFileStorage @JvmOverloads internal constructor(
     }
 
     override fun getOrCreateCID(): String {
-        val exisingkinConfig = getKinConfig()
-        return if (exisingkinConfig.isPresent) {
-            exisingkinConfig.get()!!.cid
+        val existingkinConfig = getKinConfig()
+        return if (existingkinConfig.isPresent) {
+            existingkinConfig.get()!!.cid
         } else {
             val newCid = UUID.randomUUID().toString()
             val newKinConfig = StorageKinConfig.newBuilder()
@@ -525,22 +525,18 @@ class KinFileStorage @JvmOverloads internal constructor(
 
     /**
      * File Structure
-     * Environment Directory: <context.getFilesDir>/env/<env passcode in hex>/
-     * Config: <Environment Directory>/config
-     * Account Directory: <Environment Directory>/kin_accounts/<public key>
+     * Config: <Base Directory>/config
+     * Account Directory: <Base Directory>/kin_accounts/<account hash>
      * KinAccount object: <Account Directory>/account_info
      * KinTransactions: <Account Directory>/<account_id>_transactions/<account_id>_transactions
      * Invoices: <Account Directory>/<account_id>_invoices/<account_id>_invoices
      */
 
-    private fun envDirectory(): String =
-        "$filesDir"
-
     private fun directoryForConfig(): String =
-        "${envDirectory()}/"
+        "$filesDir/"
 
     private fun directoryForAllAccounts(): String =
-        "${envDirectory()}/$directoryNameForAllAccounts/"
+        "$filesDir/$directoryNameForAllAccounts/"
 
     private fun directoryForAccount(accountId: KinAccount.Id): String {
         return directoryForAllAccounts() + accountId.hashCode() + "/"
