@@ -108,7 +108,7 @@ constructor(
     }
 
     companion object {
-        private val ed25519 = EdDSANamedCurveTable.ED_25519_CURVE_SPEC
+        val ed25519 = EdDSANamedCurveTable.ED_25519_CURVE_SPEC
 
         /**
          * Creates a new Stellar KeyPair from a strkey encoded Stellar secret seed.
@@ -178,6 +178,22 @@ constructor(
         fun fromPublicKey(publicKey: ByteArray?): KeyPairJvmImpl {
             val publicKeySpec = EdDSAPublicKeySpec(publicKey, ed25519)
             return KeyPairJvmImpl(EdDSAPublicKey(publicKeySpec))
+        }
+
+        /**
+         * Creates a new Stellar keypair from a 32 byte address.
+         *
+         * @param publicKey The 32 byte public key.
+         * @return [KeyPair]
+         */
+        @JvmStatic
+        fun fromPrivateKey(privateKey: ByteArray?): KeyPairJvmImpl {
+            val privKeySpec = EdDSAPrivateKeySpec(privateKey, ed25519)
+            val publicKeySpec = EdDSAPublicKeySpec(privKeySpec.a.toByteArray(), ed25519)
+            return KeyPairJvmImpl(
+                EdDSAPublicKey(publicKeySpec),
+                EdDSAPrivateKey(privKeySpec)
+            )
         }
 
         /**

@@ -1,8 +1,16 @@
 package org.kin.sdk.base.tools
 
+import net.i2p.crypto.eddsa.EdDSAPrivateKey
+import net.i2p.crypto.eddsa.EdDSAPublicKey
+import net.i2p.crypto.eddsa.spec.EdDSAPrivateKeySpec
+import net.i2p.crypto.eddsa.spec.EdDSAPublicKeySpec
 import org.json.JSONException
 import org.json.JSONObject
+import org.kin.sdk.base.models.Key
+import org.kin.sdk.base.models.KinAccount
+import org.kin.stellarfork.IKeyPair
 import org.kin.stellarfork.KeyPair
+import org.kin.stellarfork.KeyPairJvmImpl
 import org.libsodium.jni.NaCl
 import org.libsodium.jni.Sodium
 import java.io.UnsupportedEncodingException
@@ -131,7 +139,18 @@ class BackupRestoreImpl : BackupRestore {
         val seedBytes = accountBackup.encryptedSeedHexString.hexStringToByteArray()
 
         val decryptedBytes = Companion.decryptSecretSeed(seedBytes, keyHash)
-        return KeyPair.fromSecretSeed(decryptedBytes)
+////        val kph = KeyPairJvmImpl(EdDSAPublicKey(EdDSAPublicKeySpec()))
+//        val account = KinAccount(Key.PrivateKey(decryptedBytes))
+////        val ikp = IKeyPair(account.id, account.key)
+//        val pk = Key.PrivateKey(decryptedBytes)
+//        val ka = KinAccount(pk)
+        val privKeySpec = EdDSAPrivateKeySpec(decryptedBytes, KeyPairJvmImpl.ed25519)
+        val publicKeySpec = EdDSAPublicKeySpec(privKeySpec.a.toByteArray(), KeyPairJvmImpl.ed25519)
+        val i = KeyPairJvmImpl(
+            EdDSAPublicKey(publicKeySpec),
+            EdDSAPrivateKey(privKeySpec)
+        )
+        return KeyPair(i)
     }
 
     override fun exportWallet(keyPair: KeyPair, passphrase: String): String =

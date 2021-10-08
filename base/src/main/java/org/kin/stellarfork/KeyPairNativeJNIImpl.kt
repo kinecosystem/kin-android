@@ -214,6 +214,23 @@ constructor(
         )
 
         /**
+         * Creates a new Stellar keypair from a 32 byte address.
+         *
+         * @param publicKey The 32 byte public key.
+         * @return [KeyPairNativeJNIImpl]
+         */
+        @JvmStatic
+        fun fromKeys(publicKey: ByteArray, privateKey: ByteArray): KeyPairNativeJNIImpl {
+            Sodium.crypto_sign_ed25519_keypair(publicKey, privateKey)
+            val seed = ByteArray(SECRETKEY_BYTES)
+            Sodium.crypto_sign_ed25519_sk_to_seed(seed, privateKey)
+            return KeyPairNativeJNIImpl(
+                PublicKey(publicKey),
+                PrivateKey(privateKey, seed)
+            )
+        }
+
+        /**
          * Generates a random Stellar keypair.
          *
          * @return a random Stellar keypair.
@@ -253,7 +270,7 @@ constructor(
         }
     }
 
-    data class PrivateKey(val bytes: ByteArray, val seed: ByteArray) {
+    data class  PrivateKey(val bytes: ByteArray, val seed: ByteArray) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is PrivateKey) return false
