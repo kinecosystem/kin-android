@@ -34,7 +34,7 @@ Everything starts with a `KinEnvironment` instance that describes which blockcha
 
 ### Agora Kin Environment
 The Agora Kin Environment is now the preferred method of communicating with the Kin Blockchain. Agora is both a gateway to submit payments and a history collector that can be used to resolve your full payment history.
-When submitting payments, a developer should properly configure an [Agora webhook](https://docs.kin.org/how-it-works#webhooks), which acts as a delegate to approve and optionally co-sign a transaction to mediate transaction fees.
+When submitting payments, a developer should properly configure an [Agora webhook](https://developer.kin.org/docs/how-it-works/#webhooks), which acts as a delegate to approve and optionally co-sign a transaction to mediate transaction fees.
 Agora can also store additional meta-data about your transaction concerning what your payments were for. This bundle of information is called an `Invoice`, offchain data which is referenced by the payment's associated `Memo`. You can read more about both below in the [Sending Payments section](#sending-payments).
 
 You'll also need to tell the SDK a bit about your app in an AppInfoProvider implementation to work with some features (like paying and resolving Invoices and the [spend](../spend) module UI).
