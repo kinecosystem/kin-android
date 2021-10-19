@@ -5,7 +5,7 @@
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/base/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/base)
 
-Use the Kin SDK for Android to enable the use of Kin inside of your app. Include only the functionality you need to provide the right experience to your users. Include the offers library to give your users the opportunity to earn Kin in your app. Use just the base library to access the lightest-weight wrapper over the Kin crytocurrency. The design library provides a set of basic UI elements to ensure the user experience offered to your users is consistent and high-quality.
+Use the Kin SDK for Android to enable the use of Kin inside of your app. Include only the functionality you need to provide the right experience to your users. Use just the base library to access the lightest-weight wrapper over the Kin crytocurrency. The design library provides a set of basic UI elements to ensure the user experience offered to your users is consistent and high-quality.
 
 | Library&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Support                                                                                   | Path&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description                                                                                                                                                                                                                               |
 | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -30,7 +30,7 @@ buildscript {
 dependencies {
     // ...
 
-    //As of October 7th, 2021 we're improving the base-compat, spend, and design implementations
+    //As of October 19th, 2021 we're improving the base-compat, spend, and design implementations
     //Until further notice, we suggest only adding the base implementation to new projects.
     implementation "org.kin.sdk.android:base:${versions.kin}"
 }
@@ -38,7 +38,7 @@ dependencies {
 
 ## Demo App
 
-> :warning: **As Of October 7th, 2021:** the Demo app is being updated to use v2.0.0 of the Kin Android SDK and is not fully functioning. The [demo](demo) directory includes a demo application, showcasing a Kin wallet.
+> :warning: **As Of October 19th, 2021:** the Demo app is being updated to use v2.0.0 of the Kin Android SDK and is not fully functioning. The [demo](demo) directory includes a demo application, showcasing a Kin wallet.
 
 ## Design Showcase App
 
