@@ -13,6 +13,8 @@ apply plugin: "com.google.protobuf"
 apply plugin: "maven-publish"
 apply plugin: "signing"
 
+sourceCompatibility = 1.8
+
 repositories {
     mavenCentral()
 }
