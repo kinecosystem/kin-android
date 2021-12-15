@@ -19,7 +19,7 @@ dependencies {
 repositories {
     // ...
     jcenter()
-    maven { url "https://jitpack.io/" } // Jitpack is used for OkSSE fork only
+    maven { url "https://jitpack.io/" }
 }
 ```
 

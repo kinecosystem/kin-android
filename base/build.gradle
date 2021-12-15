@@ -67,7 +67,6 @@ dependencies {
     implementation deps.kotlin_stdlib
     implementation deps.gson
     implementation deps.okhttp
-    implementation deps.oksse
     implementation deps.i2p_crypto_eddsa
     implementation deps.slf4j
     implementation deps.grpc_stub

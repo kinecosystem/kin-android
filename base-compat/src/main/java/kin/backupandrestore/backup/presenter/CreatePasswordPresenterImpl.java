@@ -103,8 +103,13 @@ public class CreatePasswordPresenterImpl extends BasePresenterImpl<CreatePasswor
 
     private void exportAccount(String password) {
         try {
-            final String accountKey = backupRestore.exportWallet(KeyPair.fromSecretSeed(privateKey.stellarBase32Encode()), password);
-            backupNavigator.navigateToSaveAndSharePage(accountKey);
+            if (privateKey.getValue().length == 32) {
+                final String accountKey = backupRestore.exportWallet(KeyPair.fromSecretSeed(privateKey.stellarBase32Encode()), password);
+                backupNavigator.navigateToSaveAndSharePage(accountKey);
+            } else {
+                final String accountKey = backupRestore.exportWallet(KeyPair.fromPrivateKey(privateKey.getValue()), password);
+                backupNavigator.navigateToSaveAndSharePage(accountKey);
+            }
         } catch (org.kin.sdk.base.tools.CryptoException e) {
             if (view != null) {
                 view.showBackupFailed();

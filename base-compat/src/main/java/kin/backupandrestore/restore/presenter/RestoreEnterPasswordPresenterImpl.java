@@ -7,7 +7,6 @@ import androidx.annotation.NonNull;
 
 import org.kin.sdk.base.models.Key;
 import org.kin.sdk.base.tools.BackupRestore;
-import org.kin.sdk.base.tools.BackupRestoreImpl;
 import org.kin.sdk.base.tools.CorruptedDataException;
 import org.kin.sdk.base.tools.CryptoException;
 import org.kin.stellarfork.KeyPair;
@@ -17,7 +16,6 @@ import kin.backupandrestore.Validator;
 import kin.backupandrestore.events.CallbackManager;
 import kin.backupandrestore.exception.BackupAndRestoreException;
 import kin.backupandrestore.restore.view.RestoreEnterPasswordView;
-import kin.sdk.exception.CreateAccountException;
 
 import static kin.backupandrestore.events.RestoreEventCode.RESTORE_PASSWORD_DONE_TAPPED;
 import static kin.backupandrestore.events.RestoreEventCode.RESTORE_PASSWORD_ENTRY_PAGE_BACK_TAPPED;
@@ -59,7 +57,6 @@ public class RestoreEnterPasswordPresenterImpl extends BaseChildPresenterImpl<Re
             KeyPair kinAccount = importAccount(keystoreData, password);
             getParentPresenter().navigateToRestoreCompletedPage(kinAccount);
         } catch (BackupAndRestoreException e) {
-//            Logger.e("RestoreEnterPasswordPresenterImpl - restore failed.", e);
             RestoreEnterPasswordView view = getView();
             if (view != null) {
                 if (e.getCode() == CODE_RESTORE_INVALID_KEYSTORE_FORMAT) {
@@ -76,20 +73,23 @@ public class RestoreEnterPasswordPresenterImpl extends BaseChildPresenterImpl<Re
         Validator.checkNotNull(keystore, "keystore");
         Validator.checkNotNull(keystore, "password");
         KeyPair importedAccount;
+        byte[] pk;
         try {
             importedAccount = backupRestore.importWallet(keystore, password);
+            if (importedAccount.getRawSecretSeed() != null) {
+                pk = importedAccount.getRawSecretSeed();
+            } else {
+                pk = importedAccount.getPrivateKey();
+            }
             if(BackupAndRestoreManager.instance() != null) {
-                BackupAndRestoreManager.instance().
-                        getEnvironment()
-                        .importPrivateKey(new Key.PrivateKey(importedAccount.getRawSecretSeed()))
-                        .resolve();
+                BackupAndRestoreManager.instance()
+                    .getEnvironment()
+                    .importPrivateKey(new Key.PrivateKey(pk))
+                    .resolve();
             }
         } catch (CryptoException e) {
             throw new BackupAndRestoreException(CODE_RESTORE_FAILED, "Could not import the account");
         }
-//        catch (CreateAccountException e) {
-//            throw new BackupAndRestoreException(CODE_RESTORE_FAILED, "Could not create the account");
-//        }
         catch (CorruptedDataException e) {
             throw new BackupAndRestoreException(CODE_RESTORE_INVALID_KEYSTORE_FORMAT,
                     "The keystore is invalid - wrong format");
