@@ -1,6 +1,5 @@
 package org.kin.stellarfork
 
-import org.kin.sdk.base.models.Key
 import org.libsodium.jni.NaCl
 import kotlin.properties.Delegates
 

@@ -199,22 +199,6 @@ constructor(
         }
 
         /**
-         * Creates a new Stellar keypair from a 32 byte address.
-         *
-         * @param publicKey The 32 byte public key.
-         * @return [KeyPair]
-         */
-        @JvmStatic
-        fun fromPrivateKey(privateKey: ByteArray?): KeyPairJvmImpl {
-            val privKeySpec = EdDSAPrivateKeySpec(privateKey, ed25519)
-            val publicKeySpec = EdDSAPublicKeySpec(privKeySpec.a.toByteArray(), ed25519)
-            return KeyPairJvmImpl(
-                EdDSAPublicKey(publicKeySpec),
-                EdDSAPrivateKey(privKeySpec)
-            )
-        }
-
-        /**
          * Generates a random Stellar keypair.
          *
          * @return a random Stellar keypair.
