@@ -43,6 +43,9 @@ constructor(
         return mPrivateKey != null
     }
 
+    override val privateKey: ByteArray?
+        get() = mPrivateKey?.h
+
     /**
      * Returns the human readable account ID encoded in strkey.
      */
@@ -149,8 +152,23 @@ constructor(
          */
         @JvmStatic
         fun fromSecretSeed(seed: ByteArray?): KeyPairJvmImpl {
-
             val privKeySpec = EdDSAPrivateKeySpec(seed, ed25519)
+            val publicKeySpec = EdDSAPublicKeySpec(privKeySpec.a.toByteArray(), ed25519)
+            return KeyPairJvmImpl(
+                EdDSAPublicKey(publicKeySpec),
+                EdDSAPrivateKey(privKeySpec)
+            )
+        }
+
+        /**
+         * Creates a new keypair from a 64 byte private key.
+         *
+         * @param privateKey The 64 byte private key.
+         * @return [KeyPair]
+         */
+        @JvmStatic
+        fun fromPrivateKey(privateKey: ByteArray?): KeyPairJvmImpl {
+            val privKeySpec = EdDSAPrivateKeySpec(ed25519, privateKey)
             val publicKeySpec = EdDSAPublicKeySpec(privKeySpec.a.toByteArray(), ed25519)
             return KeyPairJvmImpl(
                 EdDSAPublicKey(publicKeySpec),
@@ -178,22 +196,6 @@ constructor(
         fun fromPublicKey(publicKey: ByteArray?): KeyPairJvmImpl {
             val publicKeySpec = EdDSAPublicKeySpec(publicKey, ed25519)
             return KeyPairJvmImpl(EdDSAPublicKey(publicKeySpec))
-        }
-
-        /**
-         * Creates a new Stellar keypair from a 32 byte address.
-         *
-         * @param publicKey The 32 byte public key.
-         * @return [KeyPair]
-         */
-        @JvmStatic
-        fun fromPrivateKey(privateKey: ByteArray?): KeyPairJvmImpl {
-            val privKeySpec = EdDSAPrivateKeySpec(privateKey, ed25519)
-            val publicKeySpec = EdDSAPublicKeySpec(privKeySpec.a.toByteArray(), ed25519)
-            return KeyPairJvmImpl(
-                EdDSAPublicKey(publicKeySpec),
-                EdDSAPrivateKey(privKeySpec)
-            )
         }
 
         /**

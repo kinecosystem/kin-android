@@ -6,9 +6,7 @@ import net.i2p.crypto.eddsa.spec.EdDSAPrivateKeySpec
 import net.i2p.crypto.eddsa.spec.EdDSAPublicKeySpec
 import org.json.JSONException
 import org.json.JSONObject
-import org.kin.sdk.base.models.Key
-import org.kin.sdk.base.models.KinAccount
-import org.kin.stellarfork.IKeyPair
+import org.kin.sdk.base.models.asPublicKey
 import org.kin.stellarfork.KeyPair
 import org.kin.stellarfork.KeyPairJvmImpl
 import org.libsodium.jni.NaCl
@@ -119,16 +117,24 @@ class BackupRestoreImpl : BackupRestore {
     @Throws(CryptoException::class)
     fun exportAccountBackup(keyPair: KeyPair, passphrase: String): AccountBackup {
         val saltBytes = Companion.generateRandomBytes(SALT_LENGTH_BYTES)
-
         val passphraseBytes = passphrase.toUTF8ByteArray()
         val hash = Companion.keyHash(passphraseBytes, saltBytes)
-        val secretSeedBytes = keyPair.rawSecretSeed
+        val secretSeedBytes = if (keyPair.rawSecretSeed != null && keyPair.rawSecretSeed!!.size == 32) {
+            keyPair.rawSecretSeed!!
+        } else {
+            keyPair.privateKey!!
+        }
+        val publicKey = if (secretSeedBytes.size == 32) {
+            keyPair.accountId
+        } else {
+            keyPair.asPublicKey().base58Encode()
+        }
 
-        val encryptedSeed = Companion.encryptSecretSeed(hash, secretSeedBytes!!)
+        val encryptedSeed = Companion.encryptSecretSeed(hash, secretSeedBytes)
 
         val salt = saltBytes.bytesToHex()
         val seed = encryptedSeed.bytesToHex()
-        return AccountBackup(keyPair.accountId, salt, seed)
+        return AccountBackup(publicKey, salt, seed)
     }
 
     @Throws(CryptoException::class)
@@ -139,12 +145,11 @@ class BackupRestoreImpl : BackupRestore {
         val seedBytes = accountBackup.encryptedSeedHexString.hexStringToByteArray()
 
         val decryptedBytes = Companion.decryptSecretSeed(seedBytes, keyHash)
-////        val kph = KeyPairJvmImpl(EdDSAPublicKey(EdDSAPublicKeySpec()))
-//        val account = KinAccount(Key.PrivateKey(decryptedBytes))
-////        val ikp = IKeyPair(account.id, account.key)
-//        val pk = Key.PrivateKey(decryptedBytes)
-//        val ka = KinAccount(pk)
-        val privKeySpec = EdDSAPrivateKeySpec(decryptedBytes, KeyPairJvmImpl.ed25519)
+        val privKeySpec = if (decryptedBytes.size == 32) {
+            EdDSAPrivateKeySpec(decryptedBytes, KeyPairJvmImpl.ed25519)
+        } else {
+            EdDSAPrivateKeySpec(KeyPairJvmImpl.ed25519, decryptedBytes)
+        }
         val publicKeySpec = EdDSAPublicKeySpec(privKeySpec.a.toByteArray(), KeyPairJvmImpl.ed25519)
         val i = KeyPairJvmImpl(
             EdDSAPublicKey(publicKeySpec),

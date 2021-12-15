@@ -101,7 +101,6 @@ buildscript {
         versions.toml4j = '0.5.1'
         versions.gson = '2.8.2'
         versions.okhttp = '3.12.12'
-        versions.oksse = '4121e87e8c'
         versions.i2p_crypto_eddsa = '0.3.0'
         versions.slf4j = '1.7.25'
         versions.kotlinmockito = '2.1.0'
@@ -138,7 +137,6 @@ buildscript {
         deps.gson = "com.google.code.gson:gson:${versions.gson}"
         deps.okhttp = "com.squareup.okhttp3:okhttp:${versions.okhttp}"
         deps.okhttp_mockwebserver = "com.squareup.okhttp3:mockwebserver:${versions.okhttp}"
-        deps.oksse = "com.github.kinecosystem:oksse:${versions.oksse}"
         deps.i2p_crypto_eddsa = "net.i2p.crypto:eddsa:${versions.i2p_crypto_eddsa}"
 
         deps.slf4j_android = "org.slf4j:slf4j-android:$versions.slf4j"

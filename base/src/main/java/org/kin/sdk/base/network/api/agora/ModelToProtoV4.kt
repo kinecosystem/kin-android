@@ -84,11 +84,11 @@ internal fun KinTransactionApiV4.SubmitTransactionRequest.toGrpcRequest(): Trans
     } catch (t: Throwable) {
         KinAmount.ONE
     }
-    val commitment= when {
-        amount.value < BigDecimal(50000) -> { // ~1 $USD
+    val commitment = when {
+        amount.value < BigDecimal(50000) -> {
             Model.Commitment.RECENT
         }
-        amount.value < BigDecimal(500000) -> { // ~10 $USD
+        amount.value < BigDecimal(500000) -> {
             Model.Commitment.SINGLE
         }
         else -> {

@@ -53,6 +53,8 @@ constructor(
      */
     override val secretSeed: CharArray
         get() = encodeStellarSecretSeed(mPrivateKey!!.seed)
+    override val privateKey: ByteArray?
+        get() = ByteArray(1)
 
     /**
      * Returns the raw 32 byte secret seed.
