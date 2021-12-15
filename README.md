@@ -24,7 +24,7 @@ buildscript {
     ext {
         versions = [:]
 
-        versions.kin = "2.0.0"
+        versions.kin = "2.1.0"
     }
 }
 dependencies {
@@ -38,7 +38,7 @@ dependencies {
 
 ## Demo App
 
-> :warning: **As Of October 7th, 2021:** the Demo app is being updated to use v2.0.0 of the Kin Android SDK and is not fully functioning. The [demo](demo) directory includes a demo application, showcasing a Kin wallet.
+The [demo](demo) directory includes a demo application, showcasing a Kin wallet.
 
 ## Design Showcase App
 
