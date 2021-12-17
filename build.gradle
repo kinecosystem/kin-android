@@ -247,14 +247,14 @@ allprojects {
         google()
 //        jcenter()
         mavenCentral()
-        maven {
-            url  "https://dl.bintray.com/kinecosystem/agora-api"
-        }
+        maven { url "https://jitpack.io" }
 //        maven {
 //            url "https://jitpack.io"
 //            credentials { username jitpackAuthToken }
 //        }
-        maven { url "https://jitpack.io" }
+        maven {
+            url  "https://dl.bintray.com/kinecosystem/agora-api"
+        }
     }
 
     tasks.withType(Test) {
