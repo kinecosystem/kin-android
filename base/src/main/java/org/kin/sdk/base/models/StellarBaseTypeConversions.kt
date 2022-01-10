@@ -6,7 +6,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 fun KeyPair.asPrivateKey(): Key.PrivateKey =
-    rawSecretSeed?.let { Key.PrivateKey(it) } ?: throw Exception("No Private Key Found")
+    rawSecretSeed?.let { Key.PrivateKey(it) } ?: privateKey?.let { Key.PrivateKey(it) } ?: throw Exception("No Private Key Found")
 
 fun KeyPair.asPublicKey(): Key.PublicKey =
     Key.PublicKey(publicKey)
@@ -21,17 +21,21 @@ fun Key.asKinAccountId(): KinAccount.Id =
     KinAccount.Id(asPublicKey().value)
 
 fun Key.asPublicKey(): Key.PublicKey =
-    if (this is Key.PrivateKey) KeyPair.fromSecretSeed(value).asPublicKey()
+    if (this is Key.PrivateKey && value.size == 32) KeyPair.fromSecretSeed(value).asPublicKey()
+    else if (this is Key.PrivateKey) KeyPair.fromPrivateKey(value).asPublicKey()
     else this as Key.PublicKey
 
 fun KinAccount.Id.toKeyPair(): KeyPair = KeyPair.fromPublicKey(value)
 
 fun KinAccount.toSigningKeyPair(): KeyPair =
-    (key as? Key.PrivateKey)?.let { KeyPair.fromSecretSeed(it.value) }
-        ?: throw Exception("Cannot get a signing KeyPair")
+    (key as? Key.PrivateKey)?.let {
+        if (it.value.size == 32) KeyPair.fromSecretSeed(it.value)
+        else KeyPair.fromPrivateKey(it.value)
+    } ?: throw Exception("Cannot get a signing KeyPair")
 
 fun Key.PrivateKey.toSigningKeyPair(): KeyPair =
-    KeyPair.fromSecretSeed(value) ?: throw Exception("Cannot get a signing KeyPair")
+    if (value.size == 32) KeyPair.fromSecretSeed(value)
+    else KeyPair.fromPrivateKey(value)
 
 fun String.toUTF8Bytes(): ByteArray = toByteArray(Charsets.UTF_8)
 

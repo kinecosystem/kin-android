@@ -15,6 +15,11 @@ interface IKeyPair {
     val secretSeed: CharArray
 
     /**
+     * Returns the 64 byte private key.
+     */
+    val privateKey: ByteArray?
+
+    /**
      * Returns the raw 32 byte secret seed.
      */
     val rawSecretSeed: ByteArray?
@@ -88,6 +93,8 @@ constructor(
 
     override val publicKey: ByteArray
         get() = impl.publicKey
+    override val privateKey: ByteArray?
+        get() = impl.privateKey
 
     /**
      * Sign the provided data with the keypair's private key.
@@ -156,6 +163,17 @@ constructor(
         fun fromSecretSeed(seed: ByteArray): KeyPair = KeyPair(
             if (canUseNativeJNI) KeyPairNativeJNIImpl.fromSecretSeed(seed)
             else KeyPairJvmImpl.fromSecretSeed(seed)
+        )
+
+        /**
+         * Creates a new keypair from a 64 byte private key.
+         *
+         * @param privateKey The 64 byte private key.
+         * @return [KeyPair]
+         */
+        @JvmStatic
+        fun fromPrivateKey(privateKey: ByteArray): KeyPair = KeyPair(
+            KeyPairJvmImpl.fromPrivateKey(privateKey)
         )
 
         /**
