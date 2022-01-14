@@ -24,7 +24,7 @@ buildscript {
     ext {
         versions = [:]
 
-        versions.kin = "2.1.0"
+        versions.kin = "2.1.1"
     }
 }
 dependencies {
