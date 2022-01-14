@@ -208,6 +208,12 @@ afterEvaluate {
                                 it
                             }
                         }.each addDep
+                        // Add api deps also
+                        configurations.api.dependencies.findAll {
+                            if (!groupsToShade.contains(it.group)) {
+                                it
+                            }
+                        }.each addDep
                         // Add flavor specific deps
                         configurations["shaded"].allDependencies.each addDep
 
