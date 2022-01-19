@@ -235,7 +235,7 @@ allprojects {
     ext {
         // Libraries
         groupId = "org.kin.sdk.android"
-        libraryVersion = "2.1.1" // NOTE: ALSO CHANGE SDKConfig.versionString when updating. Should be identical.
+        libraryVersion = "2.1.2" // NOTE: ALSO CHANGE SDKConfig.versionString when updating. Should be identical.
         siteUrl = "https://github.com/kinecosystem/kin-android"
         gitUrl = "https://github.com/kinecosystem/kin-android.git"
     }
