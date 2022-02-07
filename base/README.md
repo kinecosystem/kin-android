@@ -239,6 +239,7 @@ Alternatively, there is a shaded artifact for those who are having difficulty re
 dependencies {
     // ...
     // The shaded repo doesn't pulling transitive dependencies aautomatically, so add these manually
+    implementation 'org.slf4j:slf4j-api:1.7.25'
     implementation 'net.i2p.crypto:eddsa:0.3.0'
     implementation 'io.perfmark:perfmark-api:0.23.0'
     implementation "org.kin.sdk.android:base-shaded:${versions.kin}"
