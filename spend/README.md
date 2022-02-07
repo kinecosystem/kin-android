@@ -11,15 +11,15 @@ You'll need to have created a funded KinAccount and set up a valid `KinEnvironme
 
 ## Installation
 Add the following to your project's gradle file.
-This will also transitively pull in the [base module](../base) into your project as well.
+This will also transitively pull the [base module](../base) into your project.
 ```groovy
+repositories {
+    // ...
+    mavenCentral()
+}
 dependencies {
     // ...
     implementation "org.kin.sdk.android:spend:${versions.kin}"
-}
-repositories {
-    // ...
-    jcenter()
 }
 ```
 

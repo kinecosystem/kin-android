@@ -12,14 +12,13 @@ The [:base](../base) module is the foundation upon which the rest of the SDK sta
 ## Installation
 Add the following to your project's gradle file.
 ```groovy
+repositories {
+    // ...
+    mavenCentral()
+}
 dependencies {
     // ...
     implementation "org.kin.sdk.android:base:${versions.kin}"
-}
-repositories {
-    // ...
-    jcenter()
-    maven { url "https://jitpack.io/" }
 }
 ```
 
@@ -239,6 +238,9 @@ Alternatively, there is a shaded artifact for those who are having difficulty re
 ```groovy
 dependencies {
     // ...
+    // The shaded repo doesn't pulling transitive dependencies aautomatically, so add these manually
+    implementation 'net.i2p.crypto:eddsa:0.3.0'
+    implementation 'io.perfmark:perfmark-api:0.23.0'
     implementation "org.kin.sdk.android:base-shaded:${versions.kin}"
 }
 ```

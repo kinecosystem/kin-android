@@ -5,12 +5,12 @@
 [![KDoc](https://img.shields.io/badge/Docs-KDoc-blue)](https://kinecosystem.github.io/kin-android/docs)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/base/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.kin.sdk.android/base)
 
-Use the Kin SDK for Android to enable the use of Kin inside of your app. Include only the functionality you need to provide the right experience to your users. Include the offers library to give your users the opportunity to earn Kin in your app. Use just the base library to access the lightest-weight wrapper over the Kin crytocurrency. The design library provides a set of basic UI elements to ensure the user experience offered to your users is consistent and high-quality.
+Use the Kin SDK for Android to enable the use of Kin in your app. Include only the functionality you need to provide the right experience to your users. Use just the base library to access the lightest-weight wrapper over the Kin cryptocurrency. The design library provides a set of basic UI elements to ensure the user experience offered to your users is consistent and high-quality. The spend library provides a flow for users to pay invoices with Kin. The base-compat library adds support for a pre-built wallet backup solution.
 
 | Library&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Support                                                                                   | Path&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Description                                                                                                                                                                                                                               |
 | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `base`                                                                                                                                                                                | <img src="assets/java.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24">    | [`/base`](base)                                                                                                              | The foundation library used by all other libraries in the system to support basic Kin operations: <ul><li>Wallet creation and management</li><li>Send and receive Kin</li><li>Metrics interfaces</li></ul>                                |
-| `base-compat`                                                                                                                                                                         | <img src="assets/android.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24"> | [`/base-compat`](base-compat)                                                                                                | The [:base-compat](base-compat) library now only contains the backup & restore flow retrofitted on top of base. If you're using an old version of base-compat please consider upgrading to base.                                          |
+| `base-compat`                                                                                                                                                                         | <img src="assets/android.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24"> | [`/base-compat`](base-compat)                                                                                                | The [:base-compat](base-compat) library now only contains the backup & restore flow retrofitted on top of base. If you're using an old version of base-compat please consider upgrading to base. If you want to support backup & restore, you must include base **and** base-compat.                                          |
 | `design`                                                                                                                                                                              | <img src="assets/android.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24"> | [`/design`](design)                                                                                                          | Shared [:design](design) library components for creating consistent Kin user experiences. When creating a custom Kin experience, this library can be used to include standard UI components for displaying Kin prices, transactions, etc. |
 | `spend`                                                                                                                                                                               | <img src="assets/android.png" height="24">&nbsp;<img src="assets/kotlin.png" height="24"> | [`/spend`](spend)                                                                                                            | The [:spend](spend) library provides an out of the box model UI for spending Kin within an Android application. Specificy what you're buying, your account, tap confirm. Success.                                                         |
 
@@ -27,12 +27,18 @@ buildscript {
         versions.kin = "2.1.2"
     }
 }
+repositories {
+    // ...
+    mavenCentral()
+}
 dependencies {
     // ...
 
-    //As of October 7th, 2021 we're improving the base-compat, spend, and design implementations
-    //Until further notice, we suggest only adding the base implementation to new projects.
     implementation "org.kin.sdk.android:base:${versions.kin}"
+    // Optional libraries, add as needed, see their respective READMEs for additional implementation details
+    // implementation "org.kin.sdk.android:base-compat:${versions.kin}"
+    // implementation "org.kin.sdk.android:design:${versions.kin}"
+    // implementation "org.kin.sdk.android:spend:${versions.kin}"
 }
 ```
 
