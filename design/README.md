@@ -15,13 +15,13 @@ All of these components can be tested out and browsed in the [design-showcase ap
 Add the following to your project's gradle file.
 This will also transitively pull in the [base-viewmodel-impl](viewmodel-tools) into your project as well.
 ```groovy
+repositories {
+    // ...
+    mavenCentral()
+}
 dependencies {
     // ...
     implementation "org.kin.sdk.android:design:${versions.kin}"
-}
-repositories {
-    // ...
-    jcenter()
 }
 ```
 
