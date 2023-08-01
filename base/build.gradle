@@ -36,7 +36,6 @@ def groupsToShade = ['io.grpc',
                      'commons-validator',
                      'io.opencensus',
                      'com.github.kinecosystem',
-                     'org.kin.agora.gen',
                      groupId]
 // Output to build/libs/base-shaded.jar
 shadowJar {
